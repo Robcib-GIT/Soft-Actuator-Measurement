@@ -1,48 +1,64 @@
 #!/usr/bin/env python3
 
 import rospy
-from sensor_msgs.msg import Temperature, Range, Imu
+from std_msgs.msg import String
+import serial
+import json
 
-def publicar_sensor_1(event):
-    """Publica datos del Sensor 1."""
-    msg = Temperature()
-    msg.header.stamp = rospy.Time.now()
-    msg.temperature = 25.0
-    msg.variance = 0.1
-    rospy.loginfo(f"Sensor 1: {msg.temperature}°C")
-    pub1.publish(msg)
+# Configuración de la conexión serie
+arduino = serial.Serial('/dev/ttyACM0', 9600, timeout=1)  # Cambia '/dev/ttyACM0' según corresponda a tu puerto serie
 
-def publicar_sensor_2(event):
-    """Publica datos del Sensor 2."""
-    msg = Range()
-    msg.header.stamp = rospy.Time.now()
-    msg.radiation_type = Range.ULTRASOUND
-    msg.range = 1.5
-    rospy.loginfo(f"Sensor 2: {msg.range} m")
-    pub2.publish(msg)
+# Variables globales para almacenar los datos de los sensores
+sensor1_data = None
+sensor2_data = None
+sensor3_data = None
 
-def publicar_sensor_3(event):
-    """Publica datos del Sensor 3."""
-    msg = Imu()
-    msg.header.stamp = rospy.Time.now()
-    msg.angular_velocity.x = 0.01
-    msg.angular_velocity.y = 0.02
-    msg.angular_velocity.z = 0.03
-    rospy.loginfo(f"Sensor 3: Publicando IMU")
-    pub3.publish(msg)
+# Publicadores
+pub1 = rospy.Publisher('sensor1_data', String, queue_size=10)
+pub2 = rospy.Publisher('sensor2_data', String, queue_size=10)
+pub3 = rospy.Publisher('sensor3_data', String, queue_size=10)
 
-if __name__ == "__main__":
-    rospy.init_node("sensors", anonymous=True)
+# Función para enviar el comando al Arduino
+def send_command_to_arduino(command):
+    arduino.write(command.encode())  # Enviar comando por serie
 
-    # Crear publicadores
-    pub1 = rospy.Publisher("sensor_1_temperature", Temperature, queue_size=10)
-    pub2 = rospy.Publisher("sensor_2_range", Range, queue_size=10)
-    pub3 = rospy.Publisher("sensor_3_imu", Imu, queue_size=10)
+# Callback para recibir el comando desde un topic y enviarlo a Arduino
+def command_callback(msg):
+    send_command_to_arduino(msg.data)
 
-    # Timers para diferentes frecuencias
-    rospy.Timer(rospy.Duration(0.1), publicar_sensor_1)  # Frecuencia 10 Hz
-    rospy.Timer(rospy.Duration(1.0), publicar_sensor_2)  # Frecuencia 1 Hz
-    rospy.Timer(rospy.Duration(5.0), publicar_sensor_3)  # Frecuencia 0.2 Hz
+# Función para leer los datos de Arduino y publicar los resultados
+def read_data_from_arduino():
+    while arduino.in_waiting > 0:
+        line = arduino.readline().decode('utf-8').strip()  # Leer la línea de datos del Arduino
+        if line:
+            try:
+                # Parsear el JSON recibido de Arduino
+                data = json.loads(line)
+                # Asignar los valores de los sensores a las variables globales
+                global sensor1_data, sensor2_data, sensor3_data
+                sensor1_data = data.get("sensor1", None)
+                sensor2_data = data.get("sensor2", None)
+                sensor3_data = data.get("sensor3", None)
 
-    rospy.loginfo("Nodo 'sensores' inicializado")
+                # Publicar los datos de los sensores
+                pub1.publish(str(sensor1_data) if sensor1_data is not None else "null")
+                pub2.publish(str(sensor2_data) if sensor2_data is not None else "null")
+                pub3.publish(str(sensor3_data) if sensor3_data is not None else "null")
+
+            except json.JSONDecodeError:
+                rospy.logwarn("No se pudo decodificar el JSON recibido de Arduino.")
+
+# Función principal
+def main():
+    rospy.init_node('sensors', anonymous=True)
+
+    # Suscribirse al topic donde se envían los comandos
+    rospy.Subscriber('command_topic', String, command_callback)
+
+    # Ejecutar la lectura de datos en segundo plano
+    rospy.Timer(rospy.Duration(1), lambda event: read_data_from_arduino())  # Lee datos del Arduino cada 1 segundo
+
     rospy.spin()
+
+if __name__ == '__main__':
+    main()
