@@ -24,6 +24,7 @@ def send_command_to_arduino(command):
 
 # Callback para recibir el comando desde un topic y enviarlo a Arduino
 def command_callback(msg):
+    rospy.loginfo(f"Comando recibido: {msg.data}")
     send_command_to_arduino(msg.data)
 
 # Función para leer los datos de Arduino y publicar los resultados
@@ -44,6 +45,7 @@ def read_data_from_arduino():
                 pub1.publish(str(sensor1_data) if sensor1_data is not None else "null")
                 pub2.publish(str(sensor2_data) if sensor2_data is not None else "null")
                 pub3.publish(str(sensor3_data) if sensor3_data is not None else "null")
+                rospy.loginfo(f"Sensor 1: {sensor1_data}, Sensor 2: {sensor2_data}, Sensor 3: {sensor3_data}")
 
             except json.JSONDecodeError:
                 rospy.logwarn("No se pudo decodificar el JSON recibido de Arduino.")
