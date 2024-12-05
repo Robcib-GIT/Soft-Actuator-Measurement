@@ -67,40 +67,33 @@ void loop() {
       // Creación del mensaje JSON
       String message = "{\"sensor1\": ";
   
-      if(readSensor1){
-        if (currentMillis - previousMillisSensor1 >= intervalSensor1) {
+      if(readSensor1 and  currentMillis - previousMillisSensor1 >= intervalSensor1){
           previousMillisSensor1 = currentMillis;
           sensor1Value = random(0, 50000) / 100.0;//analogRead(sensor1Pin)
           sendData = true;
-        }
+          message += String(sensor1Value,2);
         
-        message += String(sensor1Value,2);
       }else{
         message += "null";
       }
   
       message += ", \"sensor2\": ";
-      if(readSensor2){
-        if (currentMillis - previousMillisSensor2 >= intervalSensor2) {
+      if(readSensor2 and  currentMillis - previousMillisSensor2 >= intervalSensor2){
           previousMillisSensor2 = currentMillis;
           sensor2Value = random(0, 50000) / 100.0;//analogRead(sensor2Pin)
           sendData = true;
-        }
-      
-        message +=  String(sensor2Value,2);
+          message += String(sensor2Value,2);
       }else{
         message += "null";
       }
   
       message += ", \"sensor3\": ";
-      if(readSensor3){
-        if (currentMillis - previousMillisSensor3 >= intervalSensor3) {
+      if(readSensor3 and  currentMillis - previousMillisSensor3 >= intervalSensor3){
           previousMillisSensor3 = currentMillis;
           sensor3Value = random(0, 50000) / 100.0;//analogRead(sensor1Pin)
           sendData = true;
-        }
+          message += String(sensor3Value,2);
         
-        message +=  String(sensor3Value,2);
       }else{
         message += "null";
       }
@@ -113,5 +106,6 @@ void loop() {
         sendData = false;
       }   
 
+    }
   }
 }
