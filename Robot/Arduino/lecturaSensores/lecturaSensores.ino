@@ -16,7 +16,7 @@ void setup() {
 
 void loop() {
   // Comprobar si hay datos disponibles en el puerto serie
-  if (Serial.available() > 0) {
+  if (Serial.available() > 0) { //Serial.available() > 0
     String command = Serial.readString();  // Leer la instrucción completa
 
     // Leer los valores de los sensores
@@ -53,5 +53,6 @@ void loop() {
 
     // Enviar el mensaje por serie
     Serial.println(message);
+    //delay(1000);
   }
 }
