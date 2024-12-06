@@ -5,14 +5,6 @@ from std_msgs.msg import String, Float32
 import serial
 import json
 
-# Variables globales para almacenar los datos de los sensores
-sensor1_data = None
-sensor2_data = None
-sensor3_data = None
-
-previous_sensor1_data = None
-previous_sensor2_data = None
-previous_sensor3_data = None
 
 # Publicadores
 pub1 = rospy.Publisher('sensor1_data', Float32, queue_size=10)
@@ -20,14 +12,8 @@ pub2 = rospy.Publisher('sensor2_data', Float32, queue_size=10)
 pub3 = rospy.Publisher('sensor3_data', Float32, queue_size=10)
 
 # Funcion para manejar publicaciones
-def publish_if_not_none(sensor_data, previous_data, publisher):
-    if sensor_data is not None:
-        publisher.publish(sensor_data)
-        return sensor_data  
-    elif previous_data is not None:
-        publisher.publish(float(-1))
-        return None  
-    return previous_data  
+def publish_if_available(key, data, publisher):
+    if key in data: publisher.publish(round(data[key],2)) 
 
 # Función para enviar el comando al Arduino
 def send_command_to_arduino(command):
@@ -40,23 +26,18 @@ def command_callback(msg):
 
 # Función para leer los datos de Arduino y publicar los resultados
 def read_data_from_arduino():
-    global previous_sensor1_data, previous_sensor2_data, previous_sensor3_data
     while arduino.in_waiting > 0:
         line = arduino.readline().decode('utf-8').strip()  # Leer la línea de datos del Arduino
         if line:
             try:
                 # Parsear el JSON recibido de Arduino
                 data = json.loads(line)
-                # Asignar los valores de los sensores a las variables globales
-                global sensor1_data, sensor2_data, sensor3_data
-                sensor1_data = data.get("sensor1", None)
-                sensor2_data = data.get("sensor2", None)
-                sensor3_data = data.get("sensor3", None)
 
                 # Publicar los datos de los sensores
-                previous_sensor1_data = publish_if_not_none(sensor1_data, previous_sensor1_data, pub1)
-                previous_sensor2_data = publish_if_not_none(sensor2_data, previous_sensor2_data, pub2)
-                previous_sensor3_data = publish_if_not_none(sensor3_data, previous_sensor3_data, pub3)
+                publish_if_available("sensor1", data, pub1)
+                publish_if_available("sensor2", data, pub2)
+                publish_if_available("sensor3", data, pub3)
+
                 #rospy.loginfo(f"Sensor 1: {sensor1_data}, Sensor 2: {sensor2_data}, Sensor 3: {sensor3_data}")
 
             except json.JSONDecodeError:
