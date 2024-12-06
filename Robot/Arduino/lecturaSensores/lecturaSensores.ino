@@ -7,25 +7,21 @@ una frecuencia regulable para cada sensor.
 *  char 1-3: se invierte el estado de lectura del sensor especificado 
 */
 
-
-
-
-#include <Arduino_JSON.h>
+#include <ArduinoJson.h>
 
 // Configuración de los sensores
 struct SensorConfig {
   int pin;
   unsigned long interval;
   unsigned long previousMillis;
-  float value;
   bool read;
   bool previousRead;
 };
 
 SensorConfig sensors[] = {
-    {A0, 2000, 0, 0, false, false},  // Sensor 1
-    {A1, 200, 0, 0, false, false},  // Sensor 2
-    {A2, 200, 0, 0, false, false}   // Sensor 3
+    {A0, 2000, 0, false, false},  // Sensor 1
+    {A1, 200, 0, false, false},  // Sensor 2
+    {A2, 200, 0, false, false}   // Sensor 3
 };
 
 const int sensorCount = sizeof(sensors) / sizeof(sensors[0]);
@@ -70,8 +66,7 @@ void toggleSensors(const String &command) {
 
 void sendSensorData() {
   unsigned long currentMillis = millis();
-  JSONVar json; // Usamos JSONVar de la biblioteca Arduino_JSON
-
+  JsonDocument json;
   bool sendData = false;
 
   for (int i = 0; i < sensorCount; i++) {
@@ -80,27 +75,24 @@ void sendSensorData() {
 
     if (sensor.read && currentMillis - sensor.previousMillis >= sensor.interval) {
       sensor.previousMillis = currentMillis;
-      sensor.value = randomWithDecimals(); // analogRead(sensor.pin);
-      json[sensorKey] = sensor.value;
+      json[sensorKey] = randomWithDecimals(); // analogRead(sensor.pin);
       sendData = true;
     } else if (!sensor.read && sensor.previousRead) {
-      json[sensorKey] = -1; //Fin del envío
+      json[sensorKey] = -1; // Fin del envío
       sendData = true;
-    } else {
-      json[sensorKey] = undefined; //No hace falta incluirlo en el json
-    }
+    } 
 
     sensor.previousRead = sensor.read;
   }
 
   if (sendData) {
-    String jsonString = JSON.stringify(json);
+    String jsonString;
+    serializeJson(json, jsonString);
     Serial.println(jsonString);
   }
 }
 
-
-//TODO borrar cuando conecte sensores
+// TODO borrar cuando conecte sensores
 float randomWithDecimals() {
   int wholePart = random(0, 500);
   int decimalPart = random(0, 100);
