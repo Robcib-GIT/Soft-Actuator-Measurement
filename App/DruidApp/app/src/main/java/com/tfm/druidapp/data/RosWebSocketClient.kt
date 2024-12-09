@@ -53,7 +53,7 @@ class RosWebSocketClient(uri: URI, private val viewModel: MainViewModel) : WebSo
     fun disconnect() {
         if (isOpen) {
             topicsMap.forEach{topic,topicInfo->
-                if (!topicInfo.subscribedTo){
+                if (topicInfo.subscribedTo){
                     unsubscribeFromTopic(topic = topic)
                     topicInfo.subscribedTo = false
                 }
