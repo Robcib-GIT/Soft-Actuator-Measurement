@@ -1,5 +1,21 @@
 package com.tfm.druidapp.data
 
+////////////////////// MEDIC INFO //////////////////////
+data class BloodPressureData(
+    val sys: Int? = null,
+    val dia: Int? = null
+)
+
+data class PpgData(  //TODO modificar tipos de datos
+    val bpm: Int? = null,
+    val sdnn: Int? = null,
+    val rmsdd: Int? = null,
+    val frequency: Double? = null,
+    val amplitude: Double? = null,
+    val riseTime: Double? = null
+)
+
+////////////////////// GLASGOW //////////////////////
 data class GlasgowTestItem(
     val text: String,
     val score: Int

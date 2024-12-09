@@ -1,6 +1,7 @@
 package com.tfm.druidapp
 
 import android.content.res.Configuration
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
@@ -19,11 +20,14 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -42,6 +46,16 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun App(viewModel: MainViewModel = viewModel()){
+    val toastMessage by viewModel.toastMessage.collectAsState()
+    val context = LocalContext.current
+
+    // Muestra el Toast cuando el mensaje esté presente
+    LaunchedEffect(toastMessage) {
+        toastMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            viewModel.clearToast()  // Limpia el mensaje después de mostrarlo
+        }
+    }
 
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -50,6 +64,7 @@ fun App(viewModel: MainViewModel = viewModel()){
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
 
     val title = allScreens.firstOrNull { it.route == currentRoute }?.title ?: ""
+    val isLoading by viewModel.loadingState.collectAsState()
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -82,15 +97,20 @@ fun App(viewModel: MainViewModel = viewModel()){
         Scaffold(
         topBar = {
             TopBar(
-                title,
-                viewModel.connected.value,
+                title = title,
+                viewModel.connectionState.value,
+                loading = isLoading,
                 onNavigationClicked = {
                     if(screensWithNav.any{it.route == currentRoute} || screensInDrawer.any{it.route == currentRoute}){
                         scope.launch { drawerState.open() }
                     }else{
                         navController.popBackStack()
                     }
-
+                },
+                switchOffFunction = {viewModel.disconnectWebSocket()},
+                switchOnFunction = {
+                    viewModel.connectWebSocket()
+                    viewModel.waitForConnection()
                 }
             )
         },

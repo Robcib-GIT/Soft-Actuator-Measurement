@@ -9,8 +9,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -20,8 +22,10 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.unit.dp
 import com.tfm.druidapp.R
@@ -29,8 +33,14 @@ import com.tfm.druidapp.data.screensWithNav
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TopBar(title: String, robotConnected: Boolean, onNavigationClicked: ()->Unit){
-    //val title = allScreens.firstOrNull { it.route == route }?.title ?: ""//viewModel.currentScreen.value.title
+fun TopBar(
+    title: String,
+    robotConnected: Boolean,
+    loading: Boolean,
+    onNavigationClicked: ()->Unit,
+    switchOffFunction: ()->Unit,
+    switchOnFunction: ()->Unit
+){
     TopAppBar(
         title = {
             Row(
@@ -62,7 +72,7 @@ fun TopBar(title: String, robotConnected: Boolean, onNavigationClicked: ()->Unit
                     )
                 }else{
                     Icon(
-                        imageVector = Icons.Default.ArrowBack,
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Go Back",
                         modifier = Modifier.size(30.dp)
                     )
@@ -71,21 +81,43 @@ fun TopBar(title: String, robotConnected: Boolean, onNavigationClicked: ()->Unit
 
         },
         actions = {
-            IconButton(
-                onClick = {
-                    /*TODO mostrar un toast diciendo como esta la conexion*/
+            Row(
+                modifier = Modifier
+                    .padding(end = 6.dp)
+                    .size(24.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if(loading){
+                    CircularProgressIndicator(
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }else{
+                    IconButton(
+                        onClick = {
+                            if (robotConnected){
+                                //TODO abrir advertencia
+                                switchOffFunction()
+                            }else{
+                                switchOnFunction()
+                            }
+                        }
+                    ){
+                        Box(
+                            modifier = Modifier
+                                .size(15.dp) // Tamaño del círculo
+                                .clip(CircleShape) // Forma circular
+                                .background(
+                                    if (robotConnected) colorResource(id = R.color.GreenBulb)
+                                    else colorResource(id = R.color.RedBulb)
+                                )
+                        )
+                    }
                 }
-            ){
-                Box(
-                    modifier = Modifier
-                        .size(15.dp) // Tamaño del círculo
-                        .clip(CircleShape) // Forma circular
-                        .background(
-                            if (robotConnected) colorResource(id = R.color.GreenBulb)
-                            else colorResource(id = R.color.RedBulb)
-                        ) // Color del círculo
-                )
             }
+
+
 
         }
 
