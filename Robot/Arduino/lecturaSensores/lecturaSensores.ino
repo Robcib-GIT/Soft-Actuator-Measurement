@@ -75,7 +75,7 @@ void sendSensorData() {
 
     if (sensor.read && currentMillis - sensor.previousMillis >= sensor.interval) {
       sensor.previousMillis = currentMillis;
-      json[sensorKey] = randomWithDecimals(); // analogRead(sensor.pin);
+      json[sensorKey] = analogRead(sensor.pin)/1023.0; randomWithDecimals();
       sendData = true;
     } else if (!sensor.read && sensor.previousRead) {
       json[sensorKey] = -1; // Fin del envío

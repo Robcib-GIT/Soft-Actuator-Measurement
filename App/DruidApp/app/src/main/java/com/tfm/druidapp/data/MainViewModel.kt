@@ -56,6 +56,8 @@ class MainViewModel : ViewModel() {
     }
     fun disconnectWebSocket() {
         wsClient.disconnect()
+        clearAmplitudes()
+        updateTemperature(null)
     }
 
     fun waitForConnection(){
@@ -108,9 +110,9 @@ class MainViewModel : ViewModel() {
             .toMutableList() // Convierte la lista inmutable a mutable
             .apply {
                 if (size >= maxPulseRegisters) {
-                    removeAt(0) // Elimina el primer elemento si se supera el límite
+                    removeAt(size - 1) // Elimina el primer elemento si se supera el límite
                 }
-                add(amplitude) // Agrega el nuevo valor
+                add(0, amplitude) // Agrega el nuevo valor
             }
     }
     fun clearAmplitudes() { //TODO si la conexion se pierde eliminar la lista

@@ -62,18 +62,17 @@ fun PPG(viewModel: MainViewModel, modifier: Modifier = Modifier) {
 
                 // Escalar las amplitudes para que se ajusten al tamaño del Canvas
                 val scaleX = width / (measuresInScreen - 1).coerceAtLeast(1)
-                val scaleY =
-                    height / 2 // Escala para la amplitud (ajustamos la altura de la gráfica)
+                val scaleY = height
 
                 // Crear un Path para dibujar la onda
                 val path = Path().apply {
                     // Mover al primer punto de la lista
-                    moveTo(width, height / 2 - pulseAmplitudeList[0] * scaleY)
+                    moveTo(width, height - pulseAmplitudeList[0] * scaleY)
 
                     // Dibujar la onda conectando los puntos
                     for (i in 1 until pulseAmplitudeList.size) {
                         val x = width - (i * scaleX)
-                        val y = (height / 2 - pulseAmplitudeList[i] * scaleY).coerceIn(0f, height)
+                        val y = (height - pulseAmplitudeList[i] * scaleY).coerceIn(0f, height)
                         lineTo(x, y)
                     }
                 }
