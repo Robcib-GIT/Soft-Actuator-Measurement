@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
@@ -39,9 +40,7 @@ import com.tfm.druidapp.views.customElements.GlasgowGauge
 
 @Composable
 fun GlasgowView(viewModel: MainViewModel){
-    var selectedOption1 by remember { mutableStateOf<Int?>(null) }
-    var selectedOption2 by remember { mutableStateOf<Int?>(null) }
-    var selectedOption3 by remember { mutableStateOf<Int?>(null) }
+    val selectedOptions by viewModel.selectedGlasgowList
     val score = viewModel.glasgowScore.value
 
     LazyColumn(
@@ -101,13 +100,12 @@ fun GlasgowView(viewModel: MainViewModel){
             )
         }
         item {
-            RadioButtonList(GlasgowData.EyeOpening, selectedOption1){index->
-                selectedOption1 = index
-                viewModel.updateGlasgowScore(addScores(selectedOption1, selectedOption2, selectedOption3))
+            RadioButtonList(GlasgowData.EyeOpening, selectedOptions[0]){index->
+                viewModel.updateGlasgowScore(group = 0, selected = index)
             }
-            Divider(
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier.padding(vertical = 6.dp)
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = 6.dp),
+                color = MaterialTheme.colorScheme.onPrimaryContainer
             )
         }
         item {
@@ -117,13 +115,12 @@ fun GlasgowView(viewModel: MainViewModel){
             )
         }
         item {
-            RadioButtonList(GlasgowData.VerbalResponse, selectedOption2){index->
-                selectedOption2 = index
-                viewModel.updateGlasgowScore(addScores(selectedOption1, selectedOption2, selectedOption3))
+            RadioButtonList(GlasgowData.VerbalResponse, selectedOptions[1]){index->
+                viewModel.updateGlasgowScore(group = 1, selected = index)
             }
-            Divider(
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier.padding(vertical = 6.dp)
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = 6.dp),
+                color = MaterialTheme.colorScheme.onPrimaryContainer
             )
         }
 
@@ -134,9 +131,8 @@ fun GlasgowView(viewModel: MainViewModel){
             )
         }
         item {
-            RadioButtonList(GlasgowData.MotorResponse, selectedOption3){index->
-                selectedOption3 = index
-                viewModel.updateGlasgowScore(addScores(selectedOption1, selectedOption2, selectedOption3))
+            RadioButtonList(GlasgowData.MotorResponse, selectedOptions[2]){index->
+                viewModel.updateGlasgowScore(group = 2, selected = index)
             }
             Divider(
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -149,16 +145,6 @@ fun GlasgowView(viewModel: MainViewModel){
 
 
 
-}
-
-fun addScores(selectedOption1: Int?, selectedOption2: Int?, selectedOption3: Int?): Int{
-    return if (selectedOption1 != null && selectedOption2 != null && selectedOption3 != null) {
-        GlasgowData.EyeOpening.options[selectedOption1].score +
-                GlasgowData.VerbalResponse.options[selectedOption2].score +
-                GlasgowData.MotorResponse.options[selectedOption3].score
-    } else {
-        0
-    }
 }
 
 @Composable

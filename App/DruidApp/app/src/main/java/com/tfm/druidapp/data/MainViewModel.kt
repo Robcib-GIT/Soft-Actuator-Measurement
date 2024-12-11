@@ -86,8 +86,19 @@ class MainViewModel : ViewModel() {
     //Glasgow
     private val _glasgowScore: MutableState<Int> = mutableStateOf(0)
     val glasgowScore: State<Int> = _glasgowScore
-    fun updateGlasgowScore(score: Int){
-        _glasgowScore.value = score
+
+    private val _selectedGlasgowList: MutableState<List<Int?>> = mutableStateOf(listOf(null, null, null))
+    val selectedGlasgowList: State<List<Int?>> = _selectedGlasgowList
+
+    fun updateGlasgowScore(group: Int, selected: Int?) {
+        _selectedGlasgowList.value = _selectedGlasgowList.value .toMutableList()
+            .apply { this[group] = selected }
+        _glasgowScore.value = _selectedGlasgowList.value.takeIf {selectedList-> selectedList.all { selected-> selected != null } }?.let {
+            GlasgowData.EyeOpening.options[it[0]!!].score +
+                    GlasgowData.VerbalResponse.options[it[1]!!].score +
+                    GlasgowData.MotorResponse.options[it[2]!!].score
+        } ?: 0
+
     }
 
     /*

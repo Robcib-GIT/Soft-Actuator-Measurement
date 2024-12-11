@@ -69,7 +69,7 @@ class RosWebSocketClient(uri: URI, private val viewModel: MainViewModel) : WebSo
     override fun onClose(code: Int, reason: String?, remote: Boolean) {
         Log.d("RosWebSocketClient", "Disconnected")
         reason?.let {
-            if(it.indexOf("failed") == -1){ //sino solapa el toast del error de conexion
+            if(it.indexOf("failed") == -1){
                 viewModel.showToast("Conexión cerrada")
                 viewModel.updateConnectionState(false)
             }
