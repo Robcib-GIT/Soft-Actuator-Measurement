@@ -34,7 +34,7 @@ fun Navigation(navController: NavHostController, viewModel: MainViewModel, pd: P
         }
 
         composable(Screen.Robot.route) {
-            RobotView()
+            RobotView(viewModel, navController)
         }
 
         composable(Screen.PPG.route) {
