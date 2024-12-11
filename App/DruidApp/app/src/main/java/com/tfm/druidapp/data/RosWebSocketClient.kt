@@ -34,9 +34,9 @@ class RosWebSocketClient(uri: URI, private val viewModel: MainViewModel) : WebSo
             when(parsedMsg.topic){
                 "/sensor1_data" -> {
                     var sensor1 = parsedMsg.msg.data as? Double
-                    sensor1 = sensor1?.times(50)
 
                     if(sensor1 != null && sensor1 != -1.0){
+                        sensor1 = sensor1.times(50)
                         viewModel.updateSensor3Data(sensor1)
                         val floatValue = sensor1.toFloat()
                         viewModel.updateSensor1Data(sensor1)

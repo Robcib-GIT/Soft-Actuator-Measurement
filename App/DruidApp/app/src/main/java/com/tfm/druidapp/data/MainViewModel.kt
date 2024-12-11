@@ -38,7 +38,7 @@ class MainViewModel : ViewModel() {
         _connectionState.value = connected
     }
 
-    private val _wsUri: MutableState<String> = mutableStateOf("ws://192.168.1.67:9090")
+    private val _wsUri: MutableState<String> = mutableStateOf("ws://192.168.1.67:9090")//192.168.2.181//192.168.1.67
     val wsUri: State<String> get() = _wsUri
     fun updateWsUri(uri: String){
         _wsUri.value = uri
@@ -103,7 +103,7 @@ class MainViewModel : ViewModel() {
     private val _pulseAmplitudeList: MutableStateFlow<List<Float>> = MutableStateFlow(listOf(0f))
     val pulseAmplitudeList: StateFlow<List<Float>> = _pulseAmplitudeList
 
-    val maxPulseRegisters = 30 //TODO ajustar si eso para que sea configurable
+    val maxPulseRegisters = 40 //TODO ajustar si eso para que sea configurable
 
     fun addPulseAmplitude(amplitude: Float) {
         _pulseAmplitudeList.value = _pulseAmplitudeList.value
