@@ -71,7 +71,7 @@ fun RobotView(viewModel: MainViewModel, navController: NavHostController){
                 onValueChange = { viewModel.updateWsUriEdited(it) },
                 modifier = Modifier
                     .focusRequester(focusRequester)
-                    .width(270.dp),
+                    .width(250.dp),
                 enabled = isUriEditable,
                 readOnly = !isUriEditable,
                 singleLine = true,
@@ -108,7 +108,7 @@ fun RobotView(viewModel: MainViewModel, navController: NavHostController){
                                 isUriEditable = false
                             }
                             .background(Color.Green)
-                            .size(30.dp)
+                            .size(28.dp)
 
                     ){
                         Icon(
@@ -125,7 +125,7 @@ fun RobotView(viewModel: MainViewModel, navController: NavHostController){
                                 isUriEditable = false
                             }
                             .background(Color.Red)
-                            .size(30.dp)
+                            .size(28.dp)
                     ){
                         Icon(
                             imageVector = Icons.Default.Clear,
