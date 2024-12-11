@@ -20,7 +20,7 @@ class RosWebSocketClient(uri: URI, private val viewModel: MainViewModel) : WebSo
         viewModel.updateConnectionState(true)
         viewModel.updateLoadingState(false)
         // Suscribirse a tópicos
-        topicsMap.forEach{topic,topicInfo->
+        topicsMap.forEach{ (topic, topicInfo) ->
             subscribeToTopic(topic = topic)
             topicInfo.subscribedTo = true
         }
@@ -78,7 +78,7 @@ class RosWebSocketClient(uri: URI, private val viewModel: MainViewModel) : WebSo
     }
     fun disconnect() {
         if (isOpen) {
-            topicsMap.forEach{topic,topicInfo->
+            topicsMap.forEach{ (topic, topicInfo) ->
                 if (topicInfo.subscribedTo){
                     unsubscribeFromTopic(topic = topic)
                     topicInfo.subscribedTo = false
@@ -108,7 +108,7 @@ class RosWebSocketClient(uri: URI, private val viewModel: MainViewModel) : WebSo
     fun subscribeToTopic(topic: String) {
         if (isOpen) {
             val jsonMessage = JSONObject()
-            jsonMessage.put("op", "subscribe")  //TODO usar clase
+            jsonMessage.put("op", MsgOp.SUBSCRIBE)
             jsonMessage.put("topic", topic)
 
             send(jsonMessage.toString())
@@ -121,7 +121,7 @@ class RosWebSocketClient(uri: URI, private val viewModel: MainViewModel) : WebSo
     fun unsubscribeFromTopic(topic: String) {
         if (isOpen) {
             val jsonMessage = JSONObject()
-            jsonMessage.put("op", "unsubscribe") //TODO usar clase
+            jsonMessage.put("op", MsgOp.UNSUBSCRIBE)
             jsonMessage.put("topic", topic)
 
             send(jsonMessage.toString())

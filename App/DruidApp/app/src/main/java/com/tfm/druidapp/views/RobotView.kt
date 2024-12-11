@@ -52,7 +52,8 @@ fun RobotView(viewModel: MainViewModel, navController: NavHostController){
 
     BackHandler(enabled = isUriEditable) {
         viewModel.updateWsUriEdited(viewModel.wsUri.value)
-        navController.popBackStack()
+        isUriEditable = false
+        //navController.popBackStack()
     }
 
     Column(
@@ -61,93 +62,105 @@ fun RobotView(viewModel: MainViewModel, navController: NavHostController){
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ){
-            OutlinedTextField(
-                value = wsUriEdited,
-                onValueChange = { viewModel.updateWsUriEdited(it) },
-                modifier = Modifier
-                    .focusRequester(focusRequester)
-                    .width(250.dp),
-                enabled = isUriEditable,
-                readOnly = !isUriEditable,
-                singleLine = true,
-                label = { Text(text = "URI")},
-                colors = OutlinedTextFieldDefaults.colors(
-                    disabledTrailingIconColor = MaterialTheme.colorScheme.onPrimary,
-                    disabledLabelColor = MaterialTheme.colorScheme.onPrimary
-                ),
-                trailingIcon =  {if(!isUriEditable){
-                    IconButton(
-                        onClick = {
-                            isUriEditable = true
-                            focusRequester.requestFocus()
-                        }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Edit,
-                            contentDescription = "Edit"
-                        )
-                        }
-                }}
-            )
-            if(isUriEditable){
-                Row(
-                    modifier = Modifier.padding(horizontal = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .clip(CircleShape)
-                            .clickable {
-                                viewModel.updateWsUri(wsUriEdited)
-                                isUriEditable = false
-                            }
-                            .background(Color.Green)
-                            .size(28.dp)
-
-                    ){
-                        Icon(
-                            imageVector = Icons.Default.Check,
-                            contentDescription ="Accept",
-                            modifier = Modifier.align(Alignment.Center)
-                        )
-                    }
-                    Box(
-                        modifier = Modifier
-                            .clip(CircleShape)
-                            .clickable {
-                                viewModel.updateWsUriEdited(viewModel.wsUri.value)
-                                isUriEditable = false
-                            }
-                            .background(Color.Red)
-                            .size(28.dp)
-                    ){
-                        Icon(
-                            imageVector = Icons.Default.Clear,
-                            contentDescription ="Accept",
-                            modifier = Modifier.align(Alignment.Center)
-                        )
-                    }
-
-                }
-            }
-
-
-        }
+        UriEditor(
+            wsUriEdited = wsUriEdited,
+            isUriEditable = isUriEditable,
+            onUriChange = { viewModel.updateWsUriEdited(it) },
+            onEditStart = {
+                isUriEditable = true
+                focusRequester.requestFocus()
+            },
+            onAccept = {
+                viewModel.updateWsUri(wsUriEdited)
+                isUriEditable = false
+            },
+            onCancel = {
+                viewModel.updateWsUriEdited(viewModel.wsUri.value)
+                isUriEditable = false
+            },
+            focusRequester = focusRequester
+        )
 
     }
 
 }
 
 @Composable
-fun UriEditBar(){
-
+fun UriEditor(
+    wsUriEdited: String,
+    isUriEditable: Boolean,
+    onUriChange: (String) -> Unit,
+    onEditStart: () -> Unit,
+    onAccept: () -> Unit,
+    onCancel: () -> Unit,
+    focusRequester: FocusRequester
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        OutlinedTextField(
+            value = wsUriEdited,
+            onValueChange = onUriChange,
+            modifier = Modifier
+                .focusRequester(focusRequester)
+                .width(250.dp),
+            enabled = isUriEditable,
+            readOnly = !isUriEditable,
+            singleLine = true,
+            label = { Text(text = "URI") },
+            colors = OutlinedTextFieldDefaults.colors(
+                disabledTrailingIconColor = MaterialTheme.colorScheme.onPrimary,
+                disabledLabelColor = MaterialTheme.colorScheme.onPrimary
+            ),
+            trailingIcon = {
+                if (!isUriEditable) {
+                    IconButton(onClick = onEditStart) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Edit"
+                        )
+                    }
+                }
+            }
+        )
+        if (isUriEditable) {
+            Row(
+                modifier = Modifier.padding(horizontal = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .clickable(onClick = onAccept)
+                        .background(Color.Green)
+                        .size(28.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = "Accept",
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .clickable(onClick = onCancel)
+                        .background(Color.Red)
+                        .size(28.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Clear,
+                        contentDescription = "Cancel",
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
+            }
+        }
+    }
 }
+
 
 
 @Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)

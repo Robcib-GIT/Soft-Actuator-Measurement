@@ -54,6 +54,7 @@ class MainViewModel : ViewModel() {
         // Crear una nueva instancia de WebSocketClient y conectarse
         wsClient = RosWebSocketClient(URI(_wsUri.value), this)
         wsClient.connect()
+        waitForConnection()
     }
     fun disconnectWebSocket() {
         wsClient.disconnect()
@@ -61,11 +62,11 @@ class MainViewModel : ViewModel() {
         updateTemperature(null)
     }
 
-    fun waitForConnection(){
+    private fun waitForConnection(){
         _loadingState.value = true
         //Iniciar la verificación de la conexión
         viewModelScope.launch {
-            delay(10000)
+            delay(5000)
             _loadingState.value = false
             if (!_connectionState.value) {
                 showToast("No se pudo conectar")
