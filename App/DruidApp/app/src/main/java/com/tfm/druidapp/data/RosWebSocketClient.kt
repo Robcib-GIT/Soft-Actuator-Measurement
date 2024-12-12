@@ -20,16 +20,16 @@ class RosWebSocketClient(uri: URI, private val viewModel: MainViewModel) : WebSo
         viewModel.updateConnectionState(true)
         viewModel.updateLoadingState(false)
         // Suscribirse a tópicos
-        topicsMap.forEach{ (topic, topicInfo) ->
+        viewModel.topicsMap.forEach{ (topic, topicInfo) ->
             subscribeToTopic(topic = topic)
-            topicInfo.subscribedTo = true
+            topicInfo.subscribedTo.value = true
         }
         viewModel.showToast("Conexión exitosa")
     }
 
     override fun onMessage(message: String?) {
         safelyExecute{
-            val parsedMsg = parseRosMessage(message)
+            val parsedMsg = parseRosMessage(message, viewModel.topicsMap)
 
             when(parsedMsg.topic){
                 "/sensor1_data" -> {
@@ -78,10 +78,10 @@ class RosWebSocketClient(uri: URI, private val viewModel: MainViewModel) : WebSo
     }
     fun disconnect() {
         if (isOpen) {
-            topicsMap.forEach{ (topic, topicInfo) ->
-                if (topicInfo.subscribedTo){
+            viewModel.topicsMap.forEach{ (topic, topicInfo) ->
+                if (topicInfo.subscribedTo.value){
                     unsubscribeFromTopic(topic = topic)
-                    topicInfo.subscribedTo = false
+                    topicInfo.subscribedTo.value = false
                 }
 
             }
@@ -90,7 +90,14 @@ class RosWebSocketClient(uri: URI, private val viewModel: MainViewModel) : WebSo
     }
 
     override fun onError(ex: Exception?) {
-        ex?.let { Log.e("RosWebSocketClient", "Error: ${it.message}") }
+        ex?.let {
+            Log.e("RosWebSocketClient", "Error: ${it.message}")
+            if(viewModel.loadingState.value){
+                viewModel.updateLoadingState(false)
+                viewModel.showToast("No se pudo conectar")
+            }
+
+        }
     }
 
     fun publishToTopic(rosMsg: RosMsg) {

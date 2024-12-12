@@ -54,24 +54,14 @@ class MainViewModel : ViewModel() {
         // Crear una nueva instancia de WebSocketClient y conectarse
         wsClient = RosWebSocketClient(URI(_wsUri.value), this)
         wsClient.connect()
-        waitForConnection()
+        //waitForConnection()
+        updateLoadingState(true)
     }
     fun disconnectWebSocket() {
         wsClient.disconnect()
+        //TODO Resetear vatiables
         clearAmplitudes()
         updateTemperature(null)
-    }
-
-    private fun waitForConnection(){
-        _loadingState.value = true
-        //Iniciar la verificación de la conexión
-        viewModelScope.launch {
-            delay(5000)
-            _loadingState.value = false //TODO hacerlo real desde el RosWSClient
-            if (!_connectionState.value) {
-                showToast("No se pudo conectar")
-            }
-        }
     }
 
     override fun onCleared() {
@@ -79,6 +69,18 @@ class MainViewModel : ViewModel() {
         disconnectWebSocket() // Cerrar la conexión al destruir el ViewModel
     }
 
+    //Mensajes
+    val topicsMap: Map<String, TopicInfo> = mapOf( //TODO poner los que haga falta
+        "/sensor1_data" to TopicInfo(),
+        "/sensor2_data" to TopicInfo(),
+        "/sensor3_data" to TopicInfo(),
+        "/temperature_data" to TopicInfo(),
+        "/ppg_data" to TopicInfo(PpgData::class.java),
+        "/pressure_data" to TopicInfo(BloodPressureData::class.java),
+    )
+    fun updateSubscribed(topic: String, subscribed: Boolean) {
+        topicsMap[topic]?.subscribedTo?.value = subscribed
+    }
 
 
 

@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -15,7 +14,6 @@ import com.tfm.druidapp.views.RobotView
 import com.tfm.druidapp.data.Screen
 import com.tfm.druidapp.views.GlasgowView
 import com.tfm.druidapp.views.PPGView
-import com.tfm.druidapp.views.customElements.PPGPreview
 
 @Composable
 fun Navigation(navController: NavHostController, viewModel: MainViewModel, pd: PaddingValues){
@@ -34,7 +32,7 @@ fun Navigation(navController: NavHostController, viewModel: MainViewModel, pd: P
         }
 
         composable(Screen.Robot.route) {
-            RobotView(viewModel, navController)
+            RobotView(viewModel)
         }
 
         composable(Screen.PPG.route) {

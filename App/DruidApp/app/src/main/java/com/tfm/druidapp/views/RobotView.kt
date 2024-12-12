@@ -18,6 +18,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -27,6 +31,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -39,13 +44,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.tfm.druidapp.data.MainViewModel
+import com.tfm.druidapp.data.TopicInfo
 import com.tfm.druidapp.ui.theme.DruidAppTheme
 
 @Composable
-fun RobotView(viewModel: MainViewModel, navController: NavHostController){
+fun RobotView(viewModel: MainViewModel){
     val wsUriEdited by viewModel.wsUriEdited
     var isUriEditable by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
@@ -81,8 +86,54 @@ fun RobotView(viewModel: MainViewModel, navController: NavHostController){
             focusRequester = focusRequester
         )
 
+        TopicSelector(viewModel.topicsMap)
+
     }
 
+}
+
+
+@Composable
+fun TopicSelector(topicsMap: Map<String, TopicInfo>){
+    var expanded by remember { mutableStateOf(false) }
+    val topics = listOf("Topic 1", "Topic 2", "Topic 3", "Topic 4")
+    val selectedTopics = remember { mutableStateMapOf<String, Boolean>() }
+
+    // Inicializa el estado de los checkboxes
+    topics.forEach { topic ->
+        if (topic !in selectedTopics) selectedTopics[topic] = false
+    }
+
+    Box {
+        // Botón con texto fijo
+        Button(onClick = { expanded = true }) {
+            Text("Topics subscritos")
+        }
+
+        // Menú desplegable con casillas de verificación
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            topicsMap.forEach { (topic, topicInfo) ->
+                DropdownMenuItem(
+                    text = {
+                        Row {
+                            Checkbox(
+                                checked = topicInfo.subscribedTo.value,
+                                onCheckedChange = null
+                            )
+                            Text(topic)
+                        }
+                    },
+                    onClick = {
+                        topicInfo.subscribedTo.value = !topicInfo.subscribedTo.value
+                    }
+                )
+            }
+        }
+    }
 }
 
 @Composable
@@ -173,7 +224,7 @@ fun RobotViewPreview(){
         ) {
             val vm: MainViewModel = viewModel()
             val navController = rememberNavController()
-            RobotView(vm, navController)
+            RobotView(vm)
         }
     }
 }

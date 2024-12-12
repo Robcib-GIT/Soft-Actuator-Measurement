@@ -1,5 +1,7 @@
 package com.tfm.druidapp.data
 
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 
@@ -10,14 +12,7 @@ y su contenido un data object que contiene si se está actualmente subscrito a
 este y la data class a la que pertenece. Esta última solo hace falta añadirla
 si se trata de una clase personalizada.
  */
-val topicsMap: Map<String, TopicInfo> = mapOf( //TODO poner los que haga falta
-    "/sensor1_data" to TopicInfo(),
-    "/sensor2_data" to TopicInfo(),
-    "/sensor3_data" to TopicInfo(),
-    "/temperature_data" to TopicInfo(),
-    "/ppg_data" to TopicInfo(PpgData::class.java),
-    "/pressure_data" to TopicInfo(BloodPressureData::class.java),
-)
+
 data object MsgOp {
     val PUBLISH = "publish"
     val SUBSCRIBE = "subscribe"
@@ -37,7 +32,7 @@ data class RosMsg(
 
 data class TopicInfo(
     val clazz: Class<*>? = null,
-    var subscribedTo: Boolean = false
+    var subscribedTo: MutableState<Boolean> = mutableStateOf(false)
 )
 
 object RosMsgUtilities {
@@ -62,7 +57,7 @@ object RosMsgUtilities {
         return gson.toJson(jsonObject)
     }
 
-    fun parseRosMessage(jsonMessage: String?): RosMsg {
+    fun parseRosMessage(jsonMessage: String?, topicsMap: Map<String, TopicInfo>): RosMsg {
         val gson = Gson()
 
         val jsonObject = gson.fromJson(jsonMessage, JsonObject::class.java)

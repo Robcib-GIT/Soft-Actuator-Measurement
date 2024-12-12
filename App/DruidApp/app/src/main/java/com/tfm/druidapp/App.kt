@@ -110,7 +110,6 @@ fun App(viewModel: MainViewModel = viewModel()){
                 switchOffFunction = {viewModel.disconnectWebSocket()},
                 switchOnFunction = {
                     viewModel.connectWebSocket()
-                    //viewModel.waitForConnection()
                 }
             )
         },
