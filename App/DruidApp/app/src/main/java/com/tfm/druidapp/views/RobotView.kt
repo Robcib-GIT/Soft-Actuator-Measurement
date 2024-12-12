@@ -7,14 +7,19 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Edit
@@ -22,6 +27,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -31,7 +37,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -86,7 +91,15 @@ fun RobotView(viewModel: MainViewModel){
             focusRequester = focusRequester
         )
 
-        TopicSelector(viewModel.topicsMap)
+        TopicSelector(
+            topicsMap = viewModel.topicsMap,
+            onChecked = {topic->
+                viewModel.wsClient.subscribeToTopic(topic = topic)
+            },
+            onUnchecked = {topic->
+                viewModel.wsClient.unsubscribeFromTopic(topic = topic)
+            }
+        )
 
     }
 
@@ -94,41 +107,61 @@ fun RobotView(viewModel: MainViewModel){
 
 
 @Composable
-fun TopicSelector(topicsMap: Map<String, TopicInfo>){
+fun TopicSelector(
+    topicsMap: Map<String,TopicInfo>,
+    onChecked: (String)->Unit,
+    onUnchecked: (String)->Unit
+){
     var expanded by remember { mutableStateOf(false) }
-    val topics = listOf("Topic 1", "Topic 2", "Topic 3", "Topic 4")
-    val selectedTopics = remember { mutableStateMapOf<String, Boolean>() }
 
-    // Inicializa el estado de los checkboxes
-    topics.forEach { topic ->
-        if (topic !in selectedTopics) selectedTopics[topic] = false
-    }
-
-    Box {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+    ) {
         // Botón con texto fijo
-        Button(onClick = { expanded = true }) {
-            Text("Topics subscritos")
+        Button(
+            onClick = { expanded = true },
+            shape = RoundedCornerShape(6.dp),
+            contentPadding = PaddingValues(horizontal = 16.dp)
+        ) {
+            Text(
+                text = "Topics subscritos",
+                style = MaterialTheme.typography.bodyLarge
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Icon(imageVector = Icons.Default.ArrowDropDown, contentDescription = "Subscribed Topics")
         }
 
         // Menú desplegable con casillas de verificación
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.wrapContentWidth()
         ) {
             topicsMap.forEach { (topic, topicInfo) ->
                 DropdownMenuItem(
                     text = {
-                        Row {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             Checkbox(
                                 checked = topicInfo.subscribedTo.value,
                                 onCheckedChange = null
                             )
-                            Text(topic)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = topic,
+                                style = MaterialTheme.typography.bodyLarge
+                            )
                         }
                     },
                     onClick = {
                         topicInfo.subscribedTo.value = !topicInfo.subscribedTo.value
+                        if (topicInfo.subscribedTo.value){
+                            onChecked(topic)
+                        }else{
+                            onUnchecked(topic)
+                        }
                     }
                 )
             }

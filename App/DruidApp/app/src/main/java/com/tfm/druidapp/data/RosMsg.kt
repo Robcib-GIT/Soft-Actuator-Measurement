@@ -32,7 +32,7 @@ data class RosMsg(
 
 data class TopicInfo(
     val clazz: Class<*>? = null,
-    var subscribedTo: MutableState<Boolean> = mutableStateOf(false)
+    val subscribedTo: MutableState<Boolean> = mutableStateOf(false)
 )
 
 object RosMsgUtilities {

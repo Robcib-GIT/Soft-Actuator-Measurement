@@ -78,10 +78,6 @@ class MainViewModel : ViewModel() {
         "/ppg_data" to TopicInfo(PpgData::class.java),
         "/pressure_data" to TopicInfo(BloodPressureData::class.java),
     )
-    fun updateSubscribed(topic: String, subscribed: Boolean) {
-        topicsMap[topic]?.subscribedTo?.value = subscribed
-    }
-
 
 
     ////////////////// RELACIONADO CON MEDIC DATA /////////////////////////////
