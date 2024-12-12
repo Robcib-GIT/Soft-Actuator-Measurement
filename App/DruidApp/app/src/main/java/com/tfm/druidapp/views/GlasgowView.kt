@@ -86,7 +86,7 @@ fun GlasgowView(viewModel: MainViewModel){
                             in 13..15 -> "Leve"
                             else -> ""
                         },
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.titleMedium,
                     )
                 }
             }
@@ -134,9 +134,9 @@ fun GlasgowView(viewModel: MainViewModel){
             RadioButtonList(GlasgowData.MotorResponse, selectedOptions[2]){index->
                 viewModel.updateGlasgowScore(group = 2, selected = index)
             }
-            Divider(
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier.padding(vertical = 6.dp)
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = 6.dp),
+                color = MaterialTheme.colorScheme.onPrimaryContainer
             )
         }
 

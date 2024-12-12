@@ -67,7 +67,7 @@ class MainViewModel : ViewModel() {
         //Iniciar la verificación de la conexión
         viewModelScope.launch {
             delay(5000)
-            _loadingState.value = false
+            _loadingState.value = false //TODO hacerlo real desde el RosWSClient
             if (!_connectionState.value) {
                 showToast("No se pudo conectar")
             }

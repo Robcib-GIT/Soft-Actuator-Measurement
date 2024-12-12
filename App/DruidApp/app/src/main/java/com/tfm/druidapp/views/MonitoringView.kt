@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -20,6 +21,7 @@ import androidx.compose.material3.Divider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -69,14 +71,11 @@ fun MonitoringView(viewModel: MainViewModel, navController: NavHostController){
 
             PressureItem(title = "SYS", value = pressureData.sys)
 
-            Divider(
-                modifier = Modifier
-                    //.fillMaxHeight() // Asegura que el Divider ocupe toda la altura disponible
-                    .width(1.dp)
-                    .heightIn(max = 100.dp),
-                thickness = 100.dp, //Sirve de altura
+            VerticalDivider(
+                modifier = Modifier.height(100.dp),
                 color = MaterialTheme.colorScheme.onPrimaryContainer
             )
+
 
             PressureItem(title = "DIA", value = pressureData.dia)
         }
@@ -187,7 +186,7 @@ fun GlasgowDisplay(score: Int){
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(4.dp),
+            .padding(vertical = 4.dp, horizontal = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceBetween
         ) {
@@ -201,8 +200,8 @@ fun GlasgowDisplay(score: Int){
             GlasgowGauge(
                 score,
                 modifier = Modifier
-                    .width(130.dp)
-                    .padding(top = 8.dp)
+                    .width(100.dp)
+                    .padding(top = 22.dp)
             )
             Column(
                 modifier = Modifier
