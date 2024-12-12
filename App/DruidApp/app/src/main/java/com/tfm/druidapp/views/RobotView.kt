@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilledTonalButton
@@ -146,7 +147,10 @@ fun TopicSelector(
                         ) {
                             Checkbox(
                                 checked = topicInfo.subscribedTo.value,
-                                onCheckedChange = null
+                                onCheckedChange = null,
+                                colors = CheckboxDefaults.colors(
+                                    checkmarkColor = Color.Green
+                                )
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
