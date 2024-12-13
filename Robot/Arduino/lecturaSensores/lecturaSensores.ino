@@ -108,7 +108,9 @@ void sendSensorData() {
         if(sensor.samples == 1){
           json[sensorKey] = analogRead(sensor.pin);
         }else{
-          JsonArray data = json[sensorKey].to<JsonArray>();
+          JsonObject sensorData = json[sensorKey].to<JsonObject>();
+          sensorData["offset"] = sensor.interval;
+          JsonArray data = sensorData["data"].to<JsonArray>();
           //Añadir lecturas al array del json a la vez que se reinicia
           for (int j = 0; j < sensor.samples; j++) {
             data.add(sensor.samplesArray[j]);
@@ -118,20 +120,24 @@ void sendSensorData() {
       }
       
     } else if (!sensor.read && sensor.previousRead) {
+        sensor.previousMillis = 0; //Intento de evitar que se desfasen a veces
         // Diferenciar si es valor unico o array
         if(sensor.samples == 1){
           json[sensorKey] = -1;
         }else{
           //Se mandan los leidos hasta que se cancele
-          JsonArray data = json[sensorKey].to<JsonArray>();
+          JsonObject sensorData = json[sensorKey].to<JsonObject>();
+          sensorData["offset"] = sensor.interval;
+          JsonArray data = sensorData["data"].to<JsonArray>();
+          //Añadir lecturas al array del json a la vez que se reinicia
           for (int j = 0; j < sensor.samples; j++) {
             data.add(sensor.samplesArray[j]);
             sensor.samplesArray[j] = -1;
           }
         }
         sendData = true;
-    } 
-
+    }
+ 
     sensor.previousRead = sensor.read;
   }
 

@@ -1,19 +1,29 @@
 #!/usr/bin/env python3
 
 import rospy
-from std_msgs.msg import String, Float32
+from std_msgs.msg import String, Int32, Int32MultiArray, MultiArrayLayout
 import serial
 import json
 
 
 # Publicadores
-pub1 = rospy.Publisher('sensor1_data', Float32, queue_size=10)
-pub2 = rospy.Publisher('sensor2_data', Float32, queue_size=10)
-pub3 = rospy.Publisher('sensor3_data', Float32, queue_size=10)
+pub1 = rospy.Publisher('sensor1_data', Int32, queue_size=10) #Temperatura
+pub2 = rospy.Publisher('sensor2_data', Int32MultiArray, queue_size=10) #
+pub3 = rospy.Publisher('sensor3_data', Int32MultiArray, queue_size=10) #Pulso
 
 # Funcion para manejar publicaciones
 def publish_if_available(key, data, publisher):
-    if key in data: publisher.publish(round(data[key],2)) 
+    if key in data:
+        sensorData = data[key]
+        if isinstance(sensorData, dict): 
+            periodo = sensorData["offset"]
+            msg = Int32MultiArray()
+            msg.data = sensorData["data"]
+            msg.layout.data_offset = periodo
+            #msg.layout = MultiArrayLayout()
+            publisher.publish(msg)
+        else:
+            publisher.publish(sensorData)
 
 # Función para enviar el comando al Arduino
 def send_command_to_arduino(command):
@@ -60,7 +70,7 @@ def main():
     rospy.Subscriber('command_topic', String, command_callback)
 
     # Ejecutar la lectura de datos en segundo plano
-    rospy.Timer(rospy.Duration(1), lambda event: read_data_from_arduino())  # Lee datos del Arduino cada 1 segundo
+    rospy.Timer(rospy.Duration(0.1), lambda event: read_data_from_arduino())  # Lee datos del Arduino cada 1 segundo
 
     rospy.spin()
 
