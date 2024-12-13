@@ -5,6 +5,9 @@ una frecuencia regulable para cada sensor.
 *  "all": se leen todos los sensores
 *  "none": no se lee ningun dato
 *  char 1-3: se invierte el estado de lectura del sensor especificado 
+*  
+*  Además, para añadir más mediciones por envio sin saturar el puerto serie, se ha añadido la 
+*  posibilidad de enviar un array de "samples" muestras tomadas cada "interval" ms
 */
 
 #include <ArduinoJson.h>
@@ -16,18 +19,32 @@ struct SensorConfig {
   unsigned long previousMillis;
   bool read;
   bool previousRead;
+  int* samplesArray;
+  int samples; //Muestras a tomar
+  int samplesCount; //Contador de muestras tomadas
 };
 
 SensorConfig sensors[] = {
-    {A0, 2000, 0, false, false},  // Sensor 1
-    {A1, 200, 0, false, false},  // Sensor 2
-    {A2, 200, 0, false, false}   // Sensor 3
+    {A0, 500, 0, false, false, nullptr, 1, 0}, // Sensor 1
+    {A1, 40, 0, false, false, nullptr, 5, 0},  // Sensor 2
+    {A2, 40, 0, false, false, nullptr, 10, 0}  // Sensor 3
 };
 
 const int sensorCount = sizeof(sensors) / sizeof(sensors[0]);
 
 void setup() {
   Serial.begin(9600);
+
+  for (int i = 0; i < sensorCount; i++) {
+    // Inicializar el array con asignación dinámica
+    SensorConfig &sensor = sensors[i];
+    if(sensor.samples>1){
+      sensors[i].samplesArray = new int[sensor.samples];
+      for (int j = 0; j < sensor.samples; j++) {
+        sensor.samplesArray[j] = -1;  // Inicialización de las muestras
+      }
+    }
+  }
 }
 
 void loop() {
@@ -75,11 +92,44 @@ void sendSensorData() {
 
     if (sensor.read && currentMillis - sensor.previousMillis >= sensor.interval) {
       sensor.previousMillis = currentMillis;
-      json[sensorKey] = analogRead(sensor.pin)/1023.0; randomWithDecimals();
-      sendData = true;
+      
+      //Tomar muestra
+      if(sensor.samples > 1){
+        sensor.samplesArray[sensor.samplesCount] = analogRead(sensor.pin);
+      }
+      sensor.samplesCount += 1;
+
+      //Tomar muestra y enviar
+      if(sensor.samplesCount >= sensor.samples){
+        sensor.samplesCount = 0;
+        sendData = true;
+
+        // Diferenciar si es valor unico o array
+        if(sensor.samples == 1){
+          json[sensorKey] = analogRead(sensor.pin);
+        }else{
+          JsonArray data = json[sensorKey].to<JsonArray>();
+          //Añadir lecturas al array del json a la vez que se reinicia
+          for (int j = 0; j < sensor.samples; j++) {
+            data.add(sensor.samplesArray[j]);
+            sensor.samplesArray[j] = -1;
+          }
+        }
+      }
+      
     } else if (!sensor.read && sensor.previousRead) {
-      json[sensorKey] = -1; // Fin del envío
-      sendData = true;
+        // Diferenciar si es valor unico o array
+        if(sensor.samples == 1){
+          json[sensorKey] = -1;
+        }else{
+          //Se mandan los leidos hasta que se cancele
+          JsonArray data = json[sensorKey].to<JsonArray>();
+          for (int j = 0; j < sensor.samples; j++) {
+            data.add(sensor.samplesArray[j]);
+            sensor.samplesArray[j] = -1;
+          }
+        }
+        sendData = true;
     } 
 
     sensor.previousRead = sensor.read;
