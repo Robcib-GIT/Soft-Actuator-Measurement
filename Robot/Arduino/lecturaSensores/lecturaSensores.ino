@@ -32,6 +32,13 @@ SensorConfig sensors[] = {
 
 const int sensorCount = sizeof(sensors) / sizeof(sensors[0]);
 
+
+//Declaracion de funciones
+void setAllSensors(bool state);
+void toggleSensors(const String &command);
+void sendSensorData();
+float randomWithDecimals();
+
 void setup() {
   Serial.begin(9600);
 
@@ -48,11 +55,14 @@ void setup() {
 }
 
 void loop() {
-  handleSerialInput();
-  sendSensorData();
+  bool sendData = handleSerialInput();
+  while(!Serial.available() and sendData){
+    sendSensorData();
+  }
 }
 
-void handleSerialInput() {
+bool handleSerialInput() {
+  bool sendData = false;
   if (Serial.available() > 0) {
     String command = Serial.readString();
     command.trim();
@@ -64,6 +74,11 @@ void handleSerialInput() {
     } else {
       toggleSensors(command);
     }
+    for (int i = 0; i < sensorCount; i++) {
+      SensorConfig &sensor = sensors[i];
+      if(sensor.read or sensor.previousRead) sendData = true;
+    }
+    return sendData;
   }
 }
 
@@ -120,7 +135,8 @@ void sendSensorData() {
       }
       
     } else if (!sensor.read && sensor.previousRead) {
-        sensor.previousMillis = 0; //Intento de evitar que se desfasen a veces
+        sensor.samplesCount = 0;
+        sensor.previousMillis = currentMillis; //Intento de evitar que se desfasen a veces
         // Diferenciar si es valor unico o array
         if(sensor.samples == 1){
           json[sensorKey] = -1;
@@ -148,6 +164,7 @@ void sendSensorData() {
   }
 }
 
+/*
 // TODO borrar cuando conecte sensores
 float randomWithDecimals() {
   int wholePart = random(0, 500);
@@ -155,3 +172,4 @@ float randomWithDecimals() {
 
   return wholePart + decimalPart / 100.0;
 }
+*/
