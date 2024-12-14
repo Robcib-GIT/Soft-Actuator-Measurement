@@ -1,6 +1,7 @@
 package com.tfm.druidapp
 
 import android.content.res.Configuration
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -35,6 +36,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.tfm.druidapp.data.MainViewModel
+import com.tfm.druidapp.data.RosMsgUtilities
 import com.tfm.druidapp.ui.theme.DruidAppTheme
 import com.tfm.druidapp.data.Screen
 import com.tfm.druidapp.data.allScreens
@@ -46,6 +48,30 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun App(viewModel: MainViewModel = viewModel()){
+    /*
+    val pruebaJson = """
+        {
+          "op": "publish",
+          "topic": "/example_topic",
+          "msg": {
+            "data": [1,2,3,4],
+            "layout": {
+                "dim": [],
+                "data_offset": 40
+            }
+          }
+        }
+    """.trimIndent()
+    val parsedJsonPrueba = RosMsgUtilities.parseRosMessage(
+        jsonMessage = pruebaJson,
+        topicsMap = viewModel.topicsMap
+    )
+    Log.d("Pruebas","Objeto recibido: $parsedJsonPrueba")
+
+    val createdJsonPrueba = RosMsgUtilities.createJsonMessage(parsedJsonPrueba)
+    Log.d("Pruebas","Json enviado: $createdJsonPrueba")
+    */
+
     val toastMessage by viewModel.toastMessage.collectAsState()
     val context = LocalContext.current
 

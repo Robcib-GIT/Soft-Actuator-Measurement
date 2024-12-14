@@ -47,9 +47,15 @@ class RosWebSocketClient(uri: URI, private val viewModel: MainViewModel) : WebSo
                     }
 
                 }
-                "/sensor2_data" -> viewModel.updateSensor2Data(parsedMsg.msg.data as? Double)
+                "/sensor2_data" -> {}
                 "/sensor3_data" -> {
-                    val sensor3 = parsedMsg.msg.data as? Double
+                    //Como no he expecificado el tipo de numero recibido gson lo parsea como double
+                    if(parsedMsg.msg.data is List<*> && parsedMsg.msg.data.all { it is Double }){
+                        Log.d("Pruebas", "Array recibido: ${parsedMsg.msg.data}")
+                    }
+
+                    /*
+                     val sensor3 = parsedMsg.msg.data as? Double
                     if(sensor3 != null && sensor3 != -1.0){
                         viewModel.updateSensor3Data(sensor3)
                         val floatValue = sensor3.coerceIn(0.0,1.0).toFloat()
@@ -58,7 +64,7 @@ class RosWebSocketClient(uri: URI, private val viewModel: MainViewModel) : WebSo
                         viewModel.clearAmplitudes()
                         viewModel.updateSensor3Data(null)
                     }
-
+                    */
 
                 }
                 else -> {}

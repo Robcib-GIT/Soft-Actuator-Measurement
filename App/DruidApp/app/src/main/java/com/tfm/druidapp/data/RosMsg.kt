@@ -20,8 +20,20 @@ data object MsgOp {
 }
 
 data class MsgData(
-    val data: Any?
+    val data: Any?,
+    val layout: MsgLayout? = null
 )
+data class MsgLayout(
+    val dim: List<MsgMultiArrayDimension> = emptyList(),
+    val data_offset: Int? = null
+)
+
+data class MsgMultiArrayDimension(
+    val label: String? = null,
+    val size: Int? = null,
+    val stride: Int? = null
+)
+
 
 data class RosMsg(
     val operation: String,
@@ -37,6 +49,7 @@ data class TopicInfo(
 
 object RosMsgUtilities {
     fun createJsonMessage(rosMsg: RosMsg): String {
+        //TODO añadir posibilidad de enviar arrays (no voy a usar de momento)
         val gson = Gson()
 
         val jsonObject = JsonObject().apply {
