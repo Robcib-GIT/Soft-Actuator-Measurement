@@ -5,6 +5,7 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -104,6 +105,9 @@ class MainViewModel : ViewModel() {
       porque si el mensaje no se parsea bien se liaria creo
      */
     //Pulso
+    val vectorChannel = Channel<List<Double>>(Channel.UNLIMITED)
+
+
     private val _ppgData: MutableStateFlow<PpgData> = MutableStateFlow(PpgData())
     val ppgData: StateFlow<PpgData> = _ppgData
 

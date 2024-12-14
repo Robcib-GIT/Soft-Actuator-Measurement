@@ -52,6 +52,11 @@ class RosWebSocketClient(uri: URI, private val viewModel: MainViewModel) : WebSo
                     //Como no he expecificado el tipo de numero recibido gson lo parsea como double
                     if(parsedMsg.msg.data is List<*> && parsedMsg.msg.data.all { it is Double }){
                         Log.d("Pruebas", "Array recibido: ${parsedMsg.msg.data}")
+                        /*
+                        TODO arreglar
+                        val doubleList: List<Double> = parsedMsg.msg.data
+                        viewModel.vectorChannel.send(doubleList)
+                         */
                     }
 
                     /*
