@@ -27,6 +27,7 @@ class RosWebSocketClient(uri: URI, private val viewModel: MainViewModel) : WebSo
         viewModel.showToast("Conexión exitosa")
     }
 
+    private var _firstPulseList = true
     override fun onMessage(message: String?) {
         safelyExecute{
             val parsedMsg = parseRosMessage(message, viewModel.topicsMap)
@@ -51,7 +52,19 @@ class RosWebSocketClient(uri: URI, private val viewModel: MainViewModel) : WebSo
                 "/sensor3_data" -> {
                     //Como no he expecificado el tipo de numero recibido gson lo parsea como double
                     if(parsedMsg.msg.data is List<*> && parsedMsg.msg.data.all { it is Double }){
-                        Log.d("Pruebas", "Array recibido: ${parsedMsg.msg.data}")
+                        //Log.d("Pruebas", "Array recibido: ${parsedMsg.msg.data}")
+                        //val doubleList= parsedMsg.msg.data as? List<Double>
+                        val doubleList = mutableListOf<Double>()
+                        for (item in parsedMsg.msg.data) {
+                            if (item is Double) {
+                                doubleList.add(item/1023) //TODO Cambiar segun la resolucion
+                            }
+                        }
+                        viewModel.sendToChannel(doubleList)
+                        if (_firstPulseList){
+                            viewModel.startProcessingPulseChannel()
+                            _firstPulseList = false
+                        }
                         /*
                         TODO arreglar
                         val doubleList: List<Double> = parsedMsg.msg.data

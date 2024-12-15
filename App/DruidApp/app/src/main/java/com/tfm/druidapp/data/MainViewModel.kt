@@ -5,6 +5,7 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -68,6 +69,7 @@ class MainViewModel : ViewModel() {
     override fun onCleared() {
         super.onCleared()
         disconnectWebSocket() // Cerrar la conexión al destruir el ViewModel
+        _pulseListChannel.close() //TODO crear un nuevo canal cuando se reconecte
     }
 
     //Mensajes
@@ -105,7 +107,23 @@ class MainViewModel : ViewModel() {
       porque si el mensaje no se parsea bien se liaria creo
      */
     //Pulso
-    val vectorChannel = Channel<List<Double>>(Channel.UNLIMITED)
+    private val _pulseListChannel = Channel<List<Double>>(Channel.BUFFERED)
+    fun sendToChannel(list: List<Double>) {
+        viewModelScope.launch {
+            _pulseListChannel.send(list)
+        }
+    }
+    fun startProcessingPulseChannel() {
+        viewModelScope.launch(Dispatchers.Default) {
+            for (list in _pulseListChannel) {
+                for (item in list){
+                    addPulseAmplitude(item.toFloat())
+                    delay(40L)
+                }
+
+            }
+        }
+    }
 
 
     private val _ppgData: MutableStateFlow<PpgData> = MutableStateFlow(PpgData())
