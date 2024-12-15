@@ -25,9 +25,9 @@ struct SensorConfig {
 };
 
 SensorConfig sensors[] = {
-    {A0, 500, 0, false, false, nullptr, 1, 0}, // Sensor 1
+    {A0, 1000, 0, false, false, nullptr, 1, 0}, // Sensor 1
     {A1, 40, 0, false, false, nullptr, 5, 0},  // Sensor 2
-    {A2, 40, 0, false, false, nullptr, 10, 0}  // Sensor 3
+    {A2, 40, 0, false, false, nullptr, 5, 0}  // Sensor 3
 };
 
 const int sensorCount = sizeof(sensors) / sizeof(sensors[0]);
