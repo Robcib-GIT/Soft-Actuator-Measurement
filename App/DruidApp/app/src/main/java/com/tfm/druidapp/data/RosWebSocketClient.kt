@@ -54,6 +54,9 @@ class RosWebSocketClient(uri: URI, private val viewModel: MainViewModel) : WebSo
                         if(item==-1) processedList.add(item.toFloat())
                         else processedList.add(item.toFloat()/1023)
                     }
+                    if (msg != null) {
+                        msg.layout.data_offset?.let { viewModel.updatePulseSampleRate(it.toLong()) }
+                    }
                     viewModel.sendToChannel(processedList)
                     if (_firstPulseList){
                         viewModel.startProcessingPulseChannel()

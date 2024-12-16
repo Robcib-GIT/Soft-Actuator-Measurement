@@ -1,5 +1,6 @@
 package com.tfm.druidapp.data
 
+import android.util.Log
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
@@ -102,14 +103,14 @@ class MainViewModel : ViewModel() {
 
     }
 
-    /*
-    TODO tal vez tengo que poner las clases como posible null
-      porque si el mensaje no se parsea bien se liaria creo
-     */
     //Pulso
     private val _pulseListChannel = Channel<List<Float>>(Channel.BUFFERED)
+    private var _pulseSampleRate: Long = 100L
+    fun updatePulseSampleRate(rate: Long){
+        if(rate != _pulseSampleRate) _pulseSampleRate = rate
+    }
     fun sendToChannel(list: List<Float>) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             _pulseListChannel.send(list)
         }
     }
@@ -121,7 +122,7 @@ class MainViewModel : ViewModel() {
                         clearAmplitudes()
                     }else{
                         addPulseAmplitude(item)
-                        delay(40L)
+                        delay(_pulseSampleRate-4) //Un poco menos para compensar
                     }
                 }
 

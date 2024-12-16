@@ -49,7 +49,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun App(viewModel: MainViewModel = viewModel()){
 
-    val pruebaJson = """
+    /*val pruebaJson = """
         {
           "op": "publish",
           "topic": "/sensor3_data",
@@ -69,7 +69,7 @@ fun App(viewModel: MainViewModel = viewModel()){
     Log.d("Pruebas","Objeto recibido: $parsedJsonPrueba")
 
     val createdJsonPrueba = RosMsgUtilities.createJsonMessage(parsedJsonPrueba, viewModel.topicsMap)
-    //Log.d("Pruebas","Json enviado: $createdJsonPrueba")
+    Log.d("Pruebas","Json enviado: $createdJsonPrueba")*/
 
 
     val toastMessage by viewModel.toastMessage.collectAsState()

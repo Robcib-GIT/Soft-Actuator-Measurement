@@ -93,7 +93,7 @@ object RosMsgUtilities {
             addProperty("topic", rosMsg.topic)
 
             val msgJson = gson.toJsonTree(rosMsg.msg)
-            Log.d("Pruebas","JsonCreado: $msgJson")
+            //Log.d("Pruebas","JsonCreado: $msgJson")
             add("msg", msgJson)
 
             rosMsg.type?.let { addProperty("type", it) }
