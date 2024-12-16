@@ -5,11 +5,14 @@ void setup() {
 
 void loop() {
   // Lee el valor del pin A0 (valor entre 0 y 1023)
-  int sensorValue = analogRead(A1);
+  const int maxValue=600;
+  const int minValue=420;
+  int sensorValue = constrain(analogRead(A0),minValue,maxValue);
+  float processedValue = (sensorValue-minValue)/float(maxValue-minValue);
 
   // Envía el valor leído al monitor serial
-  Serial.println(sensorValue);
+  Serial.println(processedValue*100);
 
   // Espera un breve tiempo antes de leer el valor de nuevo
-  delay(100);  // Retardo de 100 ms (ajustable)
+  delay(40);  // Retardo de 100 ms (ajustable)
 }
