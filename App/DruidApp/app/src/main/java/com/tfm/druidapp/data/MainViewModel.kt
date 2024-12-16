@@ -74,12 +74,12 @@ class MainViewModel : ViewModel() {
 
     //Mensajes
     val topicsMap: Map<String, TopicInfo> = mapOf( //TODO poner los que haga falta
-        "/sensor1_data" to TopicInfo(),
-        "/sensor2_data" to TopicInfo(),
-        "/sensor3_data" to TopicInfo(),
-        "/temperature_data" to TopicInfo(),
-        "/ppg_data" to TopicInfo(PpgData::class.java),
-        "/pressure_data" to TopicInfo(BloodPressureData::class.java),
+        "/sensor1_data" to TopicInfo(MsgTypes.DoubleMsg::class.java),
+        "/sensor2_data" to TopicInfo(MsgTypes.DoubleArrayMsg::class.java),
+        "/sensor3_data" to TopicInfo(MsgTypes.IntArrayMsg::class.java),
+        "/temperature_data" to TopicInfo(MsgTypes.DoubleMsg::class.java),
+        "/ppg_data" to TopicInfo(MsgTypes.PpgMsg::class.java),
+        "/pressure_data" to TopicInfo(MsgTypes.BloodPressureMsg::class.java),
     )
 
 
@@ -107,8 +107,8 @@ class MainViewModel : ViewModel() {
       porque si el mensaje no se parsea bien se liaria creo
      */
     //Pulso
-    private val _pulseListChannel = Channel<List<Double>>(Channel.BUFFERED)
-    fun sendToChannel(list: List<Double>) {
+    private val _pulseListChannel = Channel<List<Float>>(Channel.BUFFERED)
+    fun sendToChannel(list: List<Float>) {
         viewModelScope.launch {
             _pulseListChannel.send(list)
         }
@@ -117,8 +117,12 @@ class MainViewModel : ViewModel() {
         viewModelScope.launch(Dispatchers.Default) {
             for (list in _pulseListChannel) {
                 for (item in list){
-                    addPulseAmplitude(item.toFloat())
-                    delay(40L)
+                    if (item == -1f){
+                        clearAmplitudes()
+                    }else{
+                        addPulseAmplitude(item)
+                        delay(40L)
+                    }
                 }
 
             }
@@ -126,10 +130,10 @@ class MainViewModel : ViewModel() {
     }
 
 
-    private val _ppgData: MutableStateFlow<PpgData> = MutableStateFlow(PpgData())
-    val ppgData: StateFlow<PpgData> = _ppgData
+    private val _ppgData: MutableStateFlow<MsgTypes.PpgMsg> = MutableStateFlow(MsgTypes.PpgMsg())
+    val ppgData: StateFlow<MsgTypes.PpgMsg> = _ppgData
 
-    fun updatePpgData(data: PpgData){
+    fun updatePpgData(data: MsgTypes.PpgMsg){
         _ppgData.value = data
     }
 
@@ -153,9 +157,9 @@ class MainViewModel : ViewModel() {
     }
 
     //Presion
-    private val _pressureData: MutableState<BloodPressureData> = mutableStateOf(BloodPressureData()) //TODO cambiar a la ventana de conexión
-    val pressureData: State<BloodPressureData> = _pressureData
-    fun updateBloodPressureData(data: BloodPressureData){
+    private val _pressureData: MutableState<MsgTypes.BloodPressureMsg> = mutableStateOf(MsgTypes.BloodPressureMsg()) //TODO cambiar a la ventana de conexión
+    val pressureData: State<MsgTypes.BloodPressureMsg> = _pressureData
+    fun updateBloodPressureData(data: MsgTypes.BloodPressureMsg){
         _pressureData.value = data
     }
 

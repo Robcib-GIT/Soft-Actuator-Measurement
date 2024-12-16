@@ -34,14 +34,12 @@ class RosWebSocketClient(uri: URI, private val viewModel: MainViewModel) : WebSo
 
             when(parsedMsg.topic){
                 "/sensor1_data" -> {
-                    var sensor1 = parsedMsg.msg.data as? Double
+                    val msg = parsedMsg.msg as? MsgTypes.DoubleMsg
+                    val sensor1 = msg?.data?.div(10.23) //TODO cambiar esto para prueba
 
                     if(sensor1 != null && sensor1 != -1.0){
-                        sensor1 = sensor1.times(50)
-                        viewModel.updateSensor3Data(sensor1)
-                        val floatValue = sensor1.toFloat()
                         viewModel.updateSensor1Data(sensor1)
-                        viewModel.updateTemperature(floatValue)
+                        viewModel.updateTemperature(sensor1.toFloat())
                     }else{
                         viewModel.updateTemperature(null)
                         viewModel.updateSensor3Data(null)
@@ -50,40 +48,17 @@ class RosWebSocketClient(uri: URI, private val viewModel: MainViewModel) : WebSo
                 }
                 "/sensor2_data" -> {}
                 "/sensor3_data" -> {
-                    //Como no he expecificado el tipo de numero recibido gson lo parsea como double
-                    if(parsedMsg.msg.data is List<*> && parsedMsg.msg.data.all { it is Double }){
-                        //Log.d("Pruebas", "Array recibido: ${parsedMsg.msg.data}")
-                        //val doubleList= parsedMsg.msg.data as? List<Double>
-                        val doubleList = mutableListOf<Double>()
-                        for (item in parsedMsg.msg.data) {
-                            if (item is Double) {
-                                doubleList.add(item/1023) //TODO Cambiar segun la resolucion
-                            }
-                        }
-                        viewModel.sendToChannel(doubleList)
-                        if (_firstPulseList){
-                            viewModel.startProcessingPulseChannel()
-                            _firstPulseList = false
-                        }
-                        /*
-                        TODO arreglar
-                        val doubleList: List<Double> = parsedMsg.msg.data
-                        viewModel.vectorChannel.send(doubleList)
-                         */
+                    val msg = parsedMsg.msg as? MsgTypes.IntArrayMsg
+                    val processedList = mutableListOf<Float>()
+                    msg?.data?.forEach{item->
+                        if(item==-1) processedList.add(item.toFloat())
+                        else processedList.add(item.toFloat()/1023)
                     }
-
-                    /*
-                     val sensor3 = parsedMsg.msg.data as? Double
-                    if(sensor3 != null && sensor3 != -1.0){
-                        viewModel.updateSensor3Data(sensor3)
-                        val floatValue = sensor3.coerceIn(0.0,1.0).toFloat()
-                        viewModel.addPulseAmplitude(floatValue)
-                    }else{
-                        viewModel.clearAmplitudes()
-                        viewModel.updateSensor3Data(null)
+                    viewModel.sendToChannel(processedList)
+                    if (_firstPulseList){
+                        viewModel.startProcessingPulseChannel()
+                        _firstPulseList = false
                     }
-                    */
-
                 }
                 else -> {}
             }
@@ -127,7 +102,7 @@ class RosWebSocketClient(uri: URI, private val viewModel: MainViewModel) : WebSo
     fun publishToTopic(rosMsg: RosMsg) {
         safelyExecute {
             if (isOpen) {
-                val jsonMessage = createJsonMessage(rosMsg)
+                val jsonMessage = createJsonMessage(rosMsg, viewModel.topicsMap)
                 send(jsonMessage)
                 //Log.d("RosWebSocketClient", "Published: $jsonMessage")
             } else {

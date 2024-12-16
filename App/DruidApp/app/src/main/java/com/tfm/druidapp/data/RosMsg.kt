@@ -1,5 +1,6 @@
 package com.tfm.druidapp.data
 
+import android.util.Log
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import com.google.gson.Gson
@@ -19,10 +20,10 @@ data object MsgOp {
     val UNSUBSCRIBE = "unsubscribe"
 }
 
-data class MsgData(
+/*data class MsgData(
     val data: Any?,
     val layout: MsgLayout? = null
-)
+)*/
 data class MsgLayout(
     val dim: List<MsgMultiArrayDimension> = emptyList(),
     val data_offset: Int? = null
@@ -38,17 +39,52 @@ data class MsgMultiArrayDimension(
 data class RosMsg(
     val operation: String,
     val topic: String,
-    val msg: MsgData,
+    val msg: Any,
     val type: String? = null
 )
 
 data class TopicInfo(
-    val clazz: Class<*>? = null,
+    val clazz: Class<*>,
     val subscribedTo: MutableState<Boolean> = mutableStateOf(false)
 )
 
+sealed class MsgTypes(){ //Añadir aqui más si hace falta
+    data class IntMsg(
+        val data: Int
+    ):MsgTypes()
+    data class DoubleMsg(
+        val data: Double
+    ):MsgTypes()
+    data class StringMsg(
+        val data: String
+    ):MsgTypes()
+    data class IntArrayMsg(
+        val layout: MsgLayout = MsgLayout(),
+        val data: List<Int> = emptyList()
+    ):MsgTypes()
+    data class DoubleArrayMsg(
+        val layout: MsgLayout,
+        val data: List<Double> = emptyList()
+    ):MsgTypes()
+
+    //Personales
+    data class BloodPressureMsg(
+        val sys: Int? = null,
+        val dia: Int? = null
+    ):MsgTypes()
+
+    data class PpgMsg(  //TODO modificar tipos de datos
+        val bpm: Int? = null,
+        val sdnn: Int? = null,
+        val rmsdd: Int? = null,
+        val frequency: Double? = null,
+        val amplitude: Double? = null,
+        val riseTime: Double? = null
+    ):MsgTypes()
+}
+
 object RosMsgUtilities {
-    fun createJsonMessage(rosMsg: RosMsg): String {
+    fun createJsonMessage(rosMsg: RosMsg, topicsMap: Map<String, TopicInfo>): String {
         //TODO añadir posibilidad de enviar arrays (no voy a usar de momento)
         val gson = Gson()
 
@@ -56,12 +92,8 @@ object RosMsgUtilities {
             addProperty("op", rosMsg.operation)
             addProperty("topic", rosMsg.topic)
 
-            val msgJson = JsonObject().apply {
-                if (rosMsg.msg.data != null) {
-                    val dataJson = gson.toJsonTree(rosMsg.msg.data)
-                    add("data", dataJson)
-                }
-            }
+            val msgJson = gson.toJsonTree(rosMsg.msg)
+            Log.d("Pruebas","JsonCreado: $msgJson")
             add("msg", msgJson)
 
             rosMsg.type?.let { addProperty("type", it) }
@@ -80,15 +112,7 @@ object RosMsgUtilities {
         val msgJson = jsonObject.getAsJsonObject("msg")
         val type = jsonObject.get("type")?.asString
 
-        val msg: MsgData = if (topicsMap[topic]?.clazz != null){
-            val msgData = msgJson.getAsJsonObject("data")
-
-            val data = gson.fromJson(msgData, topicsMap[topic]?.clazz)
-
-            MsgData(data)
-        }else{
-            gson.fromJson(msgJson, MsgData::class.java)
-        }
+        val msg = gson.fromJson(msgJson, topicsMap[topic]?.clazz)
 
         return RosMsg(operation = operation, topic = topic, msg = msg, type = type)
     }
