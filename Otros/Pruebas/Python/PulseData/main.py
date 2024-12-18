@@ -19,7 +19,6 @@ picos_sistolicos_tiempo = []
 indice_ultimo_relativo = 0
 buscar_max_o_min: bool = False
 
-borrar = 5
 
 def leer_datos(archivo):
     with open(archivo, 'r') as f:
