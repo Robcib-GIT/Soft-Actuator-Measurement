@@ -10,7 +10,7 @@ dt = 40  # Intervalo entre mediciones
 datos_tiempo_real = []
 datos_leidos = 0
 lock = threading.Lock()  # Para sincronizar el acceso a datos_tiempo_real
-ELEMENTOS_PANTALLA = int(3000 / dt)
+ELEMENTOS_PANTALLA = int(5000 / dt)
 
 maximos_tiempo = []
 minimos_tiempo = []
@@ -151,7 +151,7 @@ def encontrar_minimos(sublista_tiempo):
 
 
 if __name__ == '__main__':
-    ruta_archivo = "Data/SalidaSensorPulso_0_1023.txt"
+    ruta_archivo = "Data/SalidaPulsoSujeto1.txt"
     datos = leer_datos(ruta_archivo)
 
     # Configuración de la figura
