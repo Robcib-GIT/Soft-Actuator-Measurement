@@ -151,7 +151,7 @@ def encontrar_minimos(sublista_tiempo):
 
 
 if __name__ == '__main__':
-    ruta_archivo = "Data/SalidaPulsoSujeto1_v3.txt"
+    ruta_archivo = "../Data/SalidaPulsoSujeto1_v3.txt"
     datos = leer_datos(ruta_archivo)
 
     # Configuración de la figura
