@@ -7,7 +7,8 @@ from scipy.signal import find_peaks
 MAX_SISTOLICO = 550
 BARRERA_SIS_DIA = 515
 MIN_DIASTOLICO = 480
-MIN_MUESTRAS_ENTRE_PULSOS = (60/100)*(1000/40)
+MIN_MUESTRAS_ENTRE_PULSOS = (60 / 100) * (1000 / 40)
+
 
 def leer_datos(archivo):
     with open(archivo, 'r') as f:
@@ -36,8 +37,8 @@ def aplicar_deteccion_PPG(lista_detecciones):
         detectado = lista_detecciones[-1]
 
     for i in range(len(senal_filtrada)):
-        if 560 > senal_filtrada[i] > 480:  # TODO ajustar
-            if i in indices_picos:
+        if MAX_SISTOLICO > senal_filtrada[i] > MIN_DIASTOLICO:  # TODO ajustar
+            if i in indices_sistolicos:
                 detectado = True
         else:
             detectado = False
@@ -45,9 +46,21 @@ def aplicar_deteccion_PPG(lista_detecciones):
     return
 
 
+def obtener_ppm(tiempos_sistolicos):
+    n = len(tiempos_sistolicos)
+    pulsaciones = [[], []]
+    if n > 1:
+        for i in range(n-1):
+            diferencia = tiempos_sistolicos[i + 1] - tiempos_sistolicos[i]
+            pulsaciones[0].append(60e3 / diferencia)
+            pulsaciones[1].append(tiempos_sistolicos[i] + diferencia/2)
+
+    return pulsaciones
+
+
 if __name__ == '__main__':
     # ##################### OBTENER DATOS ####################################
-    ruta_datos = "../Data/SalidaPulsoSujeto1_RUIDO.txt"
+    ruta_datos = "../Data/SalidaPulsoSujeto1.txt"
     datos_pulso = leer_datos(ruta_datos)
     dt = 40
     tiempo = [dt * i for i in range(len(datos_pulso))]
@@ -63,6 +76,8 @@ if __name__ == '__main__':
     for dato in datos_pulso:
         y, zi = aplicar_filtro_paso_bajo([dato], b, a, zi)
         senal_filtrada.append(y[0])
+
+    # ##################### ENCONTRAR PICOS ####################################
 
     indices_picos, _ = find_peaks(senal_filtrada, distance=2)
     indices_sistolicos, _ = find_peaks(
@@ -90,12 +105,18 @@ if __name__ == '__main__':
         diastolicos_tiempo[0].append(senal_filtrada[indice])
         diastolicos_tiempo[1].append(tiempo[indice])
 
+    # ##################### SACAR DERIVADA ####################################
+    # central_diff = [(datos_pulso[i+1] - datos_pulso[i-1]) / (2 * dt) for i in range(1, len(datos_pulso)-1)]
+
+    # ##################### OTENER DATOS DE PULSO ####################################
+    ppm = obtener_ppm(sistolicos_tiempo[1])
+
     # ##################### Detección de señal PPG ####################################
     PPG_detectado = []
     aplicar_deteccion_PPG(PPG_detectado)
 
     # ##################### GRAFICAR RESULTADOS ####################################
-    fig, axs = plt.subplots(2, 1, figsize=(13, 6))
+    fig, axs = plt.subplots(3, 1, figsize=(13, 12))
 
     axs[0].axhline(
         y=1023 / 2,
@@ -145,21 +166,32 @@ if __name__ == '__main__':
     axs[0].set_ylim(min(datos_pulso) - 10, max(datos_pulso) + 10)
     axs[0].set_ylabel('Amplitud [mV]')
     axs[0].set_title('Detección de onda PPG')
-    # axs[0].legend()
+    axs[0].legend()
 
     axs[1].plot(
+        ppm[1],
+        ppm[0],
+        linestyle='-',
+        linewidth=1.5)
+    axs[1].set_xlabel("Tiempo [ms]")
+    axs[1].set_ylim(50, 100)
+    axs[1].set_ylabel("PPM")
+    axs[1].set_title("PPM / Tiempo")
+
+    axs[2].plot(
         tiempo,
         PPG_detectado,
         linestyle='-',
         linewidth=1.5,
         label="PPG detectada")
-    axs[1].set_xlabel("Tiempo [ms]")
-    axs[1].autoscale(axis='y')
-    axs[1].set_ylabel("PPG detectada [0-1]")
-    axs[1].set_title("Detección de onda PPG")
+    axs[2].set_xlabel("Tiempo [ms]")
+    axs[2].autoscale(axis='y')
+    axs[2].set_ylabel("PPG detectada [0-1]")
+    axs[2].set_title("Detección de onda PPG")
 
     for ax in axs:
         ax.autoscale(axis='x')
         ax.set_xmargin(0)
+
     plt.tight_layout()
     plt.show()
