@@ -4,8 +4,8 @@ import numpy as np
 from scipy.signal import find_peaks
 
 # TODO ajustar
-MAX_SISTOLICO = 550
-BARRERA_SIS_DIA = 515
+MAX_SISTOLICO = 580  # Para dedo 550
+BARRERA_SIS_DIA = 525  # Para dedo 515
 MIN_DIASTOLICO = 480
 MIN_MUESTRAS_ENTRE_PULSOS = (60 / 100) * (1000 / 40)
 
@@ -60,7 +60,7 @@ def obtener_ppm(tiempos_sistolicos):
 
 if __name__ == '__main__':
     # ##################### OBTENER DATOS ####################################
-    ruta_datos = "../Data/SalidaPulsoSujeto1.txt"
+    ruta_datos = "../Data/SalidaPulsoSujeto1_BRAZO_I.txt"
     datos_pulso = leer_datos(ruta_datos)
     dt = 40
     tiempo = [dt * i for i in range(len(datos_pulso))]
@@ -163,7 +163,7 @@ if __name__ == '__main__':
         label='Máximos')
     '''
     axs[0].set_xlabel('Tiempo [ms]')
-    axs[0].set_ylim(min(datos_pulso) - 10, max(datos_pulso) + 10)
+    axs[0].set_ylim(MIN_DIASTOLICO - 10, MAX_SISTOLICO + 10)
     axs[0].set_ylabel('Amplitud [mV]')
     axs[0].set_title('Detección de onda PPG')
     axs[0].legend()
