@@ -24,8 +24,25 @@ def aplicar_filtro_paso_bajo(data, b, a, zi=None):
     return y, zf
 
 
+def aplicar_deteccion_PPG(lista_detecciones):
+    if not lista_detecciones:
+        detectado = False
+    else:
+        detectado = lista_detecciones[-1]
+
+    for i in range(len(senal_filtrada)):
+        if 560 > senal_filtrada[i] > 480:  # TODO ajustar
+            if i in indices_picos:
+                detectado = True
+        else:
+            detectado = False
+        lista_detecciones.append(detectado)
+    return
+
+
 if __name__ == '__main__':
-    ruta_datos = "../Data/SalidaPulsoSujeto1_RUIDO.txt"
+    # ##################### OBTENER DATOS ####################################
+    ruta_datos = "../Data/SalidaPulsoSujeto1.txt"
     datos_pulso = leer_datos(ruta_datos)
     dt = 40
     tiempo = [dt * i for i in range(len(datos_pulso))]
@@ -51,21 +68,10 @@ if __name__ == '__main__':
         maximos_tiempo[0].append(senal_filtrada[indice])
         maximos_tiempo[1].append(tiempo[indice])
         # TODO filtrar y añadir picos sistólicos y diastólicos
-        """
-        Posiblemente añadiendo un análisis espectral de la señal usando la Transformada Rápida de Fourier (FFT)
-        + filtrar por rango -> si se cumplen las 2 activar pulso_detectado
-        """
 
     # ##################### Detección de señal PPG ####################################
     PPG_detectado = []
-    detectado = False
-    for i in range(len(senal_filtrada)):
-        if 560 > senal_filtrada[i] > 480:
-            if i in indices_picos:
-                detectado = True
-        else:
-            detectado = False
-        PPG_detectado.append(detectado)
+    aplicar_deteccion_PPG(PPG_detectado)
 
     # ##################### GRAFICAR RESULTADOS ####################################
     fig, axs = plt.subplots(2, 1, figsize=(13, 6))
