@@ -39,7 +39,7 @@ MIN_DIASTOLICO = 480
 MIN_MUESTRAS_ENTRE_PULSOS = (60 / 100) * (1000 / 40)
 
 MUESTRAS_ENVIO = 5
-SEGMENTOS_ANALISIS = 11  # 15  # Equivalente a 3secs de datos
+SEGMENTOS_ANALISIS = 10  # 15  # Equivalente a 3secs de datos
 
 ruta_datos = "../Data/Prueba.txt"
 
@@ -100,9 +100,11 @@ if __name__ == '__main__':
     b, a = init_filtro_paso_bajo(cutoff, fs)
     zi = None
 
-    senal_filtrada = np.array([], dtype=int)  # TODO: borrar
+    senal_filtrada = np.array([])  # TODO: borrar
     sistolicos_tiempo_completo = [np.array([]), np.array([])]  # TODO: borrar
     diastolicos_tiempo_completo = [np.array([]), np.array([])]  # TODO: borrar
+
+    temp_picos_tiempo = [np.array([]), np.array([])]
 
     # _______________2.4: PROCESAR DATOS_______________
     while not fin_analisis:
@@ -124,13 +126,23 @@ if __name__ == '__main__':
             # 2.4.2: Aplicar filtro de paso bajo (Butterworth)
             datos_filtrados, zi = aplicar_filtro_paso_bajo(datos_pulso, b, a, zi)
 
+            # 2.4.3: Unir sobrante anterior para no pasar picos por alto
+            datos_filtrados_temp = np.concatenate((temp_picos_tiempo[0], datos_filtrados))
+            tiempo_temp = np.concatenate((temp_picos_tiempo[1], tiempo))
+
+            # TODO: Descomentar para ver efecto de incluir sobrante, depués borrar
+            """
+            datos_filtrados_temp = datos_filtrados
+            tiempo_temp =tiempo
+            """
+
             # 2.4.3: Localizar puntos de interés
             indices_sistolicos, _ = find_peaks(
-                datos_filtrados,
+                datos_filtrados_temp,
                 height=(BARRERA_SIS_DIA, MAX_SISTOLICO),
                 distance=MIN_MUESTRAS_ENTRE_PULSOS)
             indices_diastolicos, _ = find_peaks(
-                datos_filtrados,
+                datos_filtrados_temp,
                 height=(MIN_DIASTOLICO, BARRERA_SIS_DIA),
                 distance=MIN_MUESTRAS_ENTRE_PULSOS)
 
@@ -139,17 +151,34 @@ if __name__ == '__main__':
 
             if len(indices_sistolicos) > 0:
                 for indice in indices_sistolicos:
-                    sistolicos_tiempo[0].append(datos_filtrados[indice])
-                    sistolicos_tiempo[1].append(tiempo[indice])
+                    sistolicos_tiempo[0].append(datos_filtrados_temp[indice])
+                    sistolicos_tiempo[1].append(tiempo_temp[indice])
 
             if len(indices_diastolicos) > 0:
                 for indice in indices_diastolicos:
-                    diastolicos_tiempo[0].append(datos_filtrados[indice])
-                    diastolicos_tiempo[1].append(tiempo[indice])
+                    diastolicos_tiempo[0].append(datos_filtrados_temp[indice])
+                    diastolicos_tiempo[1].append(tiempo_temp[indice])
 
-            # 2.4.X: TODO Almacenar sobrante para la proxima vuelta
-            # if indices_sistolicos:
-            #    if indices_sistolicos[-1] == len(datos_filtrados):
+            # 2.4.X: Almacenar sobrante
+            # Descripción: Si no hay ningún pico en los últimos 2 elementos del vector,
+            #   se almacenan estos 2 últimos para evitar omitir picos cuando están
+            #   en el límite de señales muestreadas
+
+            if len(datos_filtrados) > 2:
+                indice_corte = len(datos_filtrados) - 2
+
+                if len(indices_sistolicos) > 0:
+                    if indices_sistolicos[-1] > indice_corte:
+                        indice_corte = None
+                elif len(indices_diastolicos) > 0:
+                    if indices_diastolicos[-1] > indice_corte:
+                        indice_corte = None
+
+                if indice_corte is None:
+                    temp_picos_tiempo = np.array([], [])
+                else:
+                    temp_picos_tiempo[0] = datos_filtrados[-2:]
+                    temp_picos_tiempo[1] = tiempo[-2:]
 
             datos_procesados += elementos_muestra
             senal_filtrada = np.concatenate((senal_filtrada, datos_filtrados))
