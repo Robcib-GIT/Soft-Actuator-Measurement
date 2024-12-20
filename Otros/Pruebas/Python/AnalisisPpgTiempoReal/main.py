@@ -25,6 +25,7 @@ perderlos mientras se procesan las tandas.
 Descripción: carga librerías y define constantes que servirán para filtrar la
     onda.
 """
+
 from matplotlib import pyplot as plt, animation
 from scipy.signal import butter, lfilter, find_peaks
 import numpy as np
@@ -39,9 +40,9 @@ MIN_DIASTOLICO = 480
 MIN_MUESTRAS_ENTRE_PULSOS = (60 / 100) * (1000 / 40)
 
 MUESTRAS_ENVIO = 5
-SEGMENTOS_ANALISIS = 20 #15  # Equivalente a 3secs de datos
+SEGMENTOS_ANALISIS = 15  # 15  # Equivalente a 3secs de datos
 
-ruta_datos = "../Data/SalidaPulsoSujeto1.txt"
+ruta_datos = "../Data/SalidaPulsoSujeto2.txt"
 
 """
 ==============================================================================
@@ -74,17 +75,22 @@ def obtener_propiedades_pulso(lista_sistolicos_tiempo):
     if len(tiempos_sistolicos) > 1:
         _ibi = np.diff(tiempos_sistolicos)  # Intervalo entre pulsos
         media_ibi = np.mean(_ibi)
-        _frecuencia = 1000/media_ibi
-        _pulso = _frecuencia*60
-        _variacion = np.var(_ibi)
+        _frecuencia = 1000 / media_ibi
+        _pulso = _frecuencia * 60
+        _sdnn = np.std(_ibi/1000)  # Desviación estándar
+        _rmssd = np.sqrt(np.mean(np.diff(_ibi/1000)**2))  # Raíz cuadrada de la media de las diferencias al cuadrado
+        print(
+            f"Pulso: {_pulso:.2f} bpm | IBI: {media_ibi:.2f} ms  | Frecuencia: {_frecuencia:.4f} Hz \nSDNN: {_sdnn:.4f} s | RMSSD: {_rmssd:.4f} s\n")
+
     else:
         media_ibi = None
         _frecuencia = None
         _pulso = None
-        _variacion = None
+        _sdnn = None
+        _rmssd = None
 
+    # TODO: Añadir Amplitud
     # TODO: Enviar datos a la app
-    print(f"Pulso: {_pulso} ppm | IBI: {media_ibi} ms | Variación: {_variacion} ms | Frecuencia: {_frecuencia} Hz")
     return
 
 
@@ -146,7 +152,7 @@ if __name__ == '__main__':
                 datos_pulso = np.concatenate((datos_pulso, segmento))
 
                 # 2.4.2: Aplicar filtro de paso bajo (Butterworth)
-                segmento_filtrado, zi = aplicar_filtro_paso_bajo(segmento, b, a, zi) #####
+                segmento_filtrado, zi = aplicar_filtro_paso_bajo(segmento, b, a, zi)  #####
                 senal_filtrada = np.concatenate((senal_filtrada, segmento_filtrado))
                 # TODO: Enviar (APP)
                 # TODO: Cambiar numpy por python basico al concatenar y transformar despues para velocidad
@@ -239,7 +245,7 @@ if __name__ == '__main__':
         linewidth=1,
         alpha=0.6)
 
-    intervalo_paquetes = MUESTRAS_ENVIO *  SEGMENTOS_ANALISIS * dt
+    intervalo_paquetes = MUESTRAS_ENVIO * SEGMENTOS_ANALISIS * dt
     for x in range(0, tiempo_completo[-1], intervalo_paquetes):  # Ajusta el rango según tu data
         axs[0].axvline(
             x=x,
@@ -291,4 +297,3 @@ if __name__ == '__main__':
 
     plt.tight_layout()
     plt.show()
-
