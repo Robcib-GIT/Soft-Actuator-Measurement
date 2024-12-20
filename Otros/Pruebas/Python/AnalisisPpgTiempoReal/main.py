@@ -69,6 +69,21 @@ def aplicar_filtro_paso_bajo(data, _b, _a, _zi=None):
     return yf, zf
 
 
+def obtener_propiedades_pulso(lista_sistolicos_tiempo):
+    tiempos_sistolicos = lista_sistolicos_tiempo[1]
+    if len(tiempos_sistolicos) > 1:
+        variaciones = np.diff(tiempos_sistolicos)
+        media_variaciones = np.mean(variaciones)
+        media_pulso = 1000/media_variaciones*60
+    else:
+        media_variaciones = None
+        media_pulso = None
+
+    # TODO: Enviar datos a la app
+    print(f"Pulso: {media_pulso} ppm    |    Variación: {media_variaciones} ms")
+    return media_pulso, media_variaciones
+
+
 """
 ==============================================================================
 2: CÓDIGO PRINCIPAL
@@ -116,7 +131,7 @@ if __name__ == '__main__':
 
         # 2.4.1: Obtener paquete de datos
         datos_pulso = np.array([], dtype=int)
-        senal_filtrada = np.array([]) #################
+        senal_filtrada = np.array([])
 
         for i in range(SEGMENTOS_ANALISIS):
             segmento = cola.get()
@@ -130,6 +145,7 @@ if __name__ == '__main__':
                 segmento_filtrado, zi = aplicar_filtro_paso_bajo(segmento, b, a, zi) #####
                 senal_filtrada = np.concatenate((senal_filtrada, segmento_filtrado))
                 # TODO: Enviar (APP)
+                # TODO: Cambiar numpy por python basico al concatenar y transformar despues para velocidad
 
         elementos_muestra = len(datos_pulso)
         if elementos_muestra > 0:
@@ -191,7 +207,10 @@ if __name__ == '__main__':
 
             datos_procesados += elementos_muestra
 
-            # 2.4.X: Actualizar grafica
+            # 2.4.x: Obtener datos medicos
+            pulso, variacion = obtener_propiedades_pulso(sistolicos_tiempo)
+
+            # 2.4.X: Actualizar grafica (luego no hará falta)
             senal_filtrada_completa = np.concatenate((senal_filtrada_completa, senal_filtrada))
 
             if len(sistolicos_tiempo[0]) > 0:
