@@ -39,9 +39,9 @@ MIN_DIASTOLICO = 480
 MIN_MUESTRAS_ENTRE_PULSOS = (60 / 100) * (1000 / 40)
 
 MUESTRAS_ENVIO = 5
-SEGMENTOS_ANALISIS = 10  # 15  # Equivalente a 3secs de datos
+SEGMENTOS_ANALISIS = 15  # Equivalente a 3secs de datos
 
-ruta_datos = "../Data/Prueba.txt"
+ruta_datos = "../Data/SalidaPulsoSujeto1.txt"
 
 """
 ==============================================================================
@@ -93,18 +93,23 @@ if __name__ == '__main__':
     cola.put(None)
 
     # _______________2.3: PREPARACIÓN PARA EL ANALISIS_______________
+    # 2.3.1: Variables generales
     datos_procesados = 0
     fin_analisis = False
+
+    # 2.3.2: Variables para el filtro
     fs = 1000 / dt  # Frecuencia de muestreo (Hz)
     cutoff = 3  # Frecuencia de corte (Hz) (entre 2 y 5 va bien)
     b, a = init_filtro_paso_bajo(cutoff, fs)
     zi = None
 
-    senal_filtrada = np.array([])  # TODO: borrar
+    # 2.3.3: Variables para picos
+    temp_picos_tiempo = [np.array([]), np.array([])]
+
+    # 2.3.4: Variables para la representación gráfica
+    senal_filtrada_completa = np.array([])  # TODO: borrar
     sistolicos_tiempo_completo = [np.array([]), np.array([])]  # TODO: borrar
     diastolicos_tiempo_completo = [np.array([]), np.array([])]  # TODO: borrar
-
-    temp_picos_tiempo = [np.array([]), np.array([])]
 
     # _______________2.4: PROCESAR DATOS_______________
     while not fin_analisis:
@@ -118,16 +123,17 @@ if __name__ == '__main__':
                 break
             else:
                 datos_pulso = np.concatenate((datos_pulso, segmento))
+                # TODO: Aplicar filtro y enviar (APP)
 
         elementos_muestra = len(datos_pulso)
         if elementos_muestra > 0:
             tiempo = np.arange(datos_procesados, datos_procesados + elementos_muestra) * dt
 
             # 2.4.2: Aplicar filtro de paso bajo (Butterworth)
-            datos_filtrados, zi = aplicar_filtro_paso_bajo(datos_pulso, b, a, zi)
+            senal_filtrada, zi = aplicar_filtro_paso_bajo(datos_pulso, b, a, zi)
 
             # 2.4.3: Unir sobrante anterior para no pasar picos por alto
-            datos_filtrados_temp = np.concatenate((temp_picos_tiempo[0], datos_filtrados))
+            datos_filtrados_temp = np.concatenate((temp_picos_tiempo[0], senal_filtrada))
             tiempo_temp = np.concatenate((temp_picos_tiempo[1], tiempo))
 
             # TODO: Descomentar para ver efecto de incluir sobrante, depués borrar
@@ -164,8 +170,8 @@ if __name__ == '__main__':
             #   se almacenan estos 2 últimos para evitar omitir picos cuando están
             #   en el límite de señales muestreadas
 
-            if len(datos_filtrados) > 2:
-                indice_corte = len(datos_filtrados) - 2
+            if len(senal_filtrada) > 2:
+                indice_corte = len(senal_filtrada) - 2
 
                 if len(indices_sistolicos) > 0:
                     if indices_sistolicos[-1] > indice_corte:
@@ -177,11 +183,13 @@ if __name__ == '__main__':
                 if indice_corte is None:
                     temp_picos_tiempo = np.array([], [])
                 else:
-                    temp_picos_tiempo[0] = datos_filtrados[-2:]
+                    temp_picos_tiempo[0] = senal_filtrada[-2:]
                     temp_picos_tiempo[1] = tiempo[-2:]
 
             datos_procesados += elementos_muestra
-            senal_filtrada = np.concatenate((senal_filtrada, datos_filtrados))
+
+            # 2.4.X: Actualizar grafica
+            senal_filtrada_completa = np.concatenate((senal_filtrada_completa, senal_filtrada))
 
             if len(sistolicos_tiempo[0]) > 0:
                 sistolicos_tiempo_completo[0] = np.concatenate(
@@ -204,6 +212,17 @@ if __name__ == '__main__':
         linestyle='--',
         linewidth=1,
         alpha=0.6)
+
+    intervalo_paquetes = MUESTRAS_ENVIO *  SEGMENTOS_ANALISIS * dt
+    for x in range(0, tiempo_completo[-1], intervalo_paquetes):  # Ajusta el rango según tu data
+        axs[0].axvline(
+            x=x,
+            color='red',  # Puedes cambiar el color de las líneas
+            linestyle='--',
+            linewidth=1,
+            alpha=0.6
+        )
+
     axs[0].plot(
         tiempo_completo,
         datos_pulso_completo,
@@ -213,7 +232,7 @@ if __name__ == '__main__':
         label="Onda PPG original")
     axs[0].plot(
         tiempo_completo,
-        senal_filtrada,
+        senal_filtrada_completa,
         color='green',
         linestyle='-',
         linewidth=1.5,
@@ -246,3 +265,4 @@ if __name__ == '__main__':
 
     plt.tight_layout()
     plt.show()
+
