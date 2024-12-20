@@ -1,7 +1,6 @@
 from matplotlib import pyplot as plt
-from scipy.signal import butter, lfilter
+from scipy.signal import butter, lfilter, find_peaks
 import numpy as np
-from scipy.signal import find_peaks
 
 # TODO ajustar
 MAX_SISTOLICO = 580  # Para dedo 550
