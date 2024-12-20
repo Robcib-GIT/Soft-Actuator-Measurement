@@ -116,6 +116,8 @@ if __name__ == '__main__':
 
         # 2.4.1: Obtener paquete de datos
         datos_pulso = np.array([], dtype=int)
+        senal_filtrada = np.array([]) #################
+
         for i in range(SEGMENTOS_ANALISIS):
             segmento = cola.get()
             if segmento is None:
@@ -123,14 +125,15 @@ if __name__ == '__main__':
                 break
             else:
                 datos_pulso = np.concatenate((datos_pulso, segmento))
-                # TODO: Aplicar filtro y enviar (APP)
+
+                # 2.4.2: Aplicar filtro de paso bajo (Butterworth)
+                segmento_filtrado, zi = aplicar_filtro_paso_bajo(segmento, b, a, zi) #####
+                senal_filtrada = np.concatenate((senal_filtrada, segmento_filtrado))
+                # TODO: Enviar (APP)
 
         elementos_muestra = len(datos_pulso)
         if elementos_muestra > 0:
             tiempo = np.arange(datos_procesados, datos_procesados + elementos_muestra) * dt
-
-            # 2.4.2: Aplicar filtro de paso bajo (Butterworth)
-            senal_filtrada, zi = aplicar_filtro_paso_bajo(datos_pulso, b, a, zi)
 
             # 2.4.3: Unir sobrante anterior para no pasar picos por alto
             datos_filtrados_temp = np.concatenate((temp_picos_tiempo[0], senal_filtrada))
