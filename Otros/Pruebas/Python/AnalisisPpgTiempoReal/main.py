@@ -39,7 +39,7 @@ MIN_DIASTOLICO = 480
 MIN_MUESTRAS_ENTRE_PULSOS = (60 / 100) * (1000 / 40)
 
 MUESTRAS_ENVIO = 5
-SEGMENTOS_ANALISIS = 15  # Equivalente a 3secs de datos
+SEGMENTOS_ANALISIS = 20 #15  # Equivalente a 3secs de datos
 
 ruta_datos = "../Data/SalidaPulsoSujeto1.txt"
 
@@ -72,16 +72,20 @@ def aplicar_filtro_paso_bajo(data, _b, _a, _zi=None):
 def obtener_propiedades_pulso(lista_sistolicos_tiempo):
     tiempos_sistolicos = lista_sistolicos_tiempo[1]
     if len(tiempos_sistolicos) > 1:
-        variaciones = np.diff(tiempos_sistolicos)
-        media_variaciones = np.mean(variaciones)
-        media_pulso = 1000/media_variaciones*60
+        _ibi = np.diff(tiempos_sistolicos)  # Intervalo entre pulsos
+        media_ibi = np.mean(_ibi)
+        _frecuencia = 1000/media_ibi
+        _pulso = _frecuencia*60
+        _variacion = np.var(_ibi)
     else:
-        media_variaciones = None
-        media_pulso = None
+        media_ibi = None
+        _frecuencia = None
+        _pulso = None
+        _variacion = None
 
     # TODO: Enviar datos a la app
-    print(f"Pulso: {media_pulso} ppm    |    Variación: {media_variaciones} ms")
-    return media_pulso, media_variaciones
+    print(f"Pulso: {_pulso} ppm | IBI: {media_ibi} ms | Variación: {_variacion} ms | Frecuencia: {_frecuencia} Hz")
+    return
 
 
 """
@@ -200,7 +204,7 @@ if __name__ == '__main__':
                         indice_corte = None
 
                 if indice_corte is None:
-                    temp_picos_tiempo = np.array([], [])
+                    temp_picos_tiempo = [np.array([]), np.array([])]
                 else:
                     temp_picos_tiempo[0] = senal_filtrada[-2:]
                     temp_picos_tiempo[1] = tiempo[-2:]
@@ -208,7 +212,7 @@ if __name__ == '__main__':
             datos_procesados += elementos_muestra
 
             # 2.4.x: Obtener datos medicos
-            pulso, variacion = obtener_propiedades_pulso(sistolicos_tiempo)
+            obtener_propiedades_pulso(sistolicos_tiempo)
 
             # 2.4.X: Actualizar grafica (luego no hará falta)
             senal_filtrada_completa = np.concatenate((senal_filtrada_completa, senal_filtrada))
