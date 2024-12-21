@@ -1,0 +1,3 @@
+<launch>
+    <node name="sensors" pkg="soft_actuator_measurement" type="sensors.py" output="screen"/>
+</launch>
