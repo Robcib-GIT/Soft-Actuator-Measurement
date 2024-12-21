@@ -9,7 +9,7 @@ import json
 # Publicadores
 pub1 = rospy.Publisher('sensor1_data', Int32, queue_size=10) #Temperatura
 pub2 = rospy.Publisher('sensor2_data', Int32MultiArray, queue_size=10) #
-pub3 = rospy.Publisher('sensor3_data', Int32MultiArray, queue_size=10) #Pulso
+pub3 = rospy.Publisher('sensor3_data', Int32MultiArray, queue_size=10) #
 
 # Funcion para manejar publicaciones
 def publish_if_available(key, data, publisher):
@@ -60,7 +60,7 @@ def main():
     # Configuración de la conexión serie
     try:
         global arduino
-        arduino = serial.Serial('/dev/ttyACM0', 9600, timeout=1)  # Cambia '/dev/ttyACM0' según corresponda a tu puerto serie
+        arduino = serial.Serial('/dev/ttyACM0', 9600, timeout=1)
         rospy.loginfo("Conexión serie establecida correctamente.")
     except serial.SerialException as e:
         rospy.logerr(f"Error al intentar conectar con el puerto serie: {e}")
