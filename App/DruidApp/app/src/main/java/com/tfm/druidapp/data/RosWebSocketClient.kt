@@ -47,21 +47,20 @@ class RosWebSocketClient(uri: URI, private val viewModel: MainViewModel) : WebSo
 
                 }
                 "/sensor2_data" -> {}
-                "/sensor3_data" -> {
-                    val msg = parsedMsg.msg as? MsgTypes.IntArrayMsg
-                    val processedList = mutableListOf<Float>()
-                    msg?.data?.forEach{item->
-                        if(item==-1) processedList.add(item.toFloat())
-                        else processedList.add(item.toFloat()/1023)
-                    }
+                "/ppg_data" -> {
+                    val msg = parsedMsg.msg as? MsgTypes.DoubleArrayMsg
                     if (msg != null) {
-                        msg.layout.data_offset?.let { viewModel.updatePulseSampleRate(it.toLong()) }
+                        msg.layout.data_offset?.let {
+                            viewModel.updatePulseSampleRate(it.toLong())
+                        }
+
+                        viewModel.sendToChannel(msg.data)
+                        if (_firstPulseList){
+                            viewModel.startProcessingPulseChannel()
+                            _firstPulseList = false
+                        }
                     }
-                    viewModel.sendToChannel(processedList)
-                    if (_firstPulseList){
-                        viewModel.startProcessingPulseChannel()
-                        _firstPulseList = false
-                    }
+
                 }
                 else -> {}
             }

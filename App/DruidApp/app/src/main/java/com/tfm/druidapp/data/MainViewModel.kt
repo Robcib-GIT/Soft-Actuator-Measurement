@@ -76,11 +76,7 @@ class MainViewModel : ViewModel() {
     //Mensajes
     val topicsMap: Map<String, TopicInfo> = mapOf( //TODO poner los que haga falta
         "/sensor1_data" to TopicInfo(MsgTypes.DoubleMsg::class.java),
-        "/sensor2_data" to TopicInfo(MsgTypes.DoubleArrayMsg::class.java),
-        "/sensor3_data" to TopicInfo(MsgTypes.IntArrayMsg::class.java),
-        "/temperature_data" to TopicInfo(MsgTypes.DoubleMsg::class.java),
-        "/ppg_data" to TopicInfo(MsgTypes.PpgMsg::class.java),
-        "/pressure_data" to TopicInfo(MsgTypes.BloodPressureMsg::class.java),
+        "/ppg_data" to TopicInfo(MsgTypes.DoubleArrayMsg::class.java)
     )
 
 
@@ -104,12 +100,12 @@ class MainViewModel : ViewModel() {
     }
 
     //Pulso
-    private val _pulseListChannel = Channel<List<Float>>(Channel.BUFFERED)
+    private val _pulseListChannel = Channel<List<Double>>(Channel.BUFFERED)
     private var _pulseSampleRate: Long = 100L
     fun updatePulseSampleRate(rate: Long){
         if(rate != _pulseSampleRate) _pulseSampleRate = rate
     }
-    fun sendToChannel(list: List<Float>) {
+    fun sendToChannel(list: List<Double>) {
         viewModelScope.launch(Dispatchers.IO) {
             _pulseListChannel.send(list)
         }
@@ -118,10 +114,10 @@ class MainViewModel : ViewModel() {
         viewModelScope.launch(Dispatchers.Default) {
             for (list in _pulseListChannel) {
                 for (item in list){
-                    if (item == -1f){
+                    if (item == -1.0){
                         clearAmplitudes()
                     }else{
-                        addPulseAmplitude(item)
+                        addPulseAmplitude(item.toFloat())
                         delay(_pulseSampleRate-4) //Un poco menos para compensar
                     }
                 }
@@ -141,7 +137,7 @@ class MainViewModel : ViewModel() {
     private val _pulseAmplitudeList: MutableStateFlow<List<Float>> = MutableStateFlow(listOf(0f))
     val pulseAmplitudeList: StateFlow<List<Float>> = _pulseAmplitudeList
 
-    val maxPulseRegisters = 40 //TODO ajustar si eso para que sea configurable
+    val maxPulseRegisters = 50 //TODO ajustar si eso para que sea configurable
 
     fun addPulseAmplitude(amplitude: Float) {
         _pulseAmplitudeList.value = _pulseAmplitudeList.value
