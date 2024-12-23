@@ -30,7 +30,7 @@ MIN_MUESTRAS_ENTRE_PULSOS = (60 / 100) * (1000 / 40)
 MUESTRAS_ENVIO = 5
 SEGMENTOS_ANALISIS = 15
 
-dt = None # Intervalo de tiempo entre muestras TODO: arreglar actualizacion
+dt = None # Intervalo de tiempo entre muestras
 finish_processing = True
 
 
@@ -85,10 +85,8 @@ def process_data():
                         filtered_segment, zi = apply_low_pass_filter(segment, b, a, zi)
                         filtered_signal.extend(filtered_segment)
                     
-                    if not finish_processing:
-                        publish_segment(filtered_segment)
-                    else:
-                        publish_segment(filtered_segment.append(-1))  # Para indicar el fin de la transmision
+                    # 1.1.5: Enviar segmento filtrado
+                    publish_segment(filtered_segment)
 
                 # 1.1.5: Extraer información de la señal
 
@@ -170,11 +168,28 @@ def apply_low_pass_filter(data, _b, _a, _zi=None):
     yf, zf = lfilter(_b, _a, data, zi=_zi)
     return yf, zf
 
-
+# 1.x.x: Enviar segmento
 def publish_segment(_segment):
     msg = Float32MultiArray()
-    msg.data = _segment
     msg.layout.data_offset = dt
+
+    # Limitar los valores dentro de un rango y normalizarlos para que estén entre 0 y 1
+    adapted_segment = []
+    MIN_VAL = MIN_DIASTOLICO-3
+    MAX_VAL = MAX_SISTOLICO+3
+
+    adapted_segment = [
+        (max(MIN_VAL, min(value, MAX_VAL)) - MIN_VAL) / (MAX_VAL - MIN_VAL)
+        for value in _segment
+    ]
+
+    # Añadir indicador de final de señal
+    if  finish_processing:
+        adapted_segment.append(-1)
+    
+    msg.data = adapted_segment
+
+    # Enviar mensaje
     pub1.publish(msg)
 
 
