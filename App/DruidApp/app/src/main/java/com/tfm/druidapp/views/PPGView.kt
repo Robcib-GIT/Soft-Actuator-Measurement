@@ -9,10 +9,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -29,7 +32,8 @@ private const val col2Width = 100
 
 @Composable
 fun PPGView(viewModel: MainViewModel){
-    val amplitudeValues = viewModel.pulseAmplitudeList.value
+    val cardiacData by viewModel.cardiacData.collectAsState()
+
     Column(
         modifier = Modifier
             .padding(16.dp)
@@ -51,7 +55,39 @@ fun PPGView(viewModel: MainViewModel){
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
-                    text = "Variabilidad de la frecuencia cardíaca",
+                    text = "Frecuencia cardíaca",
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Column( //frec. card.
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 50.dp)
+                ) {
+
+                    DataRow(
+                        title = "PPM", value = cardiacData.ppm.toFloat(), valueUnits = ""
+                    ) {
+                        //TODO
+                    }
+                    DataRow(
+                        title = "IBI", value = cardiacData.ibi, valueUnits = " ms"
+                    ) {
+                        //TODO
+                    }
+                    DataRow(
+                        title = "Frecuencia", value = cardiacData.frequency, valueUnits = " Hz"
+                    ) {
+                        //TODO
+                    }
+
+                }
+
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+
+                Text(
+                    text = "Variabilidad de la FC",
                     style = MaterialTheme.typography.titleMedium
                 )
                 Column( //Datos variabilidad frec. card.
@@ -61,29 +97,23 @@ fun PPGView(viewModel: MainViewModel){
                 ) {
 
                     DataRow(
-                        title = "SDNN", value = 50f, valueUnits = ""
+                        title = "SDNN", value = cardiacData.sdnn, valueUnits = " ms"
                     ) {
                         //TODO
                     }
                     DataRow(
-                        title = "RMSDD", value = 47f, valueUnits = ""
+                        title = "RMSDD", value = cardiacData.rmsdd, valueUnits = " ms"
                     ) {
                         //TODO
                     }
-                    DataRow(
-                        title = "Frecuencia", value = 47.6f, valueUnits = " Hz"
-                    ) {
-                        //TODO
-                    }
-
                 }
 
-                Divider(
+                HorizontalDivider(
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
 
                 Text(
-                    text = "Análisis morfológico de la onda PPG",
+                    text = "Análisis morfológico de la onda",
                     style = MaterialTheme.typography.titleMedium
                 )
 
@@ -93,10 +123,10 @@ fun PPGView(viewModel: MainViewModel){
                         .padding(start = 50.dp)
                 ) {
 
-                    DataRow(title = "Amplitud", value = 50.1f, valueUnits = "") {
+                    DataRow(title = "Amplitud", value = 0f, valueUnits = "") {
                         //TODO
                     }
-                    DataRow(title = "Rise Time", value = 47f, valueUnits = " s") {
+                    DataRow(title = "Rise Time", value = 0f, valueUnits = " ms") {
                         //TODO
                     }
 
@@ -115,12 +145,14 @@ fun DataRow(title: String, value: Float, valueUnits: String, onInfoClick: ()->Un
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.width(col1Width.dp)
         )
-        Text(text = if (value % 1 == 0f) {
-            String.format("%.0f", value) + valueUnits // Muestra como entero y concatena el texto
-        } else {
-            String.format("%.1f", value) + valueUnits // Muestra con un decimal y concatena el texto
-        }
-            ,
+        Text(
+            text = if (value == -1f) {
+                    "-- $valueUnits"
+                } else if (value % 1 == 0f) {
+                    String.format("%.0f", value) + valueUnits
+                } else {
+                    String.format("%.1f", value) + valueUnits
+                },
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.width(col2Width.dp)
         )

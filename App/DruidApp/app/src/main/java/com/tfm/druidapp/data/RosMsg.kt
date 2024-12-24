@@ -79,14 +79,21 @@ sealed class MsgTypes(){ //Añadir aqui más si hace falta
         val sys: Int? = null,
         val dia: Int? = null
     ):MsgTypes()
-
-    data class CardiacMsg(  //TODO modificar tipos de datos
-        val bpm: Int = -1,
+    /*
+    int32 ppm
+    float32 ibi
+    float32 frequency
+    float32 sdnn
+    float32 rmssd
+    */
+    data class CardiacMsg(  //TODO modificar y añadir tipos de datos
+        val ppm: Int = -1,
+        val ibi: Float = -1f,
+        val frequency: Float = -1f,
         val sdnn: Float = -1f,
         val rmsdd: Float = -1f,
-        val frequency: Double? = null,
-        val amplitude: Float = -1f,
-        val riseTime: Float = -1f,
+        //val amplitude: Float = -1f,
+        //val riseTime: Float = -1f,
     ):MsgTypes()
 }
 

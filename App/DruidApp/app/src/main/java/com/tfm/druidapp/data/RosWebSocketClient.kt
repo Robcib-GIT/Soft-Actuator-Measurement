@@ -33,20 +33,7 @@ class RosWebSocketClient(uri: URI, private val viewModel: MainViewModel) : WebSo
             val parsedMsg = parseRosMessage(message, viewModel.topicsMap)
 
             when(parsedMsg.topic){
-                "/sensor1_data" -> {
-                    val msg = parsedMsg.msg as? MsgTypes.DoubleMsg
-                    val sensor1 = msg?.data?.div(10.23) //TODO cambiar esto para prueba
 
-                    if(sensor1 != null && sensor1 != -1.0){
-                        viewModel.updateSensor1Data(sensor1)
-                        viewModel.updateTemperature(sensor1.toFloat())
-                    }else{
-                        viewModel.updateTemperature(null)
-                        viewModel.updateSensor3Data(null)
-                    }
-
-                }
-                "/sensor2_data" -> {}
                 "/ppg_data" -> {
                     val msg = parsedMsg.msg as? MsgTypes.FloatArrayMsg
                     if (msg != null) {
@@ -62,6 +49,14 @@ class RosWebSocketClient(uri: URI, private val viewModel: MainViewModel) : WebSo
                     }
 
                 }
+
+                "/cardiac_data" -> {
+                    val msg = parsedMsg.msg as? MsgTypes.CardiacMsg
+                    if (msg != null) {
+                        viewModel.updateCardiacData(msg)
+                    }
+                }
+
                 else -> {}
             }
         }

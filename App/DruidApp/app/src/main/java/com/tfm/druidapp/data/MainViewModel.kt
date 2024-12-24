@@ -75,7 +75,8 @@ class MainViewModel : ViewModel() {
     //Mensajes
     val topicsMap: Map<String, TopicInfo> = mapOf( //TODO poner los que haga falta
         "/sensor1_data" to TopicInfo(MsgTypes.FloatMsg::class.java),
-        "/ppg_data" to TopicInfo(MsgTypes.FloatArrayMsg::class.java)
+        "/ppg_data" to TopicInfo(MsgTypes.FloatArrayMsg::class.java),
+        "/cardiac_data" to TopicInfo(MsgTypes.CardiacMsg::class.java)
     )
 
 
@@ -134,7 +135,8 @@ class MainViewModel : ViewModel() {
     private val _cardiacData: MutableStateFlow<MsgTypes.CardiacMsg> = MutableStateFlow(MsgTypes.CardiacMsg())
     val cardiacData: StateFlow<MsgTypes.CardiacMsg> = _cardiacData
 
-    fun updatePpgData(data: MsgTypes.CardiacMsg){
+    fun updateCardiacData(data: MsgTypes.CardiacMsg){
+        //TODO: Añadir cuenta de valores inconsistentes y si supera una cantidad sacar toast
         _cardiacData.value = data
     }
 
