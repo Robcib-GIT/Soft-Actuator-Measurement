@@ -94,6 +94,7 @@ fun RobotView(viewModel: MainViewModel){
 
         TopicSelector(
             topicsMap = viewModel.topicsMap,
+            connected = viewModel.connectionState.value,
             onChecked = {topic->
                 viewModel.wsClient.subscribeToTopic(topic = topic)
             },
@@ -110,6 +111,7 @@ fun RobotView(viewModel: MainViewModel){
 @Composable
 fun TopicSelector(
     topicsMap: Map<String,TopicInfo>,
+    connected: Boolean,
     onChecked: (String)->Unit,
     onUnchecked: (String)->Unit
 ){
@@ -159,6 +161,7 @@ fun TopicSelector(
                             )
                         }
                     },
+                    enabled = connected,
                     onClick = {
                         topicInfo.subscribedTo.value = !topicInfo.subscribedTo.value
                         if (topicInfo.subscribedTo.value){
@@ -194,12 +197,13 @@ fun UriEditor(
                 .focusRequester(focusRequester)
                 .width(250.dp),
             enabled = isUriEditable,
-            readOnly = !isUriEditable,
+            //readOnly = !isUriEditable,
             singleLine = true,
             label = { Text(text = "URI") },
             colors = OutlinedTextFieldDefaults.colors(
                 disabledTrailingIconColor = MaterialTheme.colorScheme.onPrimary,
-                disabledLabelColor = MaterialTheme.colorScheme.onPrimary
+                disabledLabelColor = MaterialTheme.colorScheme.onPrimary,
+                cursorColor = Color.White
             ),
             trailingIcon = {
                 if (!isUriEditable) {
