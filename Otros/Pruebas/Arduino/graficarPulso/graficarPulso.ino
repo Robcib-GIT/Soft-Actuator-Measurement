@@ -4,7 +4,7 @@ void setup() {
 }
 
 void loop() {
-  int sensorValue = analogRead(A0);
+  int sensorValue = analogRead(A);
   //float processedValue = (sensorValue-minValue)/float(maxValue-minValue);
 
   // Envía el valor leído al monitor serial

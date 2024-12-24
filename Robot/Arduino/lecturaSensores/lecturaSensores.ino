@@ -25,8 +25,8 @@ struct SensorConfig {
 };
 
 SensorConfig sensors[] = {
-    {A0, 1000, 0, false, false, nullptr, 1, 0}, // Sensor 1
-    {A1, 40, 0, false, false, nullptr, 5, 0},  // Sensor 2
+    {A0, 1000, 0, false, false, nullptr, 1, 0}, // Sensor 1: Temperatura
+    {A1, 40, 0, false, false, nullptr, 5, 0},  // Sensor 2: Pulso
     {A2, 40, 0, false, false, nullptr, 5, 0}  // Sensor 3
 };
 
