@@ -98,7 +98,7 @@ fun PPG(viewModel: MainViewModel, modifier: Modifier = Modifier) {
                 verticalAlignment = Alignment.CenterVertically
             ){
                 Text(
-                    text = viewModel.ppgData.value.bpm?.toString() ?: "--",
+                    text = viewModel.cardiacData.value.bpm?.toString() ?: "--",
                     color = MaterialTheme.colorScheme.onPrimary,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold

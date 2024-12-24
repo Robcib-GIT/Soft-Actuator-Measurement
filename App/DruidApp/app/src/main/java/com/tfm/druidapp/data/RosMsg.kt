@@ -1,6 +1,5 @@
 package com.tfm.druidapp.data
 
-import android.util.Log
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import com.google.gson.Gson
@@ -55,6 +54,9 @@ sealed class MsgTypes(){ //Añadir aqui más si hace falta
     data class DoubleMsg(
         val data: Double
     ):MsgTypes()
+    data class FloatMsg(
+        val data: Float
+    ):MsgTypes()
     data class StringMsg(
         val data: String
     ):MsgTypes()
@@ -67,19 +69,24 @@ sealed class MsgTypes(){ //Añadir aqui más si hace falta
         val data: List<Double> = emptyList()
     ):MsgTypes()
 
+    data class FloatArrayMsg(
+        val layout: MsgLayout,
+        val data: List<Float> = emptyList()
+    ):MsgTypes()
+
     //Personales
     data class BloodPressureMsg(
         val sys: Int? = null,
         val dia: Int? = null
     ):MsgTypes()
 
-    data class PpgMsg(  //TODO modificar tipos de datos
-        val bpm: Int? = null,
-        val sdnn: Int? = null,
-        val rmsdd: Int? = null,
+    data class CardiacMsg(  //TODO modificar tipos de datos
+        val bpm: Int = -1,
+        val sdnn: Float = -1f,
+        val rmsdd: Float = -1f,
         val frequency: Double? = null,
-        val amplitude: Double? = null,
-        val riseTime: Double? = null
+        val amplitude: Float = -1f,
+        val riseTime: Float = -1f,
     ):MsgTypes()
 }
 

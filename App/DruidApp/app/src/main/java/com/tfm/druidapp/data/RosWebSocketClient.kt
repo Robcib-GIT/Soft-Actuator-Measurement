@@ -48,7 +48,7 @@ class RosWebSocketClient(uri: URI, private val viewModel: MainViewModel) : WebSo
                 }
                 "/sensor2_data" -> {}
                 "/ppg_data" -> {
-                    val msg = parsedMsg.msg as? MsgTypes.DoubleArrayMsg
+                    val msg = parsedMsg.msg as? MsgTypes.FloatArrayMsg
                     if (msg != null) {
                         msg.layout.data_offset?.let {
                             viewModel.updatePulseSampleRate(it.toLong())

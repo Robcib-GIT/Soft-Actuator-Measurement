@@ -1,6 +1,5 @@
 package com.tfm.druidapp.data
 
-import android.util.Log
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
@@ -75,12 +74,17 @@ class MainViewModel : ViewModel() {
 
     //Mensajes
     val topicsMap: Map<String, TopicInfo> = mapOf( //TODO poner los que haga falta
-        "/sensor1_data" to TopicInfo(MsgTypes.DoubleMsg::class.java),
-        "/ppg_data" to TopicInfo(MsgTypes.DoubleArrayMsg::class.java)
+        "/sensor1_data" to TopicInfo(MsgTypes.FloatMsg::class.java),
+        "/ppg_data" to TopicInfo(MsgTypes.FloatArrayMsg::class.java)
     )
 
 
     ////////////////// RELACIONADO CON MEDIC DATA /////////////////////////////
+    private fun resetMedicData(){
+        clearAmplitudes()
+        updateTemperature(null)
+    }
+
     //Glasgow
     private val _glasgowScore: MutableState<Int> = mutableStateOf(0)
     val glasgowScore: State<Int> = _glasgowScore
@@ -100,12 +104,12 @@ class MainViewModel : ViewModel() {
     }
 
     //Pulso
-    private val _pulseListChannel = Channel<List<Double>>(Channel.BUFFERED)
+    private val _pulseListChannel = Channel<List<Float>>(Channel.BUFFERED)
     private var _pulseSampleRate: Long = 100L
     fun updatePulseSampleRate(rate: Long){
         if(rate != _pulseSampleRate) _pulseSampleRate = rate
     }
-    fun sendToChannel(list: List<Double>) {
+    fun sendToChannel(list: List<Float>) {
         viewModelScope.launch(Dispatchers.IO) {
             _pulseListChannel.send(list)
         }
@@ -114,10 +118,10 @@ class MainViewModel : ViewModel() {
         viewModelScope.launch(Dispatchers.Default) {
             for (list in _pulseListChannel) {
                 for (item in list){
-                    if (item == -1.0){
+                    if (item == -1f || !_connectionState.value){ //Evitar restos al apagar
                         clearAmplitudes()
                     }else{
-                        addPulseAmplitude(item.toFloat())
+                        addPulseAmplitude(item)
                         delay(_pulseSampleRate-4) //Un poco menos para compensar
                     }
                 }
@@ -127,11 +131,11 @@ class MainViewModel : ViewModel() {
     }
 
 
-    private val _ppgData: MutableStateFlow<MsgTypes.PpgMsg> = MutableStateFlow(MsgTypes.PpgMsg())
-    val ppgData: StateFlow<MsgTypes.PpgMsg> = _ppgData
+    private val _cardiacData: MutableStateFlow<MsgTypes.CardiacMsg> = MutableStateFlow(MsgTypes.CardiacMsg())
+    val cardiacData: StateFlow<MsgTypes.CardiacMsg> = _cardiacData
 
-    fun updatePpgData(data: MsgTypes.PpgMsg){
-        _ppgData.value = data
+    fun updatePpgData(data: MsgTypes.CardiacMsg){
+        _cardiacData.value = data
     }
 
     private val _pulseAmplitudeList: MutableStateFlow<List<Float>> = MutableStateFlow(listOf(0f))
