@@ -1,5 +1,6 @@
 package com.tfm.druidapp.data
 
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
@@ -32,6 +33,17 @@ class MainViewModel : ViewModel() {
         _loadingState.value = updating
     }
 
+    //BottomSheet
+    private val _showBottomSheet = mutableStateOf(false)
+    val showBottomSheet: State<Boolean> get() = _showBottomSheet
+    fun updateBottomSheetVisibility(show: Boolean){
+        _showBottomSheet.value = show
+    }
+    private val _bottomSheetContent = mutableStateOf<(@Composable () -> Unit)?>(null)
+    val bottomSheetContent: State<(@Composable () -> Unit)?> get() = _bottomSheetContent
+    fun setComposableContent(content: @Composable () -> Unit) {
+        _bottomSheetContent.value = content
+    }
 
     ////////////////// ROSBRIDGE /////////////////////////////
     private val _connectionState = mutableStateOf(false)

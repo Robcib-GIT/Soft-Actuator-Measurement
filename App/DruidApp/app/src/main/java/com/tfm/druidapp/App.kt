@@ -13,13 +13,17 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.ModalBottomSheetProperties
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -46,6 +50,7 @@ import com.tfm.druidapp.data.screensInDrawer
 import com.tfm.druidapp.data.screensWithNav
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun App(viewModel: MainViewModel = viewModel()){
 
@@ -86,8 +91,13 @@ fun App(viewModel: MainViewModel = viewModel()){
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route ?: Screen.Monitoring.route
+
     val scope = rememberCoroutineScope()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
+    val showSheet by viewModel.showBottomSheet
+    val sheetContent by viewModel.bottomSheetContent
 
     val title = allScreens.firstOrNull { it.route == currentRoute }?.title ?: ""
     val isLoading by viewModel.loadingState.collectAsState()
@@ -153,6 +163,17 @@ fun App(viewModel: MainViewModel = viewModel()){
         }
         ) {paddingValues->
             Navigation(navController = navController ,viewModel = viewModel, pd = paddingValues)
+            if (showSheet) {
+                ModalBottomSheet(
+                    properties = ModalBottomSheetProperties(
+                        shouldDismissOnBackPress = true
+                    ),
+                    sheetState = sheetState,
+                    onDismissRequest = { viewModel.updateBottomSheetVisibility(false) }
+                ) {
+                    sheetContent?.invoke()
+                }
+            }
         }
     }
 
