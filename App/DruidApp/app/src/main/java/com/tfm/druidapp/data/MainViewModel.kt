@@ -3,9 +3,11 @@ package com.tfm.druidapp.data
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.tfm.druidapp.views.customElements.ProcessIndicatorsState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -209,6 +211,23 @@ class MainViewModel : ViewModel() {
 
 
     ////////////////// RELACIONADO CON UI /////////////////////////////
+    //ActuationView
+    private val _vitalsMonitoring = mutableStateOf(ProcessIndicatorsState.Inactive)
+    val vitalsMonitoring: State<ProcessIndicatorsState> get() = _vitalsMonitoring
+    fun updateVitalsMonitoring(monitoring: ProcessIndicatorsState){
+        _vitalsMonitoring.value = monitoring
+    }
+
+    private val _processIndicatorsExpanded = mutableStateOf(false)
+    val processIndicatorsExpanded: State<Boolean> get() = _processIndicatorsExpanded
+    fun updateProcessIndicatorsState(expanded: Boolean){
+        _processIndicatorsExpanded.value = expanded
+    }
+
+    val activationProcessMap = mutableStateMapOf<String, MutableStateFlow<Float>>(
+        //TODO
+    )
+
     //RobotView
     private val _wsUriEdited: MutableState<String> = mutableStateOf("ws://192.168.1.67:9090")//192.168.2.181//192.168.1.67
     val wsUriEdited: State<String> get() = _wsUriEdited

@@ -28,7 +28,7 @@ fun Navigation(navController: NavHostController, viewModel: MainViewModel, pd: P
         }
 
         composable(Screen.Actuation.route) {
-            ActuationView()
+            ActuationView(viewModel)
         }
 
         composable(Screen.Robot.route) {
