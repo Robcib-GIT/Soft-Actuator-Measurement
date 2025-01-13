@@ -63,19 +63,19 @@ fun ProcessProgressIndicator(
         modifier = Modifier
             .clip(shape)
             .background(Color.DarkGray)
-            .padding(horizontal = 6.dp)
+            .padding(horizontal = 16.dp)
             .fillMaxWidth()
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(40.dp)
-                .padding(end = 16.dp),
+                .height(50.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = "Iniciar mediciones",
+                style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onPrimary
             )
 
@@ -114,7 +114,7 @@ fun ProcessProgressIndicator(
                     RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp, bottomStart = cornerRadius, bottomEnd = cornerRadius)
                 )
                 .background(Color.DarkGray)
-                .padding(start = 6.dp, end = 6.dp, bottom = 6.dp)
+                .padding(start = 16.dp, end = 16.dp, bottom = 6.dp)
                 .fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
