@@ -1,7 +1,6 @@
 package com.tfm.druidapp.views
 
 import android.content.res.Configuration
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -14,18 +13,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.compose.rememberNavController
 import com.tfm.druidapp.data.MainViewModel
 import com.tfm.druidapp.ui.theme.DruidAppTheme
-import com.tfm.druidapp.views.customElements.ProcessIndicatorsState
+import com.tfm.druidapp.views.customElements.MonitoringState
 import com.tfm.druidapp.views.customElements.ProcessProgressIndicator
 
 @Composable
-fun ActuationView(viewModel: MainViewModel){
-    val expanded by viewModel.processIndicatorsExpanded
+fun ActuationView(viewModel: MainViewModel) {
     val state by viewModel.vitalsMonitoring
     val activationProcessMap by viewModel.activationProcessMap.collectAsState()
-
+    val deactivationProcessMap by viewModel.deactivationProcessMap.collectAsState()
+    var prevState = MonitoringState.Enabling
 
     Column(
         modifier = Modifier
@@ -34,29 +32,65 @@ fun ActuationView(viewModel: MainViewModel){
         //verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         ProcessProgressIndicator(
-            expanded = expanded,
             state = state,
-            text = "Iniciar mediciones",
-            processMap = activationProcessMap,
+            text = if (state == MonitoringState.Disabled || state == MonitoringState.Enabling || prevState == MonitoringState.Enabling) {
+                "Iniciar monitorización"
+            } else {
+                "Detener monitorización"
+            },
+            processMap = if (state == MonitoringState.Enabling || prevState == MonitoringState.Enabling) {
+                activationProcessMap
+            } else {
+                deactivationProcessMap
+            },
             onRun = {
-                viewModel.updateProcessIndicatorsState(true)
-                viewModel.updateVitalsMonitoring(ProcessIndicatorsState.Active)
-                //TODO: enviar comando para empezar
+                if (state == MonitoringState.Disabled) {
+                    viewModel.updateVitalsMonitoring(MonitoringState.Enabling)
+                    //TODO: Enviar comando inicializacion
+                } else {
+                    viewModel.updateVitalsMonitoring(MonitoringState.Disabling)
+                    //TODO: Enviar comando cancelacion
+                }
             },
             onPause = {
-                if (state == ProcessIndicatorsState.Paused){
-                    viewModel.updateVitalsMonitoring(ProcessIndicatorsState.Active)
-                    //TODO: reactivar
-                }else{
-                    viewModel.updateVitalsMonitoring(ProcessIndicatorsState.Paused)
+                if (state == MonitoringState.Paused) {
+                    if (prevState == MonitoringState.Enabling) {
+                        viewModel.updateVitalsMonitoring(prevState)
+                        //TODO: seguir con enabling
+                    } else if (prevState == MonitoringState.Disabling) {
+                        viewModel.updateVitalsMonitoring(prevState)
+                        //TODO: seguir con disabling
+                    }
+                } else {
+                    prevState = state
+                    viewModel.updateVitalsMonitoring(MonitoringState.Paused)
                     //TODO: pausar
                 }
 
             },
-            onStop = {
-                viewModel.updateProcessIndicatorsState(false)
-                viewModel.updateVitalsMonitoring(ProcessIndicatorsState.Inactive)
-                //TODO: enviar comando para terminar
+            onStop = { //TODO: manejar pause
+                if (state == MonitoringState.Enabling) {
+                    activationProcessMap.forEach { (process, _) ->
+                        viewModel.updateActivationMap(process, 0f)
+                    }
+                    viewModel.updateVitalsMonitoring(MonitoringState.Disabling)
+                    //TODO: comenzar disabling
+                } else {
+                    deactivationProcessMap.forEach { (process, _) ->
+                        viewModel.updateDectivationMap(process, 0f)
+                    }
+                    viewModel.updateVitalsMonitoring(MonitoringState.Enabling)
+                    //TODO: comenzar enabling
+                }
+            },
+            onEnd = {
+                if (state == MonitoringState.Enabling) {
+                    viewModel.updateVitalsMonitoring(MonitoringState.Enabled)
+                    //TODO: comenzar disabling
+                } else {
+                    viewModel.updateVitalsMonitoring(MonitoringState.Disabled)
+                    //TODO: comenzar enabling
+                }
             }
         )
     }
@@ -65,8 +99,8 @@ fun ActuationView(viewModel: MainViewModel){
 
 @Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
-fun ActuationViewPreview(){
-    DruidAppTheme{
+fun ActuationViewPreview() {
+    DruidAppTheme {
         Surface(
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background

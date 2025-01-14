@@ -6,7 +6,7 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.tfm.druidapp.views.customElements.ProcessIndicatorsState
+import com.tfm.druidapp.views.customElements.MonitoringState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -211,16 +211,10 @@ class MainViewModel : ViewModel() {
 
     ////////////////// RELACIONADO CON UI /////////////////////////////
     //ActuationView
-    private val _vitalsMonitoring = mutableStateOf(ProcessIndicatorsState.Inactive)
-    val vitalsMonitoring: State<ProcessIndicatorsState> get() = _vitalsMonitoring
-    fun updateVitalsMonitoring(monitoring: ProcessIndicatorsState){
+    private val _vitalsMonitoring = mutableStateOf(MonitoringState.Disabled)
+    val vitalsMonitoring: State<MonitoringState> get() = _vitalsMonitoring
+    fun updateVitalsMonitoring(monitoring: MonitoringState){
         _vitalsMonitoring.value = monitoring
-    }
-
-    private val _processIndicatorsExpanded = mutableStateOf(false)
-    val processIndicatorsExpanded: State<Boolean> get() = _processIndicatorsExpanded
-    fun updateProcessIndicatorsState(expanded: Boolean){
-        _processIndicatorsExpanded.value = expanded
     }
 
     private val _activationProcessMap = MutableStateFlow(mapOf<String, Float>(
@@ -232,6 +226,19 @@ class MainViewModel : ViewModel() {
     val activationProcessMap: StateFlow<Map<String, Float>> get() = _activationProcessMap
     fun updateActivationMap(key: String, newValue: Float) {
         _activationProcessMap.value = _activationProcessMap.value.toMutableMap().apply {
+            this[key] = newValue
+        }
+    }
+
+    private val _deactivationProcessMap = MutableStateFlow(mapOf<String, Float>(
+        "Desinflado" to 0f,
+        "Desacoplamiento" to 0f,
+        "Proceso1" to 0f,
+        "Proceso2" to 0f
+    ))
+    val deactivationProcessMap: StateFlow<Map<String, Float>> get() = _deactivationProcessMap
+    fun updateDectivationMap(key: String, newValue: Float) {
+        _deactivationProcessMap.value = _deactivationProcessMap.value.toMutableMap().apply {
             this[key] = newValue
         }
     }

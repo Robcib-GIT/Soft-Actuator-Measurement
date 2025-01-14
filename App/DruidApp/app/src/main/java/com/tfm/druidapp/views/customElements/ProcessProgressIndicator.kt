@@ -26,6 +26,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,30 +37,45 @@ import androidx.compose.ui.unit.dp
 import com.tfm.druidapp.R
 import com.tfm.druidapp.ui.theme.DruidAppTheme
 
-enum class ProcessIndicatorsState {
-    Active,
-    Inactive,
+enum class MonitoringState {
+    Enabled,
+    Enabling,
+    Disabled,
+    Disabling,
     Paused
 }
 
 @Composable
 fun ProcessProgressIndicator(
-    expanded: Boolean,
-    state: ProcessIndicatorsState,
+    state: MonitoringState,
     text: String,
     processMap: Map<String, Float>,
-    onRun: ()->Unit,
-    onPause: ()->Unit,
-    onStop: ()->Unit
-){
+    onRun: () -> Unit,
+    onPause: () -> Unit,
+    onStop: () -> Unit,
+    onEnd: () -> Unit
+) {
     val cornerRadius = 10.dp
+    val expanded = state == MonitoringState.Enabling || state == MonitoringState.Disabling || state == MonitoringState.Paused
     val shape = if (expanded) {
-        RoundedCornerShape(topStart = cornerRadius, topEnd = cornerRadius, bottomStart = 0.dp, bottomEnd = 0.dp)
+        RoundedCornerShape(
+            topStart = cornerRadius,
+            topEnd = cornerRadius,
+            bottomStart = 0.dp,
+            bottomEnd = 0.dp
+        )
     } else {
         RoundedCornerShape(cornerRadius)
     }
     val completedProcesses = processMap.count { it.value == 1f }
     val numberOfProcesses = processMap.size
+
+    LaunchedEffect(completedProcesses, numberOfProcesses) {
+        if (completedProcesses == numberOfProcesses && numberOfProcesses > 0) {
+            onEnd()
+        }
+    }
+
     Column(
         modifier = Modifier
             .clip(shape)
@@ -80,20 +96,20 @@ fun ProcessProgressIndicator(
                 color = MaterialTheme.colorScheme.onPrimary
             )
 
-            if(!expanded){
-                if (state == ProcessIndicatorsState.Inactive){
-                    processControlButton(R.drawable.baseline_play_arrow_24){
+            if (!expanded) {
+                if (state == MonitoringState.Disabled) {
+                    processControlButton(R.drawable.baseline_play_arrow_24) {
                         //TODO
                         onRun()
                     }
-                }else{
-                    processControlButton(R.drawable.baseline_stop_24){
+                } else {
+                    processControlButton(R.drawable.baseline_stop_24) {
                         //TODO
                         onStop()
                     }
                 }
 
-            }else{
+            } else {
                 Text(
                     text = "${completedProcesses}/${numberOfProcesses}",
                     color = MaterialTheme.colorScheme.onPrimary
@@ -104,15 +120,21 @@ fun ProcessProgressIndicator(
     AnimatedVisibility(
         visible = expanded,
         enter = expandVertically(
-            expandFrom = Alignment.Top),
+            expandFrom = Alignment.Top
+        ),
         exit = shrinkVertically(
             shrinkTowards = Alignment.Top // Se contrae hacia arriba
         )
-    ){
+    ) {
         Column(
             modifier = Modifier
                 .clip(
-                    RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp, bottomStart = cornerRadius, bottomEnd = cornerRadius)
+                    RoundedCornerShape(
+                        topStart = 0.dp,
+                        topEnd = 0.dp,
+                        bottomStart = cornerRadius,
+                        bottomEnd = cornerRadius
+                    )
                 )
                 .background(Color.DarkGray)
                 .padding(start = 16.dp, end = 16.dp, bottom = 6.dp)
@@ -124,7 +146,7 @@ fun ProcessProgressIndicator(
                 color = MaterialTheme.colorScheme.onPrimaryContainer
             )
 
-            processMap.forEach{(process, progress)->
+            processMap.forEach { (process, progress) ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -135,19 +157,21 @@ fun ProcessProgressIndicator(
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                     LinearProgressIndicator(
-                        progress = {progress},
+                        progress = { progress },
                         color = Color.Green,
                         trackColor = MaterialTheme.colorScheme.onPrimaryContainer,
                         gapSize = 0.dp,
                         drawStopIndicator = {}
                     )
-                    Icon(imageVector = Icons.Default.Done,
+                    Icon(
+                        imageVector = Icons.Default.Done,
                         contentDescription = null,
-                        tint = if (progress == 1f){
+                        tint = if (progress == 1f) {
                             Color.Green
-                        }else{
+                        } else {
                             Color.Transparent
-                        })
+                        }
+                    )
 
                 }
             }
@@ -156,20 +180,19 @@ fun ProcessProgressIndicator(
                 horizontalArrangement = Arrangement.Center,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                if (state == ProcessIndicatorsState.Active){
-                    processControlButton(R.drawable.baseline_pause_24){
-                        //TODO
-                        onPause()
+                processControlButton(
+                    painterId = if (state == MonitoringState.Enabling || state == MonitoringState.Disabling) {
+                        R.drawable.baseline_pause_24
+                    } else {
+                        R.drawable.baseline_play_arrow_24
                     }
-                }else{
-                    processControlButton(R.drawable.baseline_play_arrow_24){
-                        //TODO
-                        onPause()
-                    }
+                ) {
+                    //TODO
+                    onPause()
                 }
 
                 Spacer(modifier = Modifier.width(6.dp))
-                processControlButton(R.drawable.baseline_stop_24){
+                processControlButton(R.drawable.baseline_stop_24) {
                     //TODO
                     onStop()
                 }
@@ -180,7 +203,7 @@ fun ProcessProgressIndicator(
 }
 
 @Composable
-fun processControlButton(painterId: Int, onClick: ()->Unit){
+fun processControlButton(painterId: Int, onClick: () -> Unit) {
     IconButton(
         modifier = Modifier.size(26.dp),
         onClick = {
@@ -202,7 +225,7 @@ fun processControlButton(painterId: Int, onClick: ()->Unit){
 
 @Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
-fun ProcessProgressIndicatorsPreview(){
+fun ProcessProgressIndicatorsPreview() {
     DruidAppTheme {
         Column(
             modifier = Modifier
@@ -210,7 +233,7 @@ fun ProcessProgressIndicatorsPreview(){
                 .background(MaterialTheme.colorScheme.background)
                 .padding(6.dp)
         ) {
-            Spacer(modifier = Modifier. height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
             val expanded = true
             val processes = mapOf<String, Float>(
                 "Proceso1" to 1f,
@@ -220,13 +243,13 @@ fun ProcessProgressIndicatorsPreview(){
                 "Proceso5" to 0f,
             )
             ProcessProgressIndicator(
-                expanded = expanded,
-                state = ProcessIndicatorsState.Inactive,
+                state = MonitoringState.Disabled,
                 text = "Iniciar mediciones",
                 processMap = processes,
                 onRun = {},
                 onPause = {},
-                onStop = {}
+                onStop = {},
+                onEnd = {}
             )
         }
     }
