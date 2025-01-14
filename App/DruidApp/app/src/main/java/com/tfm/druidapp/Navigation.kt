@@ -20,7 +20,7 @@ fun Navigation(navController: NavHostController, viewModel: MainViewModel, pd: P
 
     NavHost(
         navController = navController,// as NavHostController,
-        startDestination = Screen.Monitoring.route,
+        startDestination = Screen.Actuation.route,
         modifier = Modifier.padding(pd)
     ) {
         composable(Screen.Monitoring.route) {
@@ -28,7 +28,7 @@ fun Navigation(navController: NavHostController, viewModel: MainViewModel, pd: P
         }
 
         composable(Screen.Actuation.route) {
-            ActuationView(viewModel)
+            ActuationView(viewModel, navController)
         }
 
         composable(Screen.Robot.route) {

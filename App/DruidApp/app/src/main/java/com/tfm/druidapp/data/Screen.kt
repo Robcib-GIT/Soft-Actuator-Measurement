@@ -70,8 +70,8 @@ val allScreens = listOf(
 )
 
 val screensWithNav = listOf(
-    Screen.Monitoring,
     Screen.Actuation,
+    Screen.Monitoring,
     Screen.Robot
 )
 val screensInDrawer = listOf(

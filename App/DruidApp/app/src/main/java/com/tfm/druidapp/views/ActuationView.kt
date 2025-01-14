@@ -14,17 +14,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
 import com.tfm.druidapp.data.MainViewModel
+import com.tfm.druidapp.data.Screen
 import com.tfm.druidapp.ui.theme.DruidAppTheme
 import com.tfm.druidapp.views.customElements.MonitoringState
 import com.tfm.druidapp.views.customElements.ProcessProgressIndicator
 
 @Composable
-fun ActuationView(viewModel: MainViewModel) {
+fun ActuationView(viewModel: MainViewModel, navController: NavHostController) {
     val state by viewModel.vitalsMonitoring
     val activationProcessMap by viewModel.activationProcessMap.collectAsState()
     val deactivationProcessMap by viewModel.deactivationProcessMap.collectAsState()
-    var prevState = MonitoringState.Enabling
 
     Column(
         modifier = Modifier
@@ -75,12 +77,10 @@ fun ActuationView(viewModel: MainViewModel) {
                 if (state == MonitoringState.Enabling || state == MonitoringState.EnPaused) {
                     viewModel.resetActivationMap()
                     viewModel.updateVitalsMonitoring(MonitoringState.Disabling)
-                    prevState = MonitoringState.Disabling
                     //TODO: comenzar disabling
                 } else {
                     viewModel.resetDeactivationMap()
                     viewModel.updateVitalsMonitoring(MonitoringState.Enabling)
-                    prevState = MonitoringState.Enabling
                     //TODO: comenzar enabling
                 }
             },
@@ -88,11 +88,12 @@ fun ActuationView(viewModel: MainViewModel) {
                 if (state == MonitoringState.Enabling) {
                     viewModel.updateVitalsMonitoring(MonitoringState.Enabled)
                     viewModel.resetActivationMap()
-                    //TODO: comenzar disabling
+                    navController.navigate(Screen.Monitoring.route)
+                    viewModel.showToast("Monitorización activada")
                 } else {
                     viewModel.updateVitalsMonitoring(MonitoringState.Disabled)
                     viewModel.resetDeactivationMap()
-                    //TODO: comenzar enabling
+                    viewModel.showToast("Monitorización desactivada ")
                 }
             }
         )
@@ -109,7 +110,8 @@ fun ActuationViewPreview() {
             color = MaterialTheme.colorScheme.background
         ) {
             val vm: MainViewModel = viewModel()
-            ActuationView(vm)
+            val navController = rememberNavController()
+            ActuationView(vm, navController)
         }
     }
 }
