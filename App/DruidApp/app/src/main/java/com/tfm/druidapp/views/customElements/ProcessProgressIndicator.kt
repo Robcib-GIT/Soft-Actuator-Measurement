@@ -42,7 +42,8 @@ enum class MonitoringState {
     Enabling,
     Disabled,
     Disabling,
-    Paused
+    EnPaused,
+    DisPaused
 }
 
 @Composable
@@ -56,7 +57,7 @@ fun ProcessProgressIndicator(
     onEnd: () -> Unit
 ) {
     val cornerRadius = 10.dp
-    val expanded = state == MonitoringState.Enabling || state == MonitoringState.Disabling || state == MonitoringState.Paused
+    val expanded = state != MonitoringState.Enabled && state != MonitoringState.Disabled
     val shape = if (expanded) {
         RoundedCornerShape(
             topStart = cornerRadius,

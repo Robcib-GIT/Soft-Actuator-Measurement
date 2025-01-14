@@ -33,12 +33,12 @@ fun ActuationView(viewModel: MainViewModel) {
     ) {
         ProcessProgressIndicator(
             state = state,
-            text = if (state == MonitoringState.Disabled || state == MonitoringState.Enabling || prevState == MonitoringState.Enabling) {
+            text = if (state == MonitoringState.Disabled || state == MonitoringState.Enabling || state == MonitoringState.EnPaused) {
                 "Iniciar monitorización"
             } else {
                 "Detener monitorización"
             },
-            processMap = if (state == MonitoringState.Enabling || prevState == MonitoringState.Enabling) {
+            processMap = if (state == MonitoringState.Disabled || state == MonitoringState.Enabling || state == MonitoringState.EnPaused) {
                 activationProcessMap
             } else {
                 deactivationProcessMap
@@ -53,17 +53,18 @@ fun ActuationView(viewModel: MainViewModel) {
                 }
             },
             onPause = {
-                if (state == MonitoringState.Paused) {
-                    if (prevState == MonitoringState.Enabling) {
-                        viewModel.updateVitalsMonitoring(prevState)
-                        //TODO: seguir con enabling
-                    } else if (prevState == MonitoringState.Disabling) {
-                        viewModel.updateVitalsMonitoring(prevState)
-                        //TODO: seguir con disabling
+                if (state == MonitoringState.EnPaused) {
+                    viewModel.updateVitalsMonitoring(MonitoringState.Enabling)
+                    //TODO: seguir con enabling
+                } else if(state == MonitoringState.DisPaused){
+                    viewModel.updateVitalsMonitoring(MonitoringState.Disabling)
+                    //TODO: seguir con disabling
+                }else {
+                    if (state == MonitoringState.Enabling){
+                        viewModel.updateVitalsMonitoring(MonitoringState.EnPaused)
+                    }else{
+                        viewModel.updateVitalsMonitoring(MonitoringState.DisPaused)
                     }
-                } else {
-                    prevState = state
-                    viewModel.updateVitalsMonitoring(MonitoringState.Paused)
                     //TODO: pausar
                 }
 
@@ -74,16 +75,19 @@ fun ActuationView(viewModel: MainViewModel) {
                         viewModel.updateActivationMap(process, 0f)
                     }
                     viewModel.updateVitalsMonitoring(MonitoringState.Disabling)
+                    prevState = MonitoringState.Disabling
                     //TODO: comenzar disabling
                 } else {
                     deactivationProcessMap.forEach { (process, _) ->
                         viewModel.updateDectivationMap(process, 0f)
                     }
                     viewModel.updateVitalsMonitoring(MonitoringState.Enabling)
+                    prevState = MonitoringState.Enabling
                     //TODO: comenzar enabling
                 }
             },
             onEnd = {
+                prevState = state
                 if (state == MonitoringState.Enabling) {
                     viewModel.updateVitalsMonitoring(MonitoringState.Enabled)
                     //TODO: comenzar disabling
