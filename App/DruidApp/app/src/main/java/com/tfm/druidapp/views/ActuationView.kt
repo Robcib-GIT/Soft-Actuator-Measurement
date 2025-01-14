@@ -1,6 +1,7 @@
 package com.tfm.druidapp.views
 
 import android.content.res.Configuration
+import android.util.Log
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -46,6 +47,7 @@ fun ActuationView(viewModel: MainViewModel) {
             onRun = {
                 if (state == MonitoringState.Disabled) {
                     viewModel.updateVitalsMonitoring(MonitoringState.Enabling)
+                    viewModel.simularProcesos()
                     //TODO: Enviar comando inicializacion
                 } else {
                     viewModel.updateVitalsMonitoring(MonitoringState.Disabling)
@@ -70,29 +72,26 @@ fun ActuationView(viewModel: MainViewModel) {
 
             },
             onStop = { //TODO: manejar pause
-                if (state == MonitoringState.Enabling) {
-                    activationProcessMap.forEach { (process, _) ->
-                        viewModel.updateActivationMap(process, 0f)
-                    }
+                if (state == MonitoringState.Enabling || state == MonitoringState.EnPaused) {
+                    viewModel.resetActivationMap()
                     viewModel.updateVitalsMonitoring(MonitoringState.Disabling)
                     prevState = MonitoringState.Disabling
                     //TODO: comenzar disabling
                 } else {
-                    deactivationProcessMap.forEach { (process, _) ->
-                        viewModel.updateDectivationMap(process, 0f)
-                    }
+                    viewModel.resetDeactivationMap()
                     viewModel.updateVitalsMonitoring(MonitoringState.Enabling)
                     prevState = MonitoringState.Enabling
                     //TODO: comenzar enabling
                 }
             },
             onEnd = {
-                prevState = state
                 if (state == MonitoringState.Enabling) {
                     viewModel.updateVitalsMonitoring(MonitoringState.Enabled)
+                    viewModel.resetActivationMap()
                     //TODO: comenzar disabling
                 } else {
                     viewModel.updateVitalsMonitoring(MonitoringState.Disabled)
+                    viewModel.resetDeactivationMap()
                     //TODO: comenzar enabling
                 }
             }

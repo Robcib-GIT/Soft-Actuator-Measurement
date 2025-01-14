@@ -68,7 +68,7 @@ fun ProcessProgressIndicator(
     } else {
         RoundedCornerShape(cornerRadius)
     }
-    val completedProcesses = processMap.count { it.value == 1f }
+    val completedProcesses = processMap.count { it.value >= 1f }
     val numberOfProcesses = processMap.size
 
     LaunchedEffect(completedProcesses, numberOfProcesses) {
@@ -98,18 +98,14 @@ fun ProcessProgressIndicator(
             )
 
             if (!expanded) {
-                if (state == MonitoringState.Disabled) {
-                    processControlButton(R.drawable.baseline_play_arrow_24) {
-                        //TODO
-                        onRun()
-                    }
-                } else {
-                    processControlButton(R.drawable.baseline_stop_24) {
-                        //TODO
-                        onStop()
-                    }
+                processControlButton(painterId = if(state == MonitoringState.Disabled){
+                    R.drawable.baseline_play_arrow_24
+                }else{
+                    R.drawable.baseline_stop_24
+                }) {
+                    //TODO
+                    onRun()
                 }
-
             } else {
                 Text(
                     text = "${completedProcesses}/${numberOfProcesses}",
@@ -171,7 +167,7 @@ fun ProcessProgressIndicator(
                     Icon(
                         imageVector = Icons.Default.Done,
                         contentDescription = null,
-                        tint = if (progress == 1f) {
+                        tint = if (progress >= 1f) {
                             Color.Green
                         } else {
                             Color.Transparent
@@ -247,7 +243,7 @@ fun ProcessProgressIndicatorsPreview() {
                 "Proceso5" to 0f,
             )
             ProcessProgressIndicator(
-                state = MonitoringState.Enabling,
+                state = MonitoringState.Enabled,
                 text = "Iniciar mediciones",
                 processMap = processes,
                 onRun = {},

@@ -1,5 +1,6 @@
 package com.tfm.druidapp.data
 
+import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
@@ -229,6 +230,13 @@ class MainViewModel : ViewModel() {
             this[key] = newValue
         }
     }
+    fun resetActivationMap(){
+        _activationProcessMap.value = _activationProcessMap.value.toMutableMap().apply {
+            keys.forEach { key ->
+                this[key] = 0f
+            }
+        }
+    }
 
     private val _deactivationProcessMap = MutableStateFlow(mapOf<String, Float>(
         "Desinflado" to 0f,
@@ -242,6 +250,31 @@ class MainViewModel : ViewModel() {
             this[key] = newValue
         }
     }
+    fun resetDeactivationMap(){
+        _deactivationProcessMap.value = _deactivationProcessMap.value.toMutableMap().apply {
+            keys.forEach { key ->
+                this[key] = 0f
+            }
+        }
+    }
+
+    fun simularProcesos() { //TODO: borrar
+        viewModelScope.launch {
+            if (vitalsMonitoring.value == MonitoringState.Enabling) {
+                // Lanza un proceso por cada elemento en el mapa
+                activationProcessMap.value.forEach { (process, progress) ->
+                    var currentProgress = progress
+                    while (currentProgress < 1f) {
+                        delay(100)
+                        currentProgress += 0.1f
+                        updateActivationMap(process, currentProgress)
+                    }
+                    Log.d("Pruebas","Progreso $currentProgress")
+                }
+            }
+        }
+    }
+
 
     //RobotView
     private val _wsUriEdited: MutableState<String> = mutableStateOf("ws://192.168.1.67:9090")//192.168.2.181//192.168.1.67
