@@ -151,18 +151,22 @@ fun ProcessProgressIndicator(
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Text(
                         text = process,
-                        color = MaterialTheme.colorScheme.onPrimary
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        softWrap = true,
+                        modifier = Modifier.weight(1f)
                     )
                     LinearProgressIndicator(
                         progress = { progress },
                         color = Color.Green,
                         trackColor = MaterialTheme.colorScheme.onPrimaryContainer,
                         gapSize = 0.dp,
-                        drawStopIndicator = {}
+                        drawStopIndicator = {},
+                        modifier = Modifier.weight(2f)
                     )
                     Icon(
                         imageVector = Icons.Default.Done,
@@ -235,16 +239,15 @@ fun ProcessProgressIndicatorsPreview() {
                 .padding(6.dp)
         ) {
             Spacer(modifier = Modifier.height(16.dp))
-            val expanded = true
             val processes = mapOf<String, Float>(
-                "Proceso1" to 1f,
+                "Procesosgssgs1 shgss" to 1f,
                 "Proceso2" to 1f,
                 "Proceso3" to 0.5f,
                 "Proceso4" to 1f,
                 "Proceso5" to 0f,
             )
             ProcessProgressIndicator(
-                state = MonitoringState.Disabled,
+                state = MonitoringState.Enabling,
                 text = "Iniciar mediciones",
                 processMap = processes,
                 onRun = {},
