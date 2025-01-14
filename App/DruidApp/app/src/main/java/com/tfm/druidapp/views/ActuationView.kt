@@ -86,9 +86,9 @@ fun ActuationView(viewModel: MainViewModel, navController: NavHostController) {
             },
             onEnd = {
                 if (state == MonitoringState.Enabling) {
+                    navController.navigate(Screen.Monitoring.route)
                     viewModel.updateVitalsMonitoring(MonitoringState.Enabled)
                     viewModel.resetActivationMap()
-                    navController.navigate(Screen.Monitoring.route)
                     viewModel.showToast("Monitorización activada")
                 } else {
                     viewModel.updateVitalsMonitoring(MonitoringState.Disabled)
