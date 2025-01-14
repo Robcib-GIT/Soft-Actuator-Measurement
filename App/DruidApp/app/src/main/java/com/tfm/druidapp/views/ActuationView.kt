@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -23,14 +24,8 @@ import com.tfm.druidapp.views.customElements.ProcessProgressIndicator
 fun ActuationView(viewModel: MainViewModel){
     val expanded by viewModel.processIndicatorsExpanded
     val state by viewModel.vitalsMonitoring
+    val activationProcessMap by viewModel.activationProcessMap.collectAsState()
 
-    val processes = mapOf<String, Float>( //TODO: relacionar con viewmodel
-        "Proceso1" to 1f,
-        "Proceso2" to 1f,
-        "Proceso3" to 0.5f,
-        "Proceso4" to 1f,
-        "Proceso5" to 0f,
-    )
 
     Column(
         modifier = Modifier
@@ -41,7 +36,8 @@ fun ActuationView(viewModel: MainViewModel){
         ProcessProgressIndicator(
             expanded = expanded,
             state = state,
-            processMap = processes,
+            text = "Iniciar mediciones",
+            processMap = activationProcessMap,
             onRun = {
                 viewModel.updateProcessIndicatorsState(true)
                 viewModel.updateVitalsMonitoring(ProcessIndicatorsState.Active)

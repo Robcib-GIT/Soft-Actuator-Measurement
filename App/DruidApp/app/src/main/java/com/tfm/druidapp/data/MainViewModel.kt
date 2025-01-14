@@ -3,7 +3,6 @@ package com.tfm.druidapp.data
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -224,9 +223,18 @@ class MainViewModel : ViewModel() {
         _processIndicatorsExpanded.value = expanded
     }
 
-    val activationProcessMap = mutableStateMapOf<String, MutableStateFlow<Float>>(
-        //TODO
-    )
+    private val _activationProcessMap = MutableStateFlow(mapOf<String, Float>(
+        "Acoplamiento" to 0f,
+        "Inflado" to 0f,
+        "Proceso1" to 0f,
+        "Proceso2" to 0f
+    ))
+    val activationProcessMap: StateFlow<Map<String, Float>> get() = _activationProcessMap
+    fun updateActivationMap(key: String, newValue: Float) {
+        _activationProcessMap.value = _activationProcessMap.value.toMutableMap().apply {
+            this[key] = newValue
+        }
+    }
 
     //RobotView
     private val _wsUriEdited: MutableState<String> = mutableStateOf("ws://192.168.1.67:9090")//192.168.2.181//192.168.1.67

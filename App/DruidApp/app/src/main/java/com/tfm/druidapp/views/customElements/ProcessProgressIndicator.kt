@@ -46,6 +46,7 @@ enum class ProcessIndicatorsState {
 fun ProcessProgressIndicator(
     expanded: Boolean,
     state: ProcessIndicatorsState,
+    text: String,
     processMap: Map<String, Float>,
     onRun: ()->Unit,
     onPause: ()->Unit,
@@ -74,7 +75,7 @@ fun ProcessProgressIndicator(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Iniciar mediciones",
+                text = text,
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onPrimary
             )
@@ -221,6 +222,7 @@ fun ProcessProgressIndicatorsPreview(){
             ProcessProgressIndicator(
                 expanded = expanded,
                 state = ProcessIndicatorsState.Inactive,
+                text = "Iniciar mediciones",
                 processMap = processes,
                 onRun = {},
                 onPause = {},
