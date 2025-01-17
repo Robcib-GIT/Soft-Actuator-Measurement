@@ -11,7 +11,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
+import com.tfm.druidapp.data.DataStoreManager
+import com.tfm.druidapp.data.MainViewModel
 import com.tfm.druidapp.ui.theme.DruidAppTheme
 
 class MainActivity : ComponentActivity() {
@@ -24,7 +27,9 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    App()
+                    val dataStoreManager = DataStoreManager(LocalContext.current)
+                    val viewModel = MainViewModel(dataStoreManager)
+                    App(viewModel = viewModel)
                 }
             }
         }

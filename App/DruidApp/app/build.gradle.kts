@@ -61,6 +61,8 @@ dependencies {
     implementation("org.java-websocket:Java-WebSocket:1.5.2")
     //Json
     implementation("com.google.code.gson:gson:2.10")
+    //DatasStore
+    implementation("androidx.datastore:datastore-preferences:1.1.2")
 
     implementation("androidx.core:core-ktx:1.13.1") //para que no de problemas bajado
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:$lifecycle_version")

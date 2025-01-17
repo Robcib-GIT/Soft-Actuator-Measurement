@@ -13,10 +13,27 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import java.net.URI
 
-class MainViewModel : ViewModel() {
+class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel() {
+
+    ////////////////// DataStore /////////////////////////////
+    private val _settingsData = MutableStateFlow(SettingsData())
+    val settingsData: StateFlow<SettingsData> get() = _settingsData
+    fun saveSettings(settingsData: SettingsData) {
+        viewModelScope.launch {
+            dataStoreManager.saveToDataStore(settingsData)
+        }
+    }
+    fun clearSettings() {
+        viewModelScope.launch {
+            dataStoreManager.clearDataStore()
+        }
+    }
+
     ////////////////// UTILES /////////////////////////////
     //TOAST
     private val _toastMessage = MutableStateFlow<String?>(null)
@@ -64,6 +81,11 @@ class MainViewModel : ViewModel() {
     lateinit var wsClient: RosWebSocketClient
     init {
         connectWebSocket()
+        dataStoreManager.getFromDataStore()
+            .onEach {
+                _settingsData.value = it
+            }
+            .launchIn(viewModelScope)
     }
 
     fun connectWebSocket() {

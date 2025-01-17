@@ -216,6 +216,6 @@ fun DrawerItem(
 @Composable
 fun AppPreview(){
     DruidAppTheme {
-        App()
+        //App()
     }
 }
