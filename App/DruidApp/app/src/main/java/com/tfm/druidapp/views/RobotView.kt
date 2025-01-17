@@ -12,12 +12,15 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
@@ -34,8 +37,11 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -48,10 +54,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
+import com.tfm.druidapp.data.DataStoreManager
 import com.tfm.druidapp.data.MainViewModel
 import com.tfm.druidapp.data.SettingsData
 import com.tfm.druidapp.data.TopicInfo
@@ -105,6 +114,13 @@ fun RobotView(viewModel: MainViewModel){
             },
             onUnchecked = {topic->
                 viewModel.wsClient.unsubscribeFromTopic(topic = topic)
+            }
+        )
+
+        VictimInfoEditor(
+            settingsData = settingsData,
+            onAccept = {
+                viewModel.saveSettings(it)
             }
         )
 
@@ -258,8 +274,96 @@ fun UriEditor(
     }
 }
 
+@Composable
+fun VictimInfoEditor(
+    settingsData: SettingsData,
+    onAccept: (SettingsData)->Unit
+){
+    var expanded by remember { mutableStateOf(false) }
+    var editedAge by remember { mutableStateOf(settingsData.age.toString()) }
+    var editedGender by remember { mutableStateOf(settingsData.gender) }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+    ) {
+        // Botón con texto fijo
+        Button(
+            onClick = { expanded = true },
+            shape = RoundedCornerShape(6.dp),
+            contentPadding = PaddingValues(horizontal = 16.dp)
+        ) {
+            Text(
+                text = "Edad: ${settingsData.age}    |    Sexo: ${settingsData.gender}",
+                style = MaterialTheme.typography.bodyLarge
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Icon(imageVector = Icons.Default.Edit, contentDescription = null)
+        }
+
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = {
+                expanded = false
+                editedAge = settingsData.age.toString()},
+            modifier = Modifier.wrapContentWidth()
+        ) {
+            VictimInfoItem(
+                text = "Edad",
+                value = editedAge,
+                type = 1,
+                onValueChange = {editedAge = it}
+            )
+            VictimInfoItem(
+                text = "Sexo",
+                value = editedGender,
+                type = 2,
+                onValueChange = {editedGender = it}
+            )
+            Button(
+                onClick = {
+                    expanded = false
+                    onAccept(settingsData.copy(age = editedAge.toInt(), gender = editedGender))
+                }
+            ) {
+                Text(text = "Aceptar")
+            }
+        }
+    }
+}
 
 
+@Composable
+fun VictimInfoItem(text: String, value: String, type: Int, onValueChange: (String)->Unit){
+    DropdownMenuItem(
+        text = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(text = text, style = MaterialTheme.typography.bodyLarge)
+                TextField(
+                    value = value,
+                    onValueChange = { onValueChange(it)},
+                    textStyle = MaterialTheme.typography.bodyLarge,
+                    singleLine = true,
+                    maxLines = 1,
+                    keyboardOptions = KeyboardOptions(keyboardType = if(type==1){
+                        KeyboardType.Number
+                    }else{
+                        KeyboardType.Text
+                    }),
+                    modifier = Modifier.width(if(type==1){
+                        60.dp
+                    }else{
+                        100.dp
+                    })
+                )
+
+            }
+        },
+        onClick = {}
+    )
+}
 @Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 fun RobotViewPreview(){
@@ -268,9 +372,10 @@ fun RobotViewPreview(){
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background
         ) {
-            val vm: MainViewModel = viewModel()
-            val navController = rememberNavController()
+            val dataStoreManager = DataStoreManager(LocalContext.current)
+            val vm = MainViewModel(dataStoreManager)
             RobotView(vm)
+            //VictimInfoEditor(settingsData = SettingsData(), onAccept ={} )
         }
     }
 }

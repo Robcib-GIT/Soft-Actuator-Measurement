@@ -31,7 +31,7 @@ class DataStoreManager(val context: Context) {
     fun getFromDataStore() = context.dataStore.data.map {
         SettingsData(
             age = it[AGE] ?: 30,
-            gender = it[GENDER] ?: "Male",
+            gender = it[GENDER] ?: "Hombre",
             wsUri = it[WS_URI] ?: "ws://192.168.1.67:9090"
         )
     }
