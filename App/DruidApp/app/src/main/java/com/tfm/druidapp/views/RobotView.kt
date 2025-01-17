@@ -37,6 +37,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -52,12 +53,14 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import com.tfm.druidapp.data.MainViewModel
+import com.tfm.druidapp.data.SettingsData
 import com.tfm.druidapp.data.TopicInfo
 import com.tfm.druidapp.ui.theme.DruidAppTheme
 
 @Composable
 fun RobotView(viewModel: MainViewModel){
-    val wsUriEdited by viewModel.wsUriEdited
+    val settingsData by viewModel.settingsData.collectAsState()
+    val wsUriEdited by viewModel.wsUriEdited.collectAsState()
     var isUriEditable by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
 
@@ -82,7 +85,9 @@ fun RobotView(viewModel: MainViewModel){
                 focusRequester.requestFocus()
             },
             onAccept = {
-                viewModel.updateWsUri(wsUriEdited)
+                //viewModel.updateWsUri(wsUriEdited)
+                viewModel.saveSettings(settingsData.copy(wsUri = wsUriEdited))
+                viewModel.connectWebSocket()
                 isUriEditable = false
             },
             onCancel = {

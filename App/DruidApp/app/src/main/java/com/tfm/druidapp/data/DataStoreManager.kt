@@ -17,19 +17,22 @@ class DataStoreManager(val context: Context) {
     companion object{
         val AGE = intPreferencesKey("age")
         val GENDER = stringPreferencesKey("gender")
+        val WS_URI = stringPreferencesKey("ws_uri")
     }
 
     suspend fun saveToDataStore(settingsData: SettingsData){
         context.dataStore.edit{
             it[AGE] = settingsData.age
             it[GENDER] = settingsData.gender
+            it[WS_URI] = settingsData.wsUri
         }
     }
 
     fun getFromDataStore() = context.dataStore.data.map {
         SettingsData(
             age = it[AGE] ?: 30,
-            gender = it[GENDER] ?: "Male"
+            gender = it[GENDER] ?: "Male",
+            wsUri = it[WS_URI] ?: "ws://192.168.1.67:9090"
         )
     }
 

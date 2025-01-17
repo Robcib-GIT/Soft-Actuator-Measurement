@@ -71,8 +71,8 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
         _connectionState.value = connected
     }
 
-    private val _wsUri: MutableState<String> = mutableStateOf("ws://192.168.1.67:9090")//192.168.2.181//192.168.1.67
-    val wsUri: State<String> get() = _wsUri
+    private val _wsUri = MutableStateFlow("")//: MutableState<String> = mutableStateOf("")//192.168.2.181//192.168.1.67//"ws://192.168.1.67:9090"
+    val wsUri: StateFlow<String> get() = _wsUri
     fun updateWsUri(uri: String){
         _wsUri.value = uri
         connectWebSocket()
@@ -84,8 +84,11 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
         dataStoreManager.getFromDataStore()
             .onEach {
                 _settingsData.value = it
+                _wsUri.value = it.wsUri
+                _wsUriEdited.value = it.wsUri
             }
             .launchIn(viewModelScope)
+
     }
 
     fun connectWebSocket() {
@@ -299,8 +302,8 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
 
 
     //RobotView
-    private val _wsUriEdited: MutableState<String> = mutableStateOf("ws://192.168.1.67:9090")//192.168.2.181//192.168.1.67
-    val wsUriEdited: State<String> get() = _wsUriEdited
+    private val _wsUriEdited = MutableStateFlow("")//MutableState<String> = mutableStateOf("")//192.168.2.181//192.168.1.67//ws://192.168.1.67:9090
+    val wsUriEdited: StateFlow<String> get() = _wsUriEdited
     fun updateWsUriEdited(uri: String){
         _wsUriEdited.value = uri
     }
