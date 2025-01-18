@@ -306,7 +306,7 @@ fun VictimInfoEditor(
             onDismissRequest = {
                 expanded = false
                 editedAge = settingsData.age.toString()},
-            modifier = Modifier.wrapContentWidth()
+            modifier = Modifier.width(300.dp)
         ) {
             VictimInfoItem(
                 text = "Edad",
@@ -320,14 +320,21 @@ fun VictimInfoEditor(
                 type = 2,
                 onValueChange = {editedGender = it}
             )
-            Button(
-                onClick = {
-                    expanded = false
-                    onAccept(settingsData.copy(age = editedAge.toInt(), gender = editedGender))
-                }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center
             ) {
-                Text(text = "Aceptar")
+                Button(
+                    onClick = {
+                        expanded = false
+                        onAccept(settingsData.copy(age = editedAge.toInt(), gender = editedGender))
+                    }
+                ) {
+                    Text(text = "Aceptar", style = MaterialTheme.typography.bodyLarge)
+                }
             }
+
         }
     }
 }
@@ -341,24 +348,52 @@ fun VictimInfoItem(text: String, value: String, type: Int, onValueChange: (Strin
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(text = text, style = MaterialTheme.typography.bodyLarge)
-                TextField(
-                    value = value,
-                    onValueChange = { onValueChange(it)},
-                    textStyle = MaterialTheme.typography.bodyLarge,
-                    singleLine = true,
-                    maxLines = 1,
-                    keyboardOptions = KeyboardOptions(keyboardType = if(type==1){
-                        KeyboardType.Number
-                    }else{
-                        KeyboardType.Text
-                    }),
-                    modifier = Modifier.width(if(type==1){
-                        60.dp
-                    }else{
-                        100.dp
-                    })
-                )
+                if(type==1){
+                    Spacer(modifier = Modifier.width(10.dp))
+                    TextField(
+                        value = value,
+                        onValueChange = { onValueChange(it)},
+                        textStyle = MaterialTheme.typography.bodyMedium,
+                        singleLine = true,
+                        maxLines = 1,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.width(60.dp)
+                    )
+                }else{
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ){
+                        Spacer(modifier = Modifier.width(10.dp))
+                        RadioButton(
+                            selected = (value == "Hombre"),
+                            onClick = {onValueChange("Hombre")},
+                            //modifier = Modifier.padding(end=8.dp),
+                            colors = RadioButtonDefaults.colors(
+                                selectedColor = Color.Green,
+                                unselectedColor = MaterialTheme.colorScheme.onPrimary
+                            )
+                        )
+                        Text(
+                            text = "Hombre",
+                            style = MaterialTheme.typography.bodyMedium)
 
+
+                        Spacer(modifier = Modifier.width(10.dp))
+
+                        RadioButton(
+                            selected = (value == "Mujer"),
+                            onClick = {onValueChange("Mujer")},
+                            modifier = Modifier.padding(end=8.dp),
+                            colors = RadioButtonDefaults.colors(
+                                selectedColor = Color.Green,
+                                unselectedColor = MaterialTheme.colorScheme.onPrimary
+                            )
+                        )
+                        Text(
+                            text = "Mujer",
+                            style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
             }
         },
         onClick = {}
