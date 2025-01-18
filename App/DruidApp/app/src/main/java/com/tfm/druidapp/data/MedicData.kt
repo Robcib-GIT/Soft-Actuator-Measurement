@@ -26,7 +26,22 @@ import com.tfm.druidapp.ui.theme.DruidAppTheme
 import com.tfm.druidapp.views.PPGView
 
 ////////////////////// MEDIC INFO //////////////////////
-
+data class NormalRange<T : Number>(
+    val min: T,
+    val max: T
+)
+data class NormalMedicRanges(
+    val ppm: NormalRange<Int>? = null,
+    val ibi: NormalRange<Float>? = null,
+    val frequency: NormalRange<Float>? = null,
+    val sdnn: NormalRange<Float>? = null,
+    val rmsdd: NormalRange<Float>? = null,
+    val amplitude: NormalRange<Float>? = null,
+    val riseTime: NormalRange<Float>? = null,
+    val sys: NormalRange<Int>? = null,
+    val dia: NormalRange<Int>? = null,
+    val temperature: NormalRange<Float>? = null
+)
 ////////////////////// GLASGOW //////////////////////
 data class GlasgowTestItem(
     val text: String,

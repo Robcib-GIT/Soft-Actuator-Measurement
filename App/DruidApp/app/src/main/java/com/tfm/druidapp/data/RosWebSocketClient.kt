@@ -71,7 +71,11 @@ class RosWebSocketClient(uri: URI, private val viewModel: MainViewModel) : WebSo
                 viewModel.updateConnectionState(false)
             }
         }
-
+        //Deshabilitar monitorizacion
+        viewModel.updateVitalsMonitoring(MonitoringState.Disabled)
+        viewModel.resetDeactivationMap()
+        //Resetear medic data
+        viewModel.resetMedicData()
     }
     fun disconnect() {
         if (isOpen) {
@@ -81,9 +85,6 @@ class RosWebSocketClient(uri: URI, private val viewModel: MainViewModel) : WebSo
                     topicInfo.subscribedTo.value = false
                 }
             }
-            //Deshabilitar monitorizacion
-            viewModel.updateVitalsMonitoring(MonitoringState.Disabled)
-            viewModel.resetDeactivationMap()
         }
         close()
     }

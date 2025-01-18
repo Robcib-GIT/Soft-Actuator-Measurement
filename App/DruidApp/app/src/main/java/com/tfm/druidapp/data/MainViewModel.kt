@@ -83,12 +83,15 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
 
         dataStoreManager.getFromDataStore()
             .onEach {
-                _settingsData.value = it
                 if (it.wsUri !=  _wsUri.value){
                     _wsUri.value = it.wsUri
                     _wsUriEdited.value = it.wsUri
                     connectWebSocket()
                 }
+                if (it.age !=  _settingsData.value.age || it.gender !=  _settingsData.value.gender){
+                    updateNormalMedicRanges()
+                }
+                _settingsData.value = it
             }
             .launchIn(viewModelScope)
 
@@ -124,9 +127,16 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
 
 
     ////////////////// RELACIONADO CON MEDIC DATA /////////////////////////////
-    private fun resetMedicData(){
+    fun resetMedicData(){ //TODO: añadir donde toque
         clearAmplitudes()
         updateTemperature(null)
+        updateBloodPressureData(MsgTypes.BloodPressureMsg())
+    }
+
+    private val _normalMedicRanges = mutableStateOf(NormalMedicRanges())
+    val normalMedicRanges: State<NormalMedicRanges> get() = _normalMedicRanges
+    fun updateNormalMedicRanges(){
+        //TODO: hacer
     }
 
     //Glasgow
