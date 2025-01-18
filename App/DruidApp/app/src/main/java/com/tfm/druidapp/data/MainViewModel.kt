@@ -135,8 +135,9 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
 
     private val _normalMedicRanges = mutableStateOf(NormalMedicRanges())
     val normalMedicRanges: State<NormalMedicRanges> get() = _normalMedicRanges
-    fun updateNormalMedicRanges(){
+    private fun updateNormalMedicRanges(){
         //TODO: hacer
+        _normalMedicRanges.value = calculateNormalRanges(age = settingsData.value.age, gender = settingsData.value.gender)
     }
 
     //Glasgow
