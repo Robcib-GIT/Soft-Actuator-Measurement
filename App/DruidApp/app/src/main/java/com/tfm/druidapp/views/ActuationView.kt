@@ -27,6 +27,7 @@ fun ActuationView(viewModel: MainViewModel, navController: NavHostController) {
     val state by viewModel.vitalsMonitoring
     val activationProcessMap by viewModel.activationProcessMap.collectAsState()
     val deactivationProcessMap by viewModel.deactivationProcessMap.collectAsState()
+    val enabled = (viewModel.vitalsMonitoring.value == MonitoringState.Enabled)
 
     Column(
         modifier = Modifier
@@ -48,9 +49,14 @@ fun ActuationView(viewModel: MainViewModel, navController: NavHostController) {
             },
             onRun = {
                 if (state == MonitoringState.Disabled) {
-                    viewModel.updateVitalsMonitoring(MonitoringState.Enabling)
-                    viewModel.simularProcesos()
-                    //TODO: Enviar comando inicializacion
+                    if (true/*enabled*/){ //TODO: comprobar y habilitar cuando no sean pruebas
+                        viewModel.updateVitalsMonitoring(MonitoringState.Enabling)
+                        viewModel.simularProcesos()
+                        //TODO: Enviar comando inicializacion
+                    }else{
+                        viewModel.showToast("Robot no conectado")
+                    }
+
                 } else {
                     viewModel.updateVitalsMonitoring(MonitoringState.Disabling)
                     //TODO: Enviar comando cancelacion

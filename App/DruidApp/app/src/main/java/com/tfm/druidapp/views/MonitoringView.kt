@@ -38,6 +38,7 @@ import com.tfm.druidapp.data.MainViewModel
 import com.tfm.druidapp.data.Screen
 import com.tfm.druidapp.ui.theme.DruidAppTheme
 import com.tfm.druidapp.views.customElements.GlasgowGauge
+import com.tfm.druidapp.views.customElements.MonitoringState
 import com.tfm.druidapp.views.customElements.PPG
 import com.tfm.druidapp.views.customElements.ThermometerIcon
 
@@ -45,6 +46,7 @@ import com.tfm.druidapp.views.customElements.ThermometerIcon
 fun MonitoringView(viewModel: MainViewModel, navController: NavHostController){
     val temperature by viewModel.temperature.collectAsState()
     val pressureData by viewModel.pressureData
+    val enabled = (viewModel.vitalsMonitoring.value == MonitoringState.Enabled)
 
     Column(
         modifier = Modifier
@@ -69,7 +71,8 @@ fun MonitoringView(viewModel: MainViewModel, navController: NavHostController){
             horizontalArrangement = Arrangement.SpaceAround
         ) {
 
-            PressureItem(title = "SYS", value = pressureData.sys)
+            PressureItem(title = "SYS", value = if (enabled) pressureData.sys else null)
+
 
             VerticalDivider(
                 modifier = Modifier.height(100.dp),
@@ -77,7 +80,7 @@ fun MonitoringView(viewModel: MainViewModel, navController: NavHostController){
             )
 
 
-            PressureItem(title = "DIA", value = pressureData.dia)
+            PressureItem(title = "DIA", value = if (enabled) pressureData.dia else null)
         }
 
         Row(
@@ -93,7 +96,7 @@ fun MonitoringView(viewModel: MainViewModel, navController: NavHostController){
                 .clip(RoundedCornerShape(10.dp))
                 .background(MaterialTheme.colorScheme.primary)
             ){
-                TemperatureDisplay(temperature = temperature)
+                TemperatureDisplay(temperature = if (enabled) temperature else null)
             }
             Box(modifier = Modifier
                 .fillMaxSize()
@@ -104,20 +107,6 @@ fun MonitoringView(viewModel: MainViewModel, navController: NavHostController){
                 GlasgowDisplay(score = viewModel.glasgowScore.value)
             }
         }
-
-        //TODO borrar prueba
-        val sensor1Data by viewModel.sensor1Data.collectAsState()
-        val sensor2Data by viewModel.sensor2Data.collectAsState()
-        val sensor3Data by viewModel.sensor3Data.collectAsState()
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceAround
-        ) {
-            Text(text = "S1: " + (sensor1Data?.let { String.format("%.2f", it) } ?: "--"))
-            Text(text = "S2: " + (sensor2Data?.let { String.format("%.2f", it) } ?: "--"))
-            Text(text = "S3: " + (sensor3Data?.let { String.format("%.2f", it) } ?: "--"))
-        }
-
     }
 }
 

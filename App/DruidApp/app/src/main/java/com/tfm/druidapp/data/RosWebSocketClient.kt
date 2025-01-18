@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.viewModelScope
 import com.tfm.druidapp.data.RosMsgUtilities.createJsonMessage
 import com.tfm.druidapp.data.RosMsgUtilities.parseRosMessage
+import com.tfm.druidapp.views.customElements.MonitoringState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -79,8 +80,10 @@ class RosWebSocketClient(uri: URI, private val viewModel: MainViewModel) : WebSo
                     unsubscribeFromTopic(topic = topic)
                     topicInfo.subscribedTo.value = false
                 }
-
             }
+            //Deshabilitar monitorizacion
+            viewModel.updateVitalsMonitoring(MonitoringState.Disabled)
+            viewModel.resetDeactivationMap()
         }
         close()
     }

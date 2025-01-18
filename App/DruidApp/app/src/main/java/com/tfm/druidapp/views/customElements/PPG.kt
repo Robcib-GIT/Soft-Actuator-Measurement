@@ -40,6 +40,7 @@ import com.tfm.druidapp.ui.theme.DruidAppTheme
 
 @Composable
 fun PPG(viewModel: MainViewModel, modifier: Modifier = Modifier) {
+    val enabled = (viewModel.vitalsMonitoring.value == MonitoringState.Enabled)
     val pulseAmplitudeList by viewModel.pulseAmplitudeList.collectAsState()
     val measuresInScreen = viewModel.maxPulseRegisters
     // Modifier base con características predeterminadas
@@ -78,15 +79,16 @@ fun PPG(viewModel: MainViewModel, modifier: Modifier = Modifier) {
                 }
 
                 drawLine(
-                    color = Color(0xB0504F4F), // Color de la línea
-                    start = Offset(0f, height / 2), // Empieza en el borde izquierdo y a la mitad del Canvas
-                    end = Offset(width, height / 2), // Termina en el borde derecho a la mitad del Canvas
-                    strokeWidth = 2f // Grosor de la línea
+                    color = Color(0xB0504F4F),
+                    start = Offset(0f, height / 2),
+                    end = Offset(width, height / 2),
+                    strokeWidth = 2f
                 )
 
                 // Dibujar el path en el Canvas
-                drawPath(path, color = Color.Green, style = Stroke(width = 4f))
-
+                if (enabled){ //TODO comprobar que funcione bien
+                    drawPath(path, color = Color.Green, style = Stroke(width = 4f))
+                }
 
             }
             Row (
