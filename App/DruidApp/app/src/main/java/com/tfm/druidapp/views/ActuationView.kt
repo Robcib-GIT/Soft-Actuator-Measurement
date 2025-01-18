@@ -27,7 +27,7 @@ fun ActuationView(viewModel: MainViewModel, navController: NavHostController) {
     val state by viewModel.vitalsMonitoring
     val activationProcessMap by viewModel.activationProcessMap.collectAsState()
     val deactivationProcessMap by viewModel.deactivationProcessMap.collectAsState()
-    val enabled = (viewModel.vitalsMonitoring.value == MonitoringState.Enabled)
+    val connected by viewModel.connectionState
 
     Column(
         modifier = Modifier
@@ -49,7 +49,7 @@ fun ActuationView(viewModel: MainViewModel, navController: NavHostController) {
             },
             onRun = {
                 if (state == MonitoringState.Disabled) {
-                    if (true/*enabled*/){ //TODO: comprobar y habilitar cuando no sean pruebas
+                    if (true/*connected*/){ //TODO: comprobar y habilitar cuando no sean pruebas
                         viewModel.updateVitalsMonitoring(MonitoringState.Enabling)
                         viewModel.simularProcesos()
                         //TODO: Enviar comando inicializacion

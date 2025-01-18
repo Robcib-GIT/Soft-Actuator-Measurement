@@ -28,12 +28,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.tfm.druidapp.data.DataStoreManager
 import com.tfm.druidapp.data.MainViewModel
 import com.tfm.druidapp.data.Screen
 import com.tfm.druidapp.ui.theme.DruidAppTheme
@@ -47,6 +50,7 @@ fun MonitoringView(viewModel: MainViewModel, navController: NavHostController){
     val temperature by viewModel.temperature.collectAsState()
     val pressureData by viewModel.pressureData
     val enabled = (viewModel.vitalsMonitoring.value == MonitoringState.Enabled)
+    val normalRanges by viewModel.normalMedicRanges
 
     Column(
         modifier = Modifier
@@ -71,7 +75,21 @@ fun MonitoringView(viewModel: MainViewModel, navController: NavHostController){
             horizontalArrangement = Arrangement.SpaceAround
         ) {
 
-            PressureItem(title = "SYS", value = if (enabled) pressureData.sys else null)
+            PressureItem(
+                title = "SYS",
+                value = if (enabled) pressureData.sys else null,
+                color = if(enabled){
+                    pressureData.sys?.let { value->
+                        if(value in normalRanges.sys.min..normalRanges.sys.max){
+                            MaterialTheme.colorScheme.onPrimary
+                        }else{
+                            Color.Red
+                        }
+                    } ?: MaterialTheme.colorScheme.onPrimaryContainer
+                }else{
+                    MaterialTheme.colorScheme.onPrimaryContainer
+                }
+            )
 
 
             VerticalDivider(
@@ -80,7 +98,21 @@ fun MonitoringView(viewModel: MainViewModel, navController: NavHostController){
             )
 
 
-            PressureItem(title = "DIA", value = if (enabled) pressureData.dia else null)
+            PressureItem(
+                title = "DIA",
+                value = if (enabled) pressureData.dia else null,
+                color = if(enabled){
+                    pressureData.dia?.let { value->
+                        if(value in normalRanges.sys.min..normalRanges.sys.max){
+                            MaterialTheme.colorScheme.onPrimary
+                        }else{
+                            Color.Red
+                        }
+                    } ?: MaterialTheme.colorScheme.onPrimaryContainer
+                }else{
+                    MaterialTheme.colorScheme.onPrimaryContainer
+                }
+                )
         }
 
         Row(
@@ -96,7 +128,20 @@ fun MonitoringView(viewModel: MainViewModel, navController: NavHostController){
                 .clip(RoundedCornerShape(10.dp))
                 .background(MaterialTheme.colorScheme.primary)
             ){
-                TemperatureDisplay(temperature = if (enabled) temperature else null)
+                TemperatureDisplay(
+                    temperature = if (enabled) temperature else null,
+                    color = if(enabled){
+                        temperature?.let { value->
+                            if(value in normalRanges.temperature.min..normalRanges.temperature.max){
+                                MaterialTheme.colorScheme.onPrimary
+                            }else{
+                                Color.Red
+                            }
+                        } ?: MaterialTheme.colorScheme.onPrimaryContainer
+                    }else{
+                        MaterialTheme.colorScheme.onPrimaryContainer
+                    }
+                    )
             }
             Box(modifier = Modifier
                 .fillMaxSize()
@@ -111,7 +156,7 @@ fun MonitoringView(viewModel: MainViewModel, navController: NavHostController){
 }
 
 @Composable
-fun PressureItem(title: String, value: Int?){ //TODO comprobar que sea int
+fun PressureItem(title: String, value: Int?, color: Color){ //TODO comprobar que sea int
     Row(
         modifier = Modifier.width(130.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -135,13 +180,14 @@ fun PressureItem(title: String, value: Int?){ //TODO comprobar que sea int
             text = value?.toString() ?: "--",
             style = MaterialTheme.typography.labelLarge,
             textAlign = TextAlign.End,
-            modifier = Modifier.fillMaxWidth()
-        ) //TODO relacionar con viewModel
+            modifier = Modifier.fillMaxWidth(),
+            color = color
+        )
     }
 }
 
 @Composable
-fun TemperatureDisplay(temperature: Float?){
+fun TemperatureDisplay(temperature: Float?, color: Color){
 
     Box(modifier = Modifier.fillMaxSize()){
         Row(
@@ -154,13 +200,14 @@ fun TemperatureDisplay(temperature: Float?){
             Text(
                 text = temperature?.let{String.format("%.1f", temperature)} ?: "--",
                 style = MaterialTheme.typography.labelLarge,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
+                color = color
             )
             Text(
                 text = "º",
                 style = MaterialTheme.typography.titleLarge,
-                textAlign = TextAlign.Center
-
+                textAlign = TextAlign.Center,
+                color = color
             )
         }
         Box(modifier = Modifier.padding(vertical = 6.dp, horizontal = 4.dp)){
@@ -231,7 +278,8 @@ fun MonitoringViewPreview(){
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background
         ) {
-            val vm: MainViewModel = viewModel()
+            val dataStoreManager = DataStoreManager(LocalContext.current)
+            val vm = MainViewModel(dataStoreManager)
             val navController = rememberNavController()
             MonitoringView(vm, navController)
         }

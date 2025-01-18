@@ -7,18 +7,17 @@ data class NormalRange<T : Number>(
 )
 
 data class NormalMedicRanges(
-    val ppm: NormalRange<Int>? = null,
+    val ppm: NormalRange<Int> = NormalRange(60,100),
     //val ibi: NormalRange<Float>? = null,
     //val frequency: NormalRange<Float>? = null,
     val sdnn: NormalRange<Float> = NormalRange(50f,150f),
     val rmsdd: NormalRange<Float> = NormalRange(20f,50f),
     //val amplitude: NormalRange<Float>? = null,
     val riseTime: NormalRange<Float> = NormalRange(100f,200f),
-    val sys: NormalRange<Int>? = null,
-    val dia: NormalRange<Int>? = null,
+    val sys: NormalRange<Int> = NormalRange(108,139),
+    val dia: NormalRange<Int>? = NormalRange(65,89),
     val temperature: NormalRange<Float> = NormalRange(35f,37.7f)
 )
-
 fun calculateNormalRanges(age: Int, gender: String): NormalMedicRanges {
     var ranges = NormalMedicRanges()
 

@@ -31,16 +31,16 @@ fun ThermometerIcon(temperature: Float) {
 
     val level = when {
         temperature > 40 -> 1f
-        temperature < 35 -> 0.4f
+        temperature < 32 -> 0.4f
         else -> {
-            val range = (temperature - 35) / 5
+            val range = (temperature - 32) / 8
             0.4f + range * (1f - 0.4f)
         }
     }
 
     var thermometerColor = when {
-        temperature > 37.2f -> Color.Red
-        temperature < 36.1 -> Color.Blue
+        temperature > 37.7f -> Color.Red
+        temperature < 35 -> Color.Blue
         else -> Color.White
     }
 
