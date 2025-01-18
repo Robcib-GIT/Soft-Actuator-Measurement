@@ -95,7 +95,7 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
     }
 
     fun connectWebSocket() {
-        Log.d("Pruebas", "Conectando a ${_wsUri.value}")
+        //Log.d("Pruebas", "Conectando a ${_wsUri.value}")
         // Crear una nueva instancia de WebSocketClient y conectarse
         wsClient = RosWebSocketClient(URI(_wsUri.value), this)
         wsClient.connect()

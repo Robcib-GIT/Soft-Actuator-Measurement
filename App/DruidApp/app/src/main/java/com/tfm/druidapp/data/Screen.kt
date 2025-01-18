@@ -15,12 +15,12 @@ sealed class Screen(val title: String, val route: String, @DrawableRes val icon:
     data object Actuation : Screen(
         title = "Actuación",
         route = "actuacion",
-        icon = R.drawable.baseline_front_hand_24
-    )
-    data object Robot : Screen(
-        title = "Robot",
-        route = "robot",
         icon = R.drawable.baseline_precision_manufacturing_24
+    )
+    data object Settings : Screen(
+        title = "Ajustes",
+        route = "settings",
+        icon = R.drawable.baseline_settings_24
     )
 
     /*
@@ -61,7 +61,7 @@ sealed class Screen(val title: String, val route: String, @DrawableRes val icon:
 val allScreens = listOf(
     Screen.Monitoring,
     Screen.Actuation,
-    Screen.Robot,
+    Screen.Settings,
     Screen.PPG,
     Screen.Glasgow,
     Screen.Project,
@@ -72,7 +72,7 @@ val allScreens = listOf(
 val screensWithNav = listOf(
     Screen.Actuation,
     Screen.Monitoring,
-    Screen.Robot
+    Screen.Settings
 )
 val screensInDrawer = listOf(
     Screen.Project,

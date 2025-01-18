@@ -10,7 +10,7 @@ import androidx.navigation.compose.composable
 import com.tfm.druidapp.data.MainViewModel
 import com.tfm.druidapp.views.ActuationView
 import com.tfm.druidapp.views.MonitoringView
-import com.tfm.druidapp.views.RobotView
+import com.tfm.druidapp.views.SettingsView
 import com.tfm.druidapp.data.Screen
 import com.tfm.druidapp.views.GlasgowView
 import com.tfm.druidapp.views.PPGView
@@ -31,8 +31,8 @@ fun Navigation(navController: NavHostController, viewModel: MainViewModel, pd: P
             ActuationView(viewModel, navController)
         }
 
-        composable(Screen.Robot.route) {
-            RobotView(viewModel)
+        composable(Screen.Settings.route) {
+            SettingsView(viewModel)
         }
 
         composable(Screen.PPG.route) {

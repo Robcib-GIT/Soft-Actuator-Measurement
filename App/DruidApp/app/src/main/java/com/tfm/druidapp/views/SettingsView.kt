@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -31,7 +30,6 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -58,8 +56,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.compose.rememberNavController
 import com.tfm.druidapp.data.DataStoreManager
 import com.tfm.druidapp.data.MainViewModel
 import com.tfm.druidapp.data.SettingsData
@@ -67,7 +63,7 @@ import com.tfm.druidapp.data.TopicInfo
 import com.tfm.druidapp.ui.theme.DruidAppTheme
 
 @Composable
-fun RobotView(viewModel: MainViewModel){
+fun SettingsView(viewModel: MainViewModel){
     val settingsData by viewModel.settingsData.collectAsState()
     val wsUriEdited by viewModel.wsUriEdited.collectAsState()
     var isUriEditable by remember { mutableStateOf(false) }
@@ -85,6 +81,9 @@ fun RobotView(viewModel: MainViewModel){
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
+        Text(
+            text = "Ajustes del robot",
+            style = MaterialTheme.typography.titleMedium)
         UriEditor(
             wsUriEdited = wsUriEdited,
             isUriEditable = isUriEditable,
@@ -117,6 +116,10 @@ fun RobotView(viewModel: MainViewModel){
             }
         )
 
+        Spacer(modifier = Modifier.height(20.dp))
+        Text(
+            text = "Información del paciente",
+            style = MaterialTheme.typography.titleMedium)
         VictimInfoEditor(
             settingsData = settingsData,
             onAccept = {
@@ -409,7 +412,7 @@ fun RobotViewPreview(){
         ) {
             val dataStoreManager = DataStoreManager(LocalContext.current)
             val vm = MainViewModel(dataStoreManager)
-            RobotView(vm)
+            SettingsView(vm)
             //VictimInfoEditor(settingsData = SettingsData(), onAccept ={} )
         }
     }
