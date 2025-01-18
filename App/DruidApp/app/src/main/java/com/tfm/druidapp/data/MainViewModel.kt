@@ -75,23 +75,27 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
     val wsUri: StateFlow<String> get() = _wsUri
     fun updateWsUri(uri: String){
         _wsUri.value = uri
-        connectWebSocket()
+        //connectWebSocket()
     }
 
     lateinit var wsClient: RosWebSocketClient
     init {
-        connectWebSocket()
+
         dataStoreManager.getFromDataStore()
             .onEach {
                 _settingsData.value = it
-                _wsUri.value = it.wsUri
-                _wsUriEdited.value = it.wsUri
+                if (it.wsUri !=  _wsUri.value){
+                    _wsUri.value = it.wsUri
+                    _wsUriEdited.value = it.wsUri
+                    connectWebSocket()
+                }
             }
             .launchIn(viewModelScope)
 
     }
 
     fun connectWebSocket() {
+        Log.d("Pruebas", "Conectando a ${_wsUri.value}")
         // Crear una nueva instancia de WebSocketClient y conectarse
         wsClient = RosWebSocketClient(URI(_wsUri.value), this)
         wsClient.connect()

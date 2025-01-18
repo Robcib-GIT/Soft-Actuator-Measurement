@@ -96,7 +96,7 @@ fun RobotView(viewModel: MainViewModel){
             onAccept = {
                 //viewModel.updateWsUri(wsUriEdited)
                 viewModel.saveSettings(settingsData.copy(wsUri = wsUriEdited))
-                viewModel.connectWebSocket()
+                //viewModel.connectWebSocket()
                 isUriEditable = false
             },
             onCancel = {
