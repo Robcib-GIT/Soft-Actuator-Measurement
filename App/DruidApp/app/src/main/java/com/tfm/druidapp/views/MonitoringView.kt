@@ -38,6 +38,8 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.tfm.druidapp.data.DataStoreManager
 import com.tfm.druidapp.data.MainViewModel
+import com.tfm.druidapp.data.MedicUtilities
+import com.tfm.druidapp.data.MedicUtilities.setColor
 import com.tfm.druidapp.data.Screen
 import com.tfm.druidapp.ui.theme.DruidAppTheme
 import com.tfm.druidapp.views.customElements.GlasgowGauge
@@ -78,17 +80,16 @@ fun MonitoringView(viewModel: MainViewModel, navController: NavHostController){
             PressureItem(
                 title = "SYS",
                 value = if (enabled) pressureData.sys else null,
-                color = if(enabled){
-                    pressureData.sys?.let { value->
-                        if(value in normalRanges.sys.min..normalRanges.sys.max){
-                            MaterialTheme.colorScheme.onPrimary
-                        }else{
-                            Color.Red
-                        }
-                    } ?: MaterialTheme.colorScheme.onPrimaryContainer
-                }else{
-                    MaterialTheme.colorScheme.onPrimaryContainer
-                }
+                color = setColor(
+                    value = pressureData.sys,
+                    range = normalRanges.sys,
+                    enabled = enabled,
+                    colors = MedicUtilities.MedicDataColors(
+                        onCorrect = MaterialTheme.colorScheme.onPrimary,
+                        onIncorrect = Color.Red,
+                        onIdle = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                )
             )
 
 
@@ -101,18 +102,17 @@ fun MonitoringView(viewModel: MainViewModel, navController: NavHostController){
             PressureItem(
                 title = "DIA",
                 value = if (enabled) pressureData.dia else null,
-                color = if(enabled){
-                    pressureData.dia?.let { value->
-                        if(value in normalRanges.sys.min..normalRanges.sys.max){
-                            MaterialTheme.colorScheme.onPrimary
-                        }else{
-                            Color.Red
-                        }
-                    } ?: MaterialTheme.colorScheme.onPrimaryContainer
-                }else{
-                    MaterialTheme.colorScheme.onPrimaryContainer
-                }
+                color = setColor(
+                    value = pressureData.dia,
+                    range = normalRanges.dia,
+                    enabled = enabled,
+                    colors = MedicUtilities.MedicDataColors(
+                        onCorrect = MaterialTheme.colorScheme.onPrimary,
+                        onIncorrect = Color.Red,
+                        onIdle = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
                 )
+            )
         }
 
         Row(
@@ -130,18 +130,17 @@ fun MonitoringView(viewModel: MainViewModel, navController: NavHostController){
             ){
                 TemperatureDisplay(
                     temperature = if (enabled) temperature else null,
-                    color = if(enabled){
-                        temperature?.let { value->
-                            if(value in normalRanges.temperature.min..normalRanges.temperature.max){
-                                MaterialTheme.colorScheme.onPrimary
-                            }else{
-                                Color.Red
-                            }
-                        } ?: MaterialTheme.colorScheme.onPrimaryContainer
-                    }else{
-                        MaterialTheme.colorScheme.onPrimaryContainer
-                    }
+                    color = setColor(
+                        value = temperature,
+                        range = normalRanges.temperature,
+                        enabled = enabled,
+                        colors = MedicUtilities.MedicDataColors(
+                            onCorrect = MaterialTheme.colorScheme.onPrimary,
+                            onIncorrect = Color.Red,
+                            onIdle = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
                     )
+                )
             }
             Box(modifier = Modifier
                 .fillMaxSize()

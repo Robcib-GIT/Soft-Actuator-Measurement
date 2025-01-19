@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.tfm.druidapp.R
 import com.tfm.druidapp.data.MainViewModel
+import com.tfm.druidapp.data.MedicUtilities
 import com.tfm.druidapp.ui.theme.DruidAppTheme
 
 
@@ -42,6 +43,7 @@ import com.tfm.druidapp.ui.theme.DruidAppTheme
 fun PPG(viewModel: MainViewModel, modifier: Modifier = Modifier) {
     val enabled = (viewModel.vitalsMonitoring.value == MonitoringState.Enabled)
     val pulseAmplitudeList by viewModel.pulseAmplitudeList.collectAsState()
+    val cardiacData by viewModel.cardiacData.collectAsState()
     val measuresInScreen = viewModel.maxPulseRegisters
     // Modifier base con características predeterminadas
     val baseModifier = Modifier
@@ -99,15 +101,25 @@ fun PPG(viewModel: MainViewModel, modifier: Modifier = Modifier) {
                 horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically
             ){
+                val textColor = MedicUtilities.setColor(
+                    value = cardiacData.ppm,
+                    range = viewModel.normalMedicRanges.value.ppm,
+                    enabled = enabled,
+                    colors = MedicUtilities.MedicDataColors(
+                        onCorrect = MaterialTheme.colorScheme.onPrimary,
+                        onIncorrect = Color.Red,
+                        onIdle = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                )
                 Text(
-                    text = viewModel.cardiacData.value.ppm.takeIf { it != -1 }?.toString() ?: "--",
-                    color = MaterialTheme.colorScheme.onPrimary,
+                    text = cardiacData.ppm.takeIf { it != -1 }?.toString() ?: "--",
+                    color = textColor,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
                     text = "PPM",
-                    color = MaterialTheme.colorScheme.onPrimary,
+                    color = textColor,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium,
                     modifier=Modifier.align(Alignment.Bottom)

@@ -7,6 +7,7 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.tfm.druidapp.data.MedicUtilities.calculateNormalRanges
 import com.tfm.druidapp.views.customElements.MonitoringState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
