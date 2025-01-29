@@ -162,6 +162,7 @@ include_directories(
 catkin_install_python(PROGRAMS
 	scripts/read_sensors.py
 	scripts/process_pulse_data.py
+	scripts/process_pressure_data.py
 	DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
