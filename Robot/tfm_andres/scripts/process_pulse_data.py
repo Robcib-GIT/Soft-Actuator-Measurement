@@ -106,13 +106,16 @@ def get_cardiac_data(_systolics_time_list):
         else:
             temp_ibi = _ibi
 
-        _sdnn = np.std(temp_ibi/1000)  # Desviación estándar
+        if len(temp_ibi)>2:
+            _sdnn = np.std(temp_ibi, ddof=1)  # Desviación estándar
+        else:
+            _sdnn = -1 
 
         if len(temp_ibi)>1:
-            _rmssd = np.sqrt(np.mean(np.diff(temp_ibi/1000)**2))  # Raíz cuadrada de la media de las diferencias al cuadrado 
+            _rmssd = np.sqrt(np.mean(np.diff(temp_ibi)**2))  # Raíz cuadrada de la media de las diferencias al cuadrado 
         else:
-            _rmssd = -1
-
+            _rmssd = -1 
+        
         # Enviar informacion
 
         cardiac_data_msg = CardiacData()
@@ -202,6 +205,7 @@ def pulse_data_callback(msg: Int32):
     value = msg.data
 
     if value == -1 and processing:
+        rospy.loginfo("Fin del analisis cardiaco")
         processing = False
         process_data(pulse_segment)
         pulse_segment = []
@@ -211,7 +215,9 @@ def pulse_data_callback(msg: Int32):
         diastolics_time = [[], []]
         zi = None
     elif value != -1:
-        if not processing: processing = True
+        if not processing: 
+            rospy.loginfo("Comienzo del analisis cardiaco")
+            processing = True
 
         pulse_segment.append(value)
         

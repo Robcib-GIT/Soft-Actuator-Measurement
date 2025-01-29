@@ -111,7 +111,7 @@ if __name__ == '__main__':
 
     #Leer dummy TODO: borrar
     try:
-        file_path = os.path.abspath("src/tfm_andres/resources/SalidaPulsoSujeto1_derecho.txt")
+        file_path = "/home/andres/catkin_ws/src/tfm_andres/resources/SalidaPulsoSujeto1_derecho.txt"
         rospy.loginfo(file_path)
         with open(file_path, "r") as file:
             # Cargamos todo el contenido del archivo y lo convertimos a una lista de enteros
