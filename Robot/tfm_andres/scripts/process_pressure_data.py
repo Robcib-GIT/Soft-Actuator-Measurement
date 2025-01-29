@@ -5,6 +5,7 @@ from std_msgs.msg import Int32
 from tfm_andres.msg import BloodPressureData
 import numpy as np
 from scipy.signal import butter, lfilter, find_peaks
+import matplotlib.pyplot as plt
 
 # Publicadores
 bp_pub = rospy.Publisher("/blood_pressure_data", BloodPressureData, queue_size=10)
@@ -54,7 +55,10 @@ def pressure_callback(msg: Int32):
     value = msg.data
 
     if value == -1:
-        if receiving: process_data()    #si es el final de la transmision se procesa la info
+        if receiving: 
+            rospy.loginfo("Comenzando analisis de presión arterial")
+            process_data()    #si es el final de la transmision se procesa la info
+            rospy.loginfo("Finalizado analisis de presión arterial")
         receiving = False
         pressure_data = []
     else:
@@ -77,6 +81,19 @@ def value_to_pressure(value: int):
     pressure = (value - tare_value)*SCALE
     return int(pressure)
 
+    # _______________1.x _______________
+def plot_pressure_graph(data):
+    pressure_data = [value_to_pressure(x) for x in data]
+    plt.figure(figsize=(8, 5))
+    plt.plot(data, marker='o', linestyle='-')
+    plt.xlabel("Tiempo")
+    plt.ylabel("Presión")
+    plt.title("Presión arterial")
+    plt.grid()
+
+    # 🔹 Muestra la gráfica en pantalla:
+    plt.show()
+
 def process_data():
     np_pressure_data = np.array(pressure_data)
 
@@ -91,6 +108,7 @@ def process_data():
         sys_indexes, _ = find_peaks(deflating_pressure, prominence=SYSTOLIC_PROMINENCE)
         if len(sys_indexes)>0:
             sys_value = deflating_pressure[sys_indexes[0]]
+            rospy.loginfo(f"sys_value:  {sys_value}")
         else:
             sys_value = -1
 
@@ -126,6 +144,9 @@ def process_data():
         
         # Enviar resultados
         publish_pressure_data(sys=sys_pressure, dia=dia_pressure)
+
+        # Plotear resultados
+        plot_pressure_graph(filtered_pressure_data)
 
 
 if __name__ == '__main__':

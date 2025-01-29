@@ -1,4 +1,5 @@
 <launch>
     <node name="read_sensors" pkg="tfm_andres" type="read_sensors.py" output="screen"/>
     <node name="process_pulse_data" pkg="tfm_andres" type="process_pulse_data.py" output="screen"/>
+    <node name="process_pressure_data" pkg="tfm_andres" type="process_pressure_data.py" output="screen"/>
 </launch>
