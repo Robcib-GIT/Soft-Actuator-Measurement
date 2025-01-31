@@ -1,51 +1,44 @@
-import Jetson.GPIO as GPIO
+import spidev
 import time
 
-# Pin definitions
-SCK_PIN = 18  # GPIO pin for SCK
-DT_PIN = 23   # GPIO pin for DT
+# Configurar SPI
+spi = spidev.SpiDev()
+spi.open(0, 0)  # Open SPI bus 0, device (CS) 0
 
-# Initialize GPIO
-GPIO.setmode(GPIO.BCM)
-GPIO.setup(SCK_PIN, GPIO.OUT)
-GPIO.setup(DT_PIN, GPIO.IN)
 
-def read_hx710b():
-    # Wait for the DT pin to go low (data ready)
-    while GPIO.input(DT_PIN) == 1:
-        pass
+# Configurar velocidad de reloj (ajustable)
+spi.max_speed_hz = 500000  # 500 kHz
+spi.mode = 0b00  # CPOL = 0, CPHA = 0
+spi.bits_per_word = 8  # SPI bits per word
 
-    # Read 24 bits of data
-    data = 0
-    for _ in range(24):
-        GPIO.output(SCK_PIN, 1)
-        time.sleep(0.00001)  # Small delay for clock pulse
-        GPIO.output(SCK_PIN, 0)
-        time.sleep(0.00001)
-        data = (data << 1) | GPIO.input(DT_PIN)
 
-    # Send an additional clock pulse to set the gain
-    GPIO.output(SCK_PIN, 1)
-    time.sleep(0.00001)
-    GPIO.output(SCK_PIN, 0)
-    time.sleep(0.00001)
 
-    # Convert the 24-bit data to a signed integer
-    if data & 0x800000:  # Check if the sign bit is set
-        data -= 0x1000000
+def read_pressure():
+    # Send 3 bytes of zeros to read 24 bits of data
+    raw_data = spi.xfer2([0, 0, 0])  # Enviar 3 bytes vacíos para generar los pulsos
 
-    return data
+    # Combine the 3 bytes into a single 24-bit value
+    resultado = (raw_data[0] << 16) | (raw_data[1] << 8) | raw_data[2]
+
+    # Convertir a valor entero (24 bits, complemento a dos)
+    if resultado & 0x800000:  # Si el bit más alto está en 1 (negativo en complemento a dos)
+        resultado -= 0x1000000
+
+    return resultado
+
+    
 
 def main():
     try:
         while True:
-            pressure_value = read_hx710b()
-            print(f"Pressure Value: {pressure_value}")
-            time.sleep(seconds=1)  # Delay between readings
+            pressure = read_pressure()
+            print(f"Pressure: {pressure}")
+            time.sleep(1)  # Delay between readings
     except KeyboardInterrupt:
         print("Exiting...")
     finally:
-        GPIO.cleanup()
+        # Close SPI
+        spi.close()
 
 if __name__ == "__main__":
     main()
