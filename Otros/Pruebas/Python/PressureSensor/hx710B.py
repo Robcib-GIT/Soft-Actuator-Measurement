@@ -1,5 +1,6 @@
 """
 Inspirado en: "https://gist.github.com/amotl/94c83f3ecc3dbf181da708fdd8ef9f45.js"
+y "https://gist.github.com/underdoeg/98a38b54f889fce2b237.js"
 """
 import spidev
 import time
@@ -17,7 +18,14 @@ class HX710B:
         self.clock = self.clock_25
         self.in_data = bytearray(7)
 
+        self.offset = 0 # TODO: ajustar
+        self.calibration_factor = 1 # TODO: ajustar
+
         self.set_gain(gain)
+
+    def is_ready(self):
+        # Se comprueba si el ultimo bit recibido es 0
+        return (self.spi.xfer2([0x00])[0] & 0x01) == 0
 
     def set_gain(self, gain):
         if gain == 128:
@@ -30,8 +38,8 @@ class HX710B:
         self.read() # Para ajustar la ganancia
 
     def read(self):
-        # Esperar a que el sensor esté listo comprobando si el ultimo bit recibido es 0
-        while self.spi.xfer2([0x00])[0] & 0x01:
+        # Esperar a que el sensor esté listo
+        while not self.is_ready():
             time.sleep(0.001)
 
         # Enviar reloj ficticio por MOSI y leer datos
@@ -44,6 +52,21 @@ class HX710B:
 
         # Corregir el signo (nº de complemento a dos -> numero con signo)
         return result - ((result & 0x800000) << 1)
+    
+    def read_average(self, samples=3):
+        sum = 0
+        for _ in range(samples):
+            sum += self.read()
+        
+        return sum/samples
+    
+    def get_pressure(self):
+        pressure = (self.read() + self.offset) * self.calibration_factor
+        return pressure
+
+    def get_average_pressure(self, samples):
+        average_pressure = (self.read_average() + self.offset) * self.calibration_factor
+        return average_pressure
     
     def close(self):
         self.spi.close()
