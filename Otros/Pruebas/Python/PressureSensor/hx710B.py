@@ -41,7 +41,7 @@ class HX710B:
         estado = GPIO.input(31)  # Leer el estado del pin GPIO 31
         print(f"Estado del pin: {'Alto' if estado else 'Bajo'}")
         # Se comprueba si el ultimo bit recibido es 0
-        respuesta = self.spi.xfer2([0x00])
+        respuesta = self.spi.xfer2([0x0])
         print(f"Respuesta: {bin(respuesta[0])} len: {len(respuesta)}")
         return (self.spi.xfer2([0x00])[0] & 0x01) == 0
 
