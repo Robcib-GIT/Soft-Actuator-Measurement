@@ -5,11 +5,12 @@ import random  # Usa esto para simular lecturas de ADC, reemplázalo con tu cód
 
 # Configuración
 file_dir = "./data"  # Carpeta donde se guardará el archivo
-file_name = "prueba2.txt"  # Nombre del archivo
+file_name = "brazo3.txt"  # Nombre del archivo
 num_readings = 250  # Número de lecturas a guardar
 interval = 0.04  # Intervalo de 40ms
 
 ADS = ADS1x15.ADS1115(0, 0x48)
+ADS.setDataRate(2) #32sps
 
 # Crear carpeta 'data' si no existe
 if not os.path.exists(file_dir):

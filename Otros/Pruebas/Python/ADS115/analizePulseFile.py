@@ -2,13 +2,13 @@ from matplotlib import pyplot as plt
 from scipy.signal import butter, lfilter, find_peaks
 import numpy as np
 
-ruta_datos = "data/prueba2.txt"
+ruta_datos = "data/brazo3.txt"
 
 # TODO ajustar
 MAX_SISTOLICO = 25000 #580  # Para dedo 550
-BARRERA_SIS_DIA = 15000  # Para dedo 515
-MIN_DIASTOLICO = 0
-MIN_MUESTRAS_ENTRE_PULSOS = (60 / 100) * (1000 / 40)
+BARRERA_SIS_DIA = 10000  # Para dedo 515
+MIN_DIASTOLICO = 1000
+MIN_MUESTRAS_ENTRE_PULSOS = 7
 
 
 def leer_datos(archivo):
@@ -174,7 +174,7 @@ if __name__ == '__main__':
         linestyle='-',
         linewidth=1.5)
     axs[1].set_xlabel("Tiempo [ms]")
-    axs[1].set_ylim(50, 100)
+    axs[1].set_ylim(0, 200)
     axs[1].set_ylabel("PPM")
     axs[1].set_title("PPM / Tiempo")
 
