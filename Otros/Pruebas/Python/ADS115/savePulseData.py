@@ -5,7 +5,7 @@ import random  # Usa esto para simular lecturas de ADC, reemplázalo con tu cód
 
 # Configuración
 file_dir = "./data"  # Carpeta donde se guardará el archivo
-file_name = "brazo3.txt"  # Nombre del archivo
+file_name = "brazo5.txt"  # Nombre del archivo
 num_readings = 250  # Número de lecturas a guardar
 interval = 0.04  # Intervalo de 40ms
 

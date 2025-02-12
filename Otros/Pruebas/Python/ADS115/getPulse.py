@@ -7,6 +7,8 @@ import matplotlib.animation as animation
 import random  # Para simular datos
 
 ADS = ADS1x15.ADS1115(0, 0x48)
+ADS.setGain(ADS.PGA_6_144V)
+ADS.setDataRate(2) #32sps
 
 # Configuración inicial
 fig, ax = plt.subplots()
