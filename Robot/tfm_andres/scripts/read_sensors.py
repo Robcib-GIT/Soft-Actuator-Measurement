@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import rospy
-from std_msgs.msg import Int32, String, Int32MultiArray, MultiArrayLayout
+from std_msgs.msg import Int32, Float32, String, Int32MultiArray, MultiArrayLayout
 from dataclasses import dataclass
 import random
 import os
@@ -23,8 +23,12 @@ sensors = {
         publisher= rospy.Publisher("/temperature_data", Int32, queue_size=10),
         interval= 1000
     ),
-    "Pressure" : Sensor(
-        publisher= rospy.Publisher("/pressure_data", Int32, queue_size=10),
+    "Actuator_Pressure" : Sensor(
+        publisher= rospy.Publisher("/actuator_pressure_data", Float32, queue_size=10),
+        interval=100
+    ),
+    "Cuff_Pressure" : Sensor(
+        publisher= rospy.Publisher("/cuff_pressure_data", Float32, queue_size=10),
         interval=100
     ),
     "Pulse" : Sensor(

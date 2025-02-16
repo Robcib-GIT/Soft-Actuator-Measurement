@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python3
 
 import rospy
@@ -154,6 +155,6 @@ if __name__ == '__main__':
     rospy.init_node('process_pressure_data', anonymous=True)
 
     # Subscriber para controlar las lecturas de los sensores
-    rospy.Subscriber("/pressure_data", Int32, pressure_callback)
+    rospy.Subscriber("/cuff_pressure_data", Int32, pressure_callback)
 
     rospy.spin()

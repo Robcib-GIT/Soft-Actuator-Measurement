@@ -11,6 +11,8 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   message_generation
+  actionlib
+  actionlib_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -50,7 +52,7 @@ find_package(catkin REQUIRED COMPONENTS
 add_message_files(
   FILES
   CardiacData.msg
-	BloodPressureData.msg
+  BloodPressureData.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -61,15 +63,15 @@ add_message_files(
 # )
 
 ## Generate actions in the 'action' folder
-# add_action_files(
-#   FILES
-#   Action1.action
-#   Action2.action
-# )
+add_action_files(
+	FILES
+	Pneumatics.action
+)
 
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
 	DEPENDENCIES
+	actionlib_msgs
 	std_msgs
 )
 
@@ -163,6 +165,7 @@ catkin_install_python(PROGRAMS
 	scripts/read_sensors.py
 	scripts/process_pulse_data.py
 	scripts/process_pressure_data.py
+	scripts/pneumatics_server.py
 	DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
