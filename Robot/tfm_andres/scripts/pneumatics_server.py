@@ -4,11 +4,29 @@ import rospy
 import actionlib
 from std_msgs.msg import Bool, Float32, String
 from tfm_andres.msg import PneumaticsAction, PneumaticsFeedback, PneumaticsResult
+from dataclasses import dataclass
+from typing import Optional
 
 actuator_pressure_goal = 200.0 #TODO cambiar
 cuff_pressure_goal = 300.0  #TODO cambiar
 
+@dataclass
+class PneumaticState:
+    name: str
+    pump_on: bool
+    valve1_angle: Optional[int]
+    valve2_angle: Optional[int]
+
 class PneumaticsServer:
+    STATES = [ #TODO igual añadir algun tipo de funcion ns con callable
+        PneumaticState(name="Home", pump_on=False, valve1_angle=90, valve2_angle=90),
+        PneumaticState(name="Close actuator", pump_on=True, valve1_angle=90, valve2_angle=None),
+        PneumaticState(name="Inflate cuff", pump_on=True, valve1_angle=0, valve2_angle=180),
+        PneumaticState(name="Deflate cuff", pump_on=False, valve1_angle=90, valve2_angle=None),
+        PneumaticState(name="Open actuator", pump_on=False, valve1_angle=180, valve2_angle=180),
+        PneumaticState(name="IDLE", pump_on=False, valve1_angle=None, valve2_angle=None)
+    ]
+
     def __init__(self):
         rospy.init_node('pneumatics_server')
 
@@ -96,6 +114,11 @@ class PneumaticsServer:
     def switchOffPump():
         print("Swintching off pump")
         #TODO
+    
+    def turnValve(valve: int, angle: int):
+        print(f"Turning valve {valve} to position {angle}...")
+        #TODO
+
         
 
 if __name__ == '__main__':
