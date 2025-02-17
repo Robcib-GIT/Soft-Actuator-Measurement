@@ -1,4 +1,5 @@
-string[] tasks
+int32 first_state
+int32 last_state
 ---
 bool success
 ---
