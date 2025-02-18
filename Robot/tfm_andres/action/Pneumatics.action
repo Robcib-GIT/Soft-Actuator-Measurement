@@ -4,4 +4,4 @@ int32 last_state
 bool success
 ---
 float32 current_progress
-string current_task
+int32 current_state

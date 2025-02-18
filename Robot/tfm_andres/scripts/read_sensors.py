@@ -25,11 +25,11 @@ sensors = {
     ),
     "Actuator_Pressure" : Sensor(
         publisher= rospy.Publisher("/actuator_pressure_data", Float32, queue_size=10),
-        interval=100
+        interval=500
     ),
     "Cuff_Pressure" : Sensor(
         publisher= rospy.Publisher("/cuff_pressure_data", Float32, queue_size=10),
-        interval=100
+        interval=500
     ),
     "Pulse" : Sensor(
         publisher= rospy.Publisher("/pulse_data", Int32, queue_size=10),
@@ -82,16 +82,23 @@ def sensor_control_callback(msg: String):
             sensor.publisher.publish(-1)
         rospy.loginfo("Todas las lecturas desactivadas")
     
-
-# Leer sensor TODO: Modificar
+cuff_pressure_temp = 0     #TODO borrar
+actuator_pressure_temp = 0     #TODO borrar
+# Leer sensor TODO: Modificar 
 def read_sensor(sensor: str):
     global pulse_dummy_index #TODO borrar
+    global cuff_pressure_temp #TODO borrar
+    global actuator_pressure_temp #TODO borrar
 
     if sensor in sensors.keys():
         if sensor == "Temperature":
             return random.randint(0, 1023)
-        elif sensor == "Pressure":
-            return random.randint(0, 1023)
+        elif sensor == "Cuff_Pressure":
+            cuff_pressure_temp += 5
+            return cuff_pressure_temp
+        elif sensor == "Actuator_Pressure":
+            actuator_pressure_temp += 5
+            return actuator_pressure_temp
         elif sensor == "Pulse":
             if pulse_dummy_index < len(pulse_dummy):
                 pulse_value = pulse_dummy[pulse_dummy_index]
