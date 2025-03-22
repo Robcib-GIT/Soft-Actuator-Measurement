@@ -58,6 +58,16 @@ class RosWebSocketClient(uri: URI, private val viewModel: MainViewModel) : WebSo
                     }
                 }
 
+                "/pneumatic/feedback" -> {
+                    val msg = parsedMsg.msg as? MsgTypes.PneumaticFeedbackMsg
+                    if (msg != null) {
+                        viewModel.updateActuatorStateProgress(
+                            state = msg.feedback.current_state,
+                            progress = msg.feedback.current_progress
+                        )
+                    }
+                }
+
                 else -> {}
             }
         }
@@ -73,7 +83,7 @@ class RosWebSocketClient(uri: URI, private val viewModel: MainViewModel) : WebSo
         }
         //Deshabilitar monitorizacion
         viewModel.updateVitalsMonitoring(MonitoringState.Disabled)
-        viewModel.resetDeactivationMap()
+        viewModel.resetActuatorStates()
         //Resetear medic data
         viewModel.resetMedicData()
     }

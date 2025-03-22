@@ -47,6 +47,12 @@ data class TopicInfo(
     val subscribedTo: MutableState<Boolean> = mutableStateOf(false)
 )
 
+// Todo: ver si reubicar
+data class PneumaticFeedback(
+    val current_progress: Float = 0f,
+    val current_state: Int = 0
+)
+
 sealed class MsgTypes(){ //Añadir aqui más si hace falta
     data class IntMsg(
         val data: Int
@@ -94,6 +100,12 @@ sealed class MsgTypes(){ //Añadir aqui más si hace falta
         val rmsdd: Float = -1f,
         //val amplitude: Float = -1f,
         //val riseTime: Float = -1f,
+    ):MsgTypes()
+
+    data class PneumaticFeedbackMsg(  //TODO
+        val header: Any,
+        val status: Any,
+        val feedback: PneumaticFeedback
     ):MsgTypes()
 }
 

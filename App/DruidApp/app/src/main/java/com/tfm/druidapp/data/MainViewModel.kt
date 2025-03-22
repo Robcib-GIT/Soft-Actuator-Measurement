@@ -123,7 +123,8 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
     val topicsMap: Map<String, TopicInfo> = mapOf( //TODO poner los que haga falta
         "/sensor1_data" to TopicInfo(MsgTypes.FloatMsg::class.java),
         "/ppg_data" to TopicInfo(MsgTypes.FloatArrayMsg::class.java),
-        "/cardiac_data" to TopicInfo(MsgTypes.CardiacMsg::class.java)
+        "/cardiac_data" to TopicInfo(MsgTypes.CardiacMsg::class.java),
+        "/pneumatics/feedback" to TopicInfo(MsgTypes.PneumaticFeedbackMsg::class.java)
     )
 
 
@@ -258,6 +259,46 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
         _vitalsMonitoring.value = monitoring
     }
 
+    private val _actuatorStates = MutableStateFlow(listOf(
+        ActuationState("Home"),
+        ActuationState("Close actuator"),
+        ActuationState("Inflate cuff"),
+        ActuationState("Deflate cuff"),
+        ActuationState("Open actuator"),
+        ActuationState("IDLE") //TODO: igual quitar
+        )
+    )
+    val actuatorStates: StateFlow<List<ActuationState>> = _actuatorStates
+    fun updateActuatorStateProgress(state: Int, progress: Float){
+        _actuatorStates.value = _actuatorStates.value.toMutableList().apply {
+            this[state] = this[state].copy(progress=progress)
+        }
+    }
+    fun resetActuatorStates(){
+        _actuatorStates.value = _actuatorStates.value.toMutableList().apply {
+            forEachIndexed { index, state ->
+                this[index] = state.copy(progress = 0f)
+            }
+        }
+    }
+
+
+    /*
+    TODO: borrar
+    val activationProcessMap: StateFlow<Map<String, Float>> get() = _activationProcessMap
+    fun updateActivationMap(key: String, newValue: Float) {
+        _activationProcessMap.value = _activationProcessMap.value.toMutableMap().apply {
+            this[key] = newValue
+        }
+    }
+    fun resetActivationMap(){
+        _activationProcessMap.value = _activationProcessMap.value.toMutableMap().apply {
+            keys.forEach { key ->
+                this[key] = 0f
+            }
+        }
+    }
+
     private val _activationProcessMap = MutableStateFlow(mapOf<String, Float>(
         "Acoplamiento" to 0f,
         "Inflado" to 0f,
@@ -296,7 +337,8 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
                 this[key] = 0f
             }
         }
-    }
+    }*/
+
 
     fun simularProcesos() { //TODO: borrar
         viewModelScope.launch {

@@ -25,8 +25,7 @@ import com.tfm.druidapp.views.customElements.ProcessProgressIndicator
 @Composable
 fun ActuationView(viewModel: MainViewModel, navController: NavHostController) {
     val state by viewModel.vitalsMonitoring
-    val activationProcessMap by viewModel.activationProcessMap.collectAsState()
-    val deactivationProcessMap by viewModel.deactivationProcessMap.collectAsState()
+    val actuatorStates by viewModel.actuatorStates.collectAsState()
     val connected by viewModel.connectionState
 
     Column(
@@ -35,7 +34,7 @@ fun ActuationView(viewModel: MainViewModel, navController: NavHostController) {
             .fillMaxSize(),
         //verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        ProcessProgressIndicator(
+        ProcessProgressIndicator( //TODO:retocar para los cambios nuevos
             state = state,
             text = if (state == MonitoringState.Disabled || state == MonitoringState.Enabling || state == MonitoringState.EnPaused) {
                 "Iniciar monitorización"

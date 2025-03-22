@@ -50,7 +50,7 @@ enum class MonitoringState {
 fun ProcessProgressIndicator(
     state: MonitoringState,
     text: String,
-    processMap: Map<String, Float>,
+    processMap: Map<String, Float>, //TODO: cambiar con la actualizacion
     onRun: () -> Unit,
     onPause: () -> Unit,
     onStop: () -> Unit,
