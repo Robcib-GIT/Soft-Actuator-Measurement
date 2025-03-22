@@ -41,10 +41,11 @@ fun ActuationView(viewModel: MainViewModel, navController: NavHostController) {
             } else {
                 "Detener monitorización"
             },
-            processMap = if (state == MonitoringState.Disabled || state == MonitoringState.Enabling || state == MonitoringState.EnPaused) {
-                activationProcessMap
+            statesList = if (state == MonitoringState.Disabled || state == MonitoringState.Enabling || state == MonitoringState.EnPaused) {
+                //Activacion
+                actuatorStates.slice(1..3)
             } else {
-                deactivationProcessMap
+                listOf(actuatorStates[4])
             },
             onRun = {
                 if (state == MonitoringState.Disabled) {
@@ -79,12 +80,12 @@ fun ActuationView(viewModel: MainViewModel, navController: NavHostController) {
 
             },
             onStop = { //TODO: manejar pause
+                viewModel.resetActuatorStates()
+
                 if (state == MonitoringState.Enabling || state == MonitoringState.EnPaused) {
-                    viewModel.resetActivationMap()
                     viewModel.updateVitalsMonitoring(MonitoringState.Disabling)
                     //TODO: comenzar disabling
                 } else {
-                    viewModel.resetDeactivationMap()
                     viewModel.updateVitalsMonitoring(MonitoringState.Enabling)
                     //TODO: comenzar enabling
                 }
@@ -93,11 +94,11 @@ fun ActuationView(viewModel: MainViewModel, navController: NavHostController) {
                 if (state == MonitoringState.Enabling) {
                     navController.navigate(Screen.Monitoring.route)
                     viewModel.updateVitalsMonitoring(MonitoringState.Enabled)
-                    viewModel.resetActivationMap()
+                    viewModel.resetActuatorStates()
                     viewModel.showToast("Monitorización activada")
                 } else {
                     viewModel.updateVitalsMonitoring(MonitoringState.Disabled)
-                    viewModel.resetDeactivationMap()
+                    viewModel.resetActuatorStates()
                     viewModel.showToast("Monitorización desactivada ")
                 }
             }

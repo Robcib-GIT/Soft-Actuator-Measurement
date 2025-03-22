@@ -35,6 +35,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.tfm.druidapp.R
+import com.tfm.druidapp.data.ActuationState
 import com.tfm.druidapp.ui.theme.DruidAppTheme
 
 enum class MonitoringState {
@@ -50,7 +51,7 @@ enum class MonitoringState {
 fun ProcessProgressIndicator(
     state: MonitoringState,
     text: String,
-    processMap: Map<String, Float>, //TODO: cambiar con la actualizacion
+    statesList: List<ActuationState>, //TODO: cambiar con la actualizacion
     onRun: () -> Unit,
     onPause: () -> Unit,
     onStop: () -> Unit,
@@ -68,11 +69,11 @@ fun ProcessProgressIndicator(
     } else {
         RoundedCornerShape(cornerRadius)
     }
-    val completedProcesses = processMap.count { it.value >= 1f }
-    val numberOfProcesses = processMap.size
+    val completedStates = statesList.count { it.progress >= 1f }
+    val numberOfStates = statesList.size
 
-    LaunchedEffect(completedProcesses, numberOfProcesses) {
-        if (completedProcesses == numberOfProcesses && numberOfProcesses > 0) {
+    LaunchedEffect(completedStates, numberOfStates) {
+        if (completedStates == numberOfStates && numberOfStates > 0) {
             onEnd()
         }
     }
@@ -108,7 +109,7 @@ fun ProcessProgressIndicator(
                 }
             } else {
                 Text(
-                    text = "${completedProcesses}/${numberOfProcesses}",
+                    text = "${completedStates}/${numberOfStates}",
                     color = MaterialTheme.colorScheme.onPrimary
                 )
             }
@@ -143,21 +144,21 @@ fun ProcessProgressIndicator(
                 color = MaterialTheme.colorScheme.onPrimaryContainer
             )
 
-            processMap.forEach { (process, progress) ->
+            statesList.forEach { state->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Text(
-                        text = process,
+                        text = state.name,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onPrimary,
                         softWrap = true,
                         modifier = Modifier.weight(1f)
                     )
                     LinearProgressIndicator(
-                        progress = { progress },
+                        progress = { state.progress },
                         color = Color.Green,
                         trackColor = MaterialTheme.colorScheme.onPrimaryContainer,
                         gapSize = 0.dp,
@@ -167,7 +168,7 @@ fun ProcessProgressIndicator(
                     Icon(
                         imageVector = Icons.Default.Done,
                         contentDescription = null,
-                        tint = if (progress >= 1f) {
+                        tint = if (state.progress >= 1f) {
                             Color.Green
                         } else {
                             Color.Transparent
@@ -235,17 +236,18 @@ fun ProcessProgressIndicatorsPreview() {
                 .padding(6.dp)
         ) {
             Spacer(modifier = Modifier.height(16.dp))
-            val processes = mapOf<String, Float>(
-                "Procesosgssgs1 shgss" to 1f,
-                "Proceso2" to 1f,
-                "Proceso3" to 0.5f,
-                "Proceso4" to 1f,
-                "Proceso5" to 0f,
+            val states = listOf(
+                ActuationState("Home"),
+                ActuationState("Close actuator", 0.5f),
+                ActuationState("Inflate cuff", 1f),
+                ActuationState("Deflate cuff"),
+                ActuationState("Open actuator"),
+                ActuationState("IDLE") //TODO: igual quitar
             )
             ProcessProgressIndicator(
-                state = MonitoringState.Enabled,
+                state = MonitoringState.Enabling,
                 text = "Iniciar mediciones",
-                processMap = processes,
+                statesList = states,
                 onRun = {},
                 onPause = {},
                 onStop = {},

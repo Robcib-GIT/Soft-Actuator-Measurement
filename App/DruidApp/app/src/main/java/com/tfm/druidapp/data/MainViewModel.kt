@@ -344,12 +344,12 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
         viewModelScope.launch {
             if (vitalsMonitoring.value == MonitoringState.Enabling) {
                 // Lanza un proceso por cada elemento en el mapa
-                activationProcessMap.value.forEach { (process, progress) ->
-                    var currentProgress = progress
+                actuatorStates.value.forEachIndexed{ index, state ->
+                    var currentProgress = state.progress
                     while (currentProgress < 1f) {
                         delay(100)
                         currentProgress += 0.1f
-                        updateActivationMap(process, currentProgress)
+                        updateActuatorStateProgress(index, currentProgress)
                     }
                     Log.d("Pruebas","Progreso $currentProgress")
                 }
