@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.tfm.druidapp.data.ActuatorUtilities
 import com.tfm.druidapp.data.MainViewModel
 import com.tfm.druidapp.data.MsgOp
 import com.tfm.druidapp.data.MsgTypes
@@ -31,6 +32,7 @@ fun ActuationView(viewModel: MainViewModel, navController: NavHostController) {
     val state by viewModel.vitalsMonitoring
     val actuatorStates by viewModel.actuatorStates.collectAsState()
     val connected by viewModel.connectionState
+    val actuatorUtilities = ActuatorUtilities(viewModel)
 
     Column(
         modifier = Modifier
@@ -47,31 +49,26 @@ fun ActuationView(viewModel: MainViewModel, navController: NavHostController) {
             },
             statesList = if (state == MonitoringState.Disabled || state == MonitoringState.Enabling || state == MonitoringState.EnPaused) {
                 //Activacion
-                actuatorStates.slice(1..3)
+                actuatorStates.slice(actuatorUtilities.activationFirstState ..actuatorUtilities.activationLastState)
             } else {
-                listOf(actuatorStates[4])
+                actuatorStates.slice(actuatorUtilities.deactivationFirstState ..actuatorUtilities.deactivationLastState)
             },
             onRun = {
                 if (state == MonitoringState.Disabled) {
-                    if (true/*connected*/){ //TODO: comprobar y habilitar cuando no sean pruebas
+                    if (connected){
                         viewModel.updateVitalsMonitoring(MonitoringState.Enabling)
-                        // TODO: borrar
-                        // viewModel.simularProcesos()
-                        //TODO: Enviar comando inicializacion
-                        viewModel.wsClient.publishToTopic(
-                            RosMsg(
-                                operation = MsgOp.PUBLISH,
-                                topic = "/pneumatics/goal",
-                                msg = MsgTypes.ActionGoal(PneumaticsGoal(first_state = 1, last_state = 3))
-                            )
-                        )
+
+                        // Activar el actuador
+                        actuatorUtilities.activateActuator()
                     }else{
                         viewModel.showToast("Robot no conectado")
                     }
 
                 } else {
                     viewModel.updateVitalsMonitoring(MonitoringState.Disabling)
-                    //TODO: Enviar comando cancelacion
+
+                    // Desactivar el actuador
+                    actuatorUtilities.deactivateActuator()
                 }
             },
             onPause = {
@@ -96,16 +93,21 @@ fun ActuationView(viewModel: MainViewModel, navController: NavHostController) {
 
                 if (state == MonitoringState.Enabling || state == MonitoringState.EnPaused) {
                     viewModel.updateVitalsMonitoring(MonitoringState.Disabling)
-                    //TODO: comenzar disabling
-                    val msg = RosMsg(
-                        operation = MsgOp.PUBLISH,
-                        topic = "/pneumatics/cancel",
-                        msg = MsgTypes.ActionCancel()
-                    )
-                    viewModel.wsClient.publishToTopic(msg)
+
+                    // Cancelar la accion
+                    actuatorUtilities.stopActuator()
+
+                    // Desactivar el actuador
+                    actuatorUtilities.deactivateActuator()
+
                 } else {
                     viewModel.updateVitalsMonitoring(MonitoringState.Enabling)
-                    //TODO: comenzar enabling
+                    //TODO: comprobar que funciona
+                    // Cancelar la accion
+                    actuatorUtilities.stopActuator()
+
+                    // Activar el actuador
+                    actuatorUtilities.activateActuator()
                 }
             },
             onEnd = {
