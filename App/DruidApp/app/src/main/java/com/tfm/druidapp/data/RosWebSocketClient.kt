@@ -31,6 +31,8 @@ class RosWebSocketClient(uri: URI, private val viewModel: MainViewModel) : WebSo
     private var _firstPulseList = true
     override fun onMessage(message: String?) {
         safelyExecute{
+            //Log.d("RosWebSocket", message?:"null message")
+
             val parsedMsg = parseRosMessage(message, viewModel.topicsMap)
 
             when(parsedMsg.topic){
@@ -58,7 +60,7 @@ class RosWebSocketClient(uri: URI, private val viewModel: MainViewModel) : WebSo
                     }
                 }
 
-                "/pneumatic/feedback" -> {
+                "/pneumatics/feedback" -> {
                     val msg = parsedMsg.msg as? MsgTypes.PneumaticFeedbackMsg
                     if (msg != null) {
                         viewModel.updateActuatorStateProgress(
@@ -113,7 +115,7 @@ class RosWebSocketClient(uri: URI, private val viewModel: MainViewModel) : WebSo
     fun publishToTopic(rosMsg: RosMsg) {
         safelyExecute {
             if (isOpen) {
-                val jsonMessage = createJsonMessage(rosMsg, viewModel.topicsMap)
+                val jsonMessage = createJsonMessage(rosMsg)
                 send(jsonMessage)
                 //Log.d("RosWebSocketClient", "Published: $jsonMessage")
             } else {

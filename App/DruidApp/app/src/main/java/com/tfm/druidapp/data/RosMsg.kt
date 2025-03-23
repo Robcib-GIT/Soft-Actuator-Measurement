@@ -47,11 +47,21 @@ data class TopicInfo(
     val subscribedTo: MutableState<Boolean> = mutableStateOf(false)
 )
 
-// Todo: ver si reubicar
+// Todo: ver si reubicar a actuationData
 data class PneumaticFeedback(
     val current_progress: Float = 0f,
     val current_state: Int = 0
 )
+
+data class Stamp(
+    val secs: Int = 0,
+    val nsecs: Int = 0
+)
+
+data class PneumaticsGoal(  //TODO
+    val first_state: Int,
+    val last_state: Int
+):MsgTypes()
 
 sealed class MsgTypes(){ //Añadir aqui más si hace falta
     data class IntMsg(
@@ -107,10 +117,19 @@ sealed class MsgTypes(){ //Añadir aqui más si hace falta
         val status: Any,
         val feedback: PneumaticFeedback
     ):MsgTypes()
+
+    data class ActionGoal(  //TODO
+        val goal: Any
+    ):MsgTypes()
+
+    data class  ActionCancel(
+        val stamp: Stamp = Stamp(),
+        val id: String = ""
+    ):MsgTypes()
 }
 
 object RosMsgUtilities {
-    fun createJsonMessage(rosMsg: RosMsg, topicsMap: Map<String, TopicInfo>): String {
+    fun createJsonMessage(rosMsg: RosMsg): String {
         //TODO añadir posibilidad de enviar arrays (no voy a usar de momento)
         val gson = Gson()
 
@@ -122,7 +141,7 @@ object RosMsgUtilities {
             //Log.d("Pruebas","JsonCreado: $msgJson")
             add("msg", msgJson)
 
-            rosMsg.type?.let { addProperty("type", it) }
+            rosMsg.type?.let { addProperty("type", it) } //TODO: quitar
         }
 
         return gson.toJson(jsonObject)
@@ -136,7 +155,7 @@ object RosMsgUtilities {
         val operation = jsonObject.get("op")?.asString ?: ""
         val topic = jsonObject.get("topic")?.asString ?: ""
         val msgJson = jsonObject.getAsJsonObject("msg")
-        val type = jsonObject.get("type")?.asString
+        val type = jsonObject.get("type")?.asString //TODO: quitar porque no lo envia
 
         val msg = gson.fromJson(msgJson, topicsMap[topic]?.clazz)
 

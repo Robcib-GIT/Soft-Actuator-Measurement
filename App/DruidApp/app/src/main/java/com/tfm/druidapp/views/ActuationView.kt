@@ -17,6 +17,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.tfm.druidapp.data.MainViewModel
+import com.tfm.druidapp.data.MsgOp
+import com.tfm.druidapp.data.MsgTypes
+import com.tfm.druidapp.data.PneumaticsGoal
+import com.tfm.druidapp.data.RosMsg
 import com.tfm.druidapp.data.Screen
 import com.tfm.druidapp.ui.theme.DruidAppTheme
 import com.tfm.druidapp.views.customElements.MonitoringState
@@ -51,8 +55,16 @@ fun ActuationView(viewModel: MainViewModel, navController: NavHostController) {
                 if (state == MonitoringState.Disabled) {
                     if (true/*connected*/){ //TODO: comprobar y habilitar cuando no sean pruebas
                         viewModel.updateVitalsMonitoring(MonitoringState.Enabling)
-                        viewModel.simularProcesos()
+                        // TODO: borrar
+                        // viewModel.simularProcesos()
                         //TODO: Enviar comando inicializacion
+                        viewModel.wsClient.publishToTopic(
+                            RosMsg(
+                                operation = MsgOp.PUBLISH,
+                                topic = "/pneumatics/goal",
+                                msg = MsgTypes.ActionGoal(PneumaticsGoal(first_state = 1, last_state = 3))
+                            )
+                        )
                     }else{
                         viewModel.showToast("Robot no conectado")
                     }
@@ -85,6 +97,12 @@ fun ActuationView(viewModel: MainViewModel, navController: NavHostController) {
                 if (state == MonitoringState.Enabling || state == MonitoringState.EnPaused) {
                     viewModel.updateVitalsMonitoring(MonitoringState.Disabling)
                     //TODO: comenzar disabling
+                    val msg = RosMsg(
+                        operation = MsgOp.PUBLISH,
+                        topic = "/pneumatics/cancel",
+                        msg = MsgTypes.ActionCancel()
+                    )
+                    viewModel.wsClient.publishToTopic(msg)
                 } else {
                     viewModel.updateVitalsMonitoring(MonitoringState.Enabling)
                     //TODO: comenzar enabling

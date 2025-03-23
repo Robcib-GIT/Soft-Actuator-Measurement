@@ -270,6 +270,7 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
     )
     val actuatorStates: StateFlow<List<ActuationState>> = _actuatorStates
     fun updateActuatorStateProgress(state: Int, progress: Float){
+        Log.d("ActuatorFeedback", "State: ${_actuatorStates.value[state].name}  |   Progres: ${progress*100}%")
         _actuatorStates.value = _actuatorStates.value.toMutableList().apply {
             this[state] = this[state].copy(progress=progress)
         }
