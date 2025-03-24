@@ -43,6 +43,7 @@ class PneumaticsServer:
         self.cuff_pressure = 0.0
         rospy.Subscriber('/actuator_pressure_data', Float32, self.actuator_pressure_callback)
         rospy.Subscriber('/cuff_pressure_data', Float32, self.cuff_pressure_callback)
+        rospy.Subscriber('/pause_pneumatics', Bool, self.pause_callback)
         self.sensor_command_pub = rospy.Publisher('/sensor_command', String, queue_size=10)
 
         # Servidor de acción
@@ -50,6 +51,13 @@ class PneumaticsServer:
         self.server.start()
         self.paused = False #TODO implementar
         rospy.loginfo("Pneumatics Server is running...")
+    
+    def pause_callback(self, msg):
+        self.paused = msg.data
+        if self.paused:
+            rospy.logwarn("Pneumatics process paused.")
+        else:
+            rospy.loginfo("Pneumatics process resumed.")
 
     def actuator_pressure_callback(self, msg):
         self.actuator_pressure = msg.data
@@ -74,11 +82,16 @@ class PneumaticsServer:
             self.setValves(state)
             start_pressures = (self.actuator_pressure, self.cuff_pressure)
 
+            #TODO: hacer que solo informe cuando cambia y ojo con excepciones
             while progress<1:
                 if self.server.is_preempt_requested():
                     rospy.logwarn("Acción pneumática interrumpida.")
                     self.server.set_preempted()
                     return
+
+                while self.paused:
+                    rospy.logwarn("Proceso en pausa...")
+                    rospy.sleep(0.5)
 
                 progress = self.calculateProgress(state_id=state, start_pressures=start_pressures)
                 print(f"State: {PneumaticsServer.STATES[state].name}    |   Progress: {int(progress * 100)}%", end="\r", flush=True)
