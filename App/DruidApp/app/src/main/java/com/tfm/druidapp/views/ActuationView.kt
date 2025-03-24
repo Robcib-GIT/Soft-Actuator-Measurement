@@ -75,9 +75,11 @@ fun ActuationView(viewModel: MainViewModel, navController: NavHostController) {
                 if (state == MonitoringState.EnPaused) {
                     viewModel.updateVitalsMonitoring(MonitoringState.Enabling)
                     //TODO: seguir con enabling
+                    actuatorUtilities.pauseActuator(pause = false)
                 } else if(state == MonitoringState.DisPaused){
                     viewModel.updateVitalsMonitoring(MonitoringState.Disabling)
                     //TODO: seguir con disabling
+                    actuatorUtilities.pauseActuator(pause = false)
                 }else {
                     if (state == MonitoringState.Enabling){
                         viewModel.updateVitalsMonitoring(MonitoringState.EnPaused)
@@ -85,6 +87,7 @@ fun ActuationView(viewModel: MainViewModel, navController: NavHostController) {
                         viewModel.updateVitalsMonitoring(MonitoringState.DisPaused)
                     }
                     //TODO: pausar
+                    actuatorUtilities.pauseActuator(pause = true)
                 }
 
             },

@@ -33,8 +33,14 @@ class ActuatorUtilities(val viewModel: MainViewModel) {
         )
     }
 
-    fun pauseActuator(){ //TODO: completar y añadir otra funcion para continuar si eso
-
+    fun pauseActuator(pause: Boolean){
+        viewModel.wsClient.publishToTopic(
+            RosMsg(
+                operation = MsgOp.PUBLISH,
+                topic = "/pause_pneumatics",
+                msg = MsgTypes.BoolMsg(pause)
+            )
+        )
     }
 
     fun stopActuator(){

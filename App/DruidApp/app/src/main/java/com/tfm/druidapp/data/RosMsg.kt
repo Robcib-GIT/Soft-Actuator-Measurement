@@ -76,6 +76,9 @@ sealed class MsgTypes(){ //Añadir aqui más si hace falta
     data class StringMsg(
         val data: String
     ):MsgTypes()
+    data class BoolMsg(
+        val data: Boolean
+    ):MsgTypes()
     data class IntArrayMsg(
         val layout: MsgLayout = MsgLayout(),
         val data: List<Int> = emptyList()
