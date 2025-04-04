@@ -3,14 +3,24 @@
 import rospy
 from std_msgs.msg import Int32, Float32, String, Int32MultiArray, MultiArrayLayout
 from dataclasses import dataclass
-import random
-import os
-
-# Pruebas, TODO: borrar
-pulse_dummy = []
-pulse_dummy_index = 0
+import ADS1x15
+import math
 
 # Declaración de sensores
+ADS_1 = ADS1x15.ADS1115(0, 0x48)    # Para pulso y temperatura
+ADS_1.setGain(ADS_1.PGA_6_144V)
+
+ADS_2 = ADS1x15.ADS1115(0, 0x49)    # Para presiones
+ADS_2.setGain(ADS_2.PGA_0_512V)
+
+# Constantes para sensores
+VCC = 5.0               # Voltaje de alimentación (V)
+#TEMPERATURA
+R_AUX = 10000.0         # Resistencia en serie (ohmios)
+R0 = 10000.0            # Resistencia del NTC a T0 (ohmios)
+BETA = 3950.0           # Constante beta del NTC (K)
+T0 = 25.0 + 273.15      # Temperatura nominal en Kelvin (25°C)
+
 @dataclass
 class Sensor:
     publisher: rospy.Publisher
@@ -20,7 +30,7 @@ class Sensor:
 
 sensors = {
     "Temperature" : Sensor(
-        publisher= rospy.Publisher("/temperature_data", Int32, queue_size=10),
+        publisher= rospy.Publisher("/temperature_data", Float32, queue_size=10),
         interval= 1000
     ),
     "Actuator_Pressure" : Sensor(
@@ -81,31 +91,41 @@ def sensor_control_callback(msg: String):
             # Indicar final de transmisión con un -1
             sensor.publisher.publish(-1)
         rospy.loginfo("Todas las lecturas desactivadas")
+
+
+def get_temperature(voltage: float):
+    if voltage == 0:
+        return 25.0  # Evitar división por cero o log(0)
     
-cuff_pressure_temp = 0     #TODO borrar
-actuator_pressure_temp = 0     #TODO borrar
+    R_NTC = R_AUX * (VCC / voltage - 1)
+    temperaturaK = 1.0 / ((math.log(R_NTC / R0) / BETA) + (1.0 / T0))
+    return temperaturaK - 273.15  # Convertir de Kelvin a Celsius
+
+def get_pressure(value: int): # TODO: posibilidad de pasar a kPa o mmHg
+    #TODO: completar
+    pressure = float(value)
+    return pressure
+
+
 # Leer sensor TODO: Modificar 
 def read_sensor(sensor: str):
-    global pulse_dummy_index #TODO borrar
-    global cuff_pressure_temp #TODO borrar
-    global actuator_pressure_temp #TODO borrar
 
     if sensor in sensors.keys():
         if sensor == "Temperature":
-            return random.randint(0, 1023)
+            temperature_raw = ADS_1.readADC(0)
+            temperature = ADS_1.toVoltage(temperature_raw)
+            return temperature
+        
         elif sensor == "Cuff_Pressure":
-            cuff_pressure_temp += 5
-            return cuff_pressure_temp
+            pressure_raw = ADS_2.readADC_Differential_0_1()
+            return get_pressure(pressure_raw)
+        
         elif sensor == "Actuator_Pressure":
-            actuator_pressure_temp += 5
-            return actuator_pressure_temp
+            pressure_raw = ADS_2.readADC_Differential_2_3()
+            return get_pressure(pressure_raw)
+        
         elif sensor == "Pulse":
-            if pulse_dummy_index < len(pulse_dummy):
-                pulse_value = pulse_dummy[pulse_dummy_index]
-                pulse_dummy_index += 1  # Avanzamos al siguiente valor
-                return pulse_value
-            else:
-                return -1
+            return ADS_1.readADC(1)
 
     else:
         return -2   # No afecta
