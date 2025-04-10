@@ -4,9 +4,9 @@ import time
 ADS = ADS1x15.ADS1115(0, 0x48)   
 ADS.setGain(ADS.PGA_0_512V)
 
-def getPressure():
+def getPressure(offset=27.0, pressureRef = 200.0, valueRef=2960.0):
     pressure_raw = ADS.readADC_Differential_0_1()
-    pressure = (pressure_raw-27.0)*200/2960.0
+    pressure = (pressure_raw-offset)*pressureRef/valueRef
     return float(pressure)
 
 # Intervalo de tiempo en segundos
