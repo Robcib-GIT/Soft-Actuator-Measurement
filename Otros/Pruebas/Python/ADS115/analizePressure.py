@@ -6,6 +6,9 @@ import matplotlib.pyplot as plt
 from scipy.signal import butter, filtfilt, find_peaks, peak_prominences
 from tkinter import Tk, filedialog
 
+prominence_min = 1.5
+prominence_max = 5
+
 
 def seleccionar_csv():
     root = Tk()
@@ -63,8 +66,8 @@ indice_max_presion = np.argmax(presion) + 10 #offset para evitar cosas raras
 indices_picos_vPresion, _ = find_peaks(
     derivada_filtrada,
     height=(-25, -4),  # TODO: ajustar
-    prominence=1.5,  # Primero filtrar por el maximo de las bases
-    # width=(fs*60/180.0, fs*60/40.0) TODO:
+    prominence=prominence_min,  # Primero filtrar por el maximo de las bases
+    distance=1  # TODO: filtrar los que se repitan mas para quitar ruidos
 )
 width=(fs*60/200.0, fs*60/20.0)
 picos_vPresion = [derivada_filtrada[i] for i in indices_picos_vPresion]
@@ -76,17 +79,43 @@ prominencias, izq_bases, der_bases = peak_prominences(derivada_filtrada, indices
 bases_min = np.minimum(derivada_filtrada[izq_bases], derivada_filtrada[der_bases])
 prominencia_min = derivada_filtrada[indices_picos_vPresion] - bases_min
 
-# Filtrar los picos cuya prominencia mínima sea mayor que cierto valor, por ejemplo 1.5
-umbral = 5
-#indices_picos_filtrados = [indices_picos_vPresion[i] for i, prominencia in enumerate(prominencia_min) if prominencia > umbral]
+# Filtrar los picos cuya prominencia mínima sea mayor que cierto valor
 indices_picos_filtrados = []
 
 # Recorremos cada elemento de la lista prominencia_min con su índice
 for i in range(len(prominencia_min)):
-    # Si la prominencia es mayor que el umbral
-    if prominencia_min[i] > umbral and indices_picos_vPresion[i]>indice_max_presion:
+    # Si la prominencia es mayor que el umbral, el pico esta en la parte de desinflado
+    if prominencia_min[i] > prominence_max and indices_picos_vPresion[i] > indice_max_presion:
         # Añadimos el índice correspondiente de indices_picos_vPresion a la nueva lista
         indices_picos_filtrados.append(indices_picos_vPresion[i])
+
+
+# Volver a filtrar por el histograma de distancias para sacar los agrupados e importantes
+distancias = np.diff(indices_picos_filtrados)
+bins = 10  # Todo: ajustar xq a huevo, tal vez colocar un rango a mano para evitar errores si no se detecta ruido al principio
+hist, bin_edges = np.histogram(distancias, bins=bins)
+
+indice_moda = np.argmax(hist)
+distancia_min = bin_edges[indice_moda]
+distancia_max = bin_edges[indice_moda+1]
+
+#TODO: filtrar los indces que esten en ese rango y el doble para evitar cuando se salta un piquillo
+#
+#
+
+
+print("Histograma:", hist)
+print("Límites de los bins:", bin_edges)
+
+plt.hist(distancias, bins=bins, edgecolor='black')
+plt.xticks(bin_edges)  # Mostrar los bordes en el eje x
+plt.xlabel('Distancia')
+plt.ylabel('Frecuencia')
+plt.title('Histograma con 4 bins')
+plt.grid(True)
+plt.show()
+
+# Obtener puntos
 new_picos_vPresion = [derivada_filtrada[i] for i in indices_picos_filtrados]
 new_tiempo_picos_vPresion = [tiempo[i] for i in indices_picos_filtrados]
 
