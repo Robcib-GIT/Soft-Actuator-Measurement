@@ -15,7 +15,7 @@ def getPressure(offset=27.0, pressureRef=200.0, valueRef=2960.0):
     return float(pressure)
 
 # Intervalo de tiempo en segundos
-interval = 0.1  # Cambia este valor por el que necesites
+interval = 0.025  # Cambia este valor por el que necesites
 
 # Inicializar lista para almacenar los datos de presión
 presiones = []

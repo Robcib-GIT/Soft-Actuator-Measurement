@@ -52,7 +52,7 @@ derivada_presion = calcular_derivada(tiempo, presion)
 fs = 1 / np.mean(np.diff(tiempo))  # Hz
 
 # Paso 5: Filtrar derivada
-fc = 2.5
+fc = 2
 derivada_filtrada = filtro_paso_bajo(derivada_presion, fs, fc=fc)
 
 # Encontrar maximo presion
