@@ -7,9 +7,13 @@ from adafruit_motor import servo
 from adafruit_pca9685 import PCA9685
 import busio
 
-#i2c = board.I2C()  # uses board.SCL and board.SDA
+BUS_I2C = 1
 
-i2c = busio.I2C(board.SCL_1, board.SDA_1)    # Pi Pico RP2040
+if BUS_I2C == 1:                                # BUS0 (SCL: 28 | SDA: 27)
+    i2c = board.I2C() # o busio.I2C(board.SCL, board.SDA)
+else:                                           # BUS1 (SCL: 5  |  SDA: 3)
+    i2c = busio.I2C(board.SCL_1, board.SDA_1)
+
 
 # Create a simple PCA9685 class instance.
 pca = PCA9685(i2c)
@@ -17,7 +21,7 @@ pca = PCA9685(i2c)
 # timing pulses. This calibration will be specific to each board and its environment. See the
 # calibration.py example in the PCA9685 driver.
 # pca = PCA9685(i2c, reference_clock_speed=25630710)
-pca.frequency = 30
+pca.frequency = 50
 
 # To get the full range of the servo you will likely need to adjust the min_pulse and max_pulse to
 # match the stall points of the servo.
@@ -37,29 +41,15 @@ pca.frequency = 30
 # The pulse range is 750 - 2250 by default. This range typically gives 135 degrees of
 # range, but the default is to use 180 degrees. You can specify the expected range if you wish:
 # servo7 = servo.Servo(pca.channels[7], actuation_range=135)
-servo7 = servo.Servo(pca.channels[2])
+myServo = servo.Servo(pca.channels[15], min_pulse=650, max_pulse=2650) #650-2650
+#myServo = servo.Servo(pca.channels[15]) #650-2650
 
-servo7.angle = 0
-time.sleep(1)
-servo7.angle = 90
-time.sleep(1)
-servo7.angle = 100
-time.sleep(1)
-servo7.angle = 30
+try:
+    while True:
+        angle = int(input("Introduce un angulo: "))
+        myServo.angle = max(0, min(180, angle))
+except KeyboardInterrupt:
+    print("\nInterrumpido por el usuario. Saliendo...")
 
-# We sleep in the loops to give the servo time to move into position.
-""" for i in range(180):
-    servo7.angle = i
-    time.sleep(0.03)
-for i in range(180):
-    servo7.angle = 180 - i
-    time.sleep(0.03) """
-
-# You can also specify the movement fractionally.
-""" fraction = 0.0
-while fraction < 1.0:
-    servo7.fraction = fraction
-    fraction += 0.01
-    time.sleep(0.03) """
 
 pca.deinit()
