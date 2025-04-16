@@ -162,6 +162,25 @@ def initialice_servo_pos():
     cuffServo.angle = DEFLATE_ANGLE
     time.sleep(1) """
 
+
+# --- PID Controller ---
+class PID:
+    def __init__(self, Kp, Ki, Kd, setpoint=0.0):
+        self.Kp = Kp
+        self.Ki = Ki
+        self.Kd = Kd
+        self.setpoint = setpoint
+        self.integral = 0.0
+        self.prev_error = 0.0
+
+    def update(self, measurement, dt):
+        error = self.setpoint - measurement
+        self.integral += error * dt
+        derivative = (error - self.prev_error) / dt
+        output = self.Kp * error + self.Ki * self.integral + self.Kd * derivative
+        self.prev_error = error
+        return output
+
 # --- Bucle principal con PID ---
 if __name__ == "__main__":
     print("Holi")
@@ -171,7 +190,7 @@ if __name__ == "__main__":
     time.sleep(0.5)
 
     deflating = False
-    prev_pressure = 0
+    pid = PID(Kp=5, Ki=5, Kd=10, setpoint=-5)  # PID para mantener velocidad de -4 mmHg/s
 
     while True:
         pressure = getPressure()
@@ -183,40 +202,14 @@ if __name__ == "__main__":
             angle = DEFLATE_ANGLE
             cuffServo.angle = angle
             deflating = True
-            prev_pressure = pressure
-            
 
-        elif deflating and pressure < 15:
+        elif deflating and pressure < 10:
             print("\nTerminado")
-            angle = 0
-            cuffServo.angle = angle
             break
 
-        elif deflating: #TODO: ajustar y mejorar
-            if p_velocity > -4 and (prev_pressure-pressure) > 15:
-                angle -=2
-                prev_pressure = pressure
-
+        elif deflating:
+            correction = pid.update(p_velocity, INTERVAL)
+            angle = int(max(min(angle + correction, DEFLATE_ANGLE), 0))  # Limitar el ángulo
             cuffServo.angle = angle
-    
-    #Calcular presiones
-    pressures= np.array(pressures)
-    time = np.arange(0, len(pressures)) * INTERVAL
-    fs = 1 / np.mean(np.diff(time))  # Frecuencia de muestreo
-    dp = compute_derivative(time, pressure)
-    dp_filtered = lowpass_filter(dp, fs, FC)
-
-    idx_max_pressure = np.argmax(pressure)  # Índice del pico máximo de presión
-    morph_peaks = morphological_filter(dp_filtered, HEIGHT_MAX, HEIGHT_MIN, PROMINENCE_MAX, PROMINENCE_MIN, idx_max_pressure)
-    filtered_peaks = distance_based_filter(morph_peaks, fs)
-
-    if not filtered_peaks:
-        print("⚠️ No valid peaks found after filtering.")
-    else:
-        idx_sys, idx_dia = filtered_peaks[0], filtered_peaks[-1]
-        sys, dia = int(pressure[idx_sys]), int(pressure[idx_dia])
-        print(f"✅ SYS: {sys} mmHg  |  DIA: {dia} mmHg")
-        plot_results(time, pressure, dp, dp_filtered, filtered_peaks, idx_sys, idx_dia, sys, dia)
-
 
         

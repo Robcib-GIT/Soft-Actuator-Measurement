@@ -9,7 +9,7 @@ import busio
 
 BUS_I2C = 1
 
-if BUS_I2C == 1:                                # BUS0 (SCL: 28 | SDA: 27)
+if BUS_I2C == 0:                                # BUS0 (SCL: 28 | SDA: 27)
     i2c = board.I2C() # o busio.I2C(board.SCL, board.SDA)
 else:                                           # BUS1 (SCL: 5  |  SDA: 3)
     i2c = busio.I2C(board.SCL_1, board.SDA_1)
