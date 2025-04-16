@@ -20,6 +20,7 @@ HEIGHT_MAX = 2        # Altura máxima permitida para los picos
 HEIGHT_MIN = -25      # Altura mínima permitida para los picos
 FC = 2                # Frecuencia de corte del filtro paso bajo para la derivada de la señal
 INTERVAL = 0.025      # Segundos entre muestras
+pressures = []         # Vector para guardar todas las presiones
 
 ADS = ADS1x15.ADS1115(1, 0x48)
 ADS.setGain(ADS.PGA_0_512V)
@@ -45,6 +46,7 @@ cuffServo = servo.Servo(pca.channels[15], min_pulse=650, max_pulse=2650)
 def getPressure(offset=27.0, pressureRef=200.0, valueRef=2960.0):
     pressure_raw = ADS.readADC_Differential_0_1()
     pressure = (pressure_raw - offset) * pressureRef / valueRef
+    time.sleep(INTERVAL)  # TODO: quitar
     return float(pressure)
 
 # Calcula la derivada de la señal de presión con respecto al tiempo
@@ -132,6 +134,17 @@ def plot_results(t: np.ndarray, p: np.ndarray, dp: np.ndarray, dp_filt: np.ndarr
     plt.tight_layout()
     plt.show()
 
+
+# Calcular velocidad media con 1 sec
+def calculate_velocity(sample_time=1):
+    samples = 5#math.ceil(sample_time/INTERVAL)
+    if len(pressures)<samples:
+        return 0.0
+    else:
+        mean_delta = np.mean(np.diff(pressures[-samples:]))
+        velocity = mean_delta/INTERVAL
+        return velocity
+
 # --- Declaracion de funciones servos ---
 def initialice_servo_pos():
     print("Moviendo servo a IDLE")
@@ -143,22 +156,42 @@ def initialice_servo_pos():
     cuffServo.angle = DEFLATE_ANGLE
     time.sleep(1) """
 
+def control_air_flow(ang, p_v, min_v=-8, max_v=-2):
+    salto = 4
+    if p_v < min_v:
+        ang += salto
+    elif p_v > max_v:
+        ang -= salto
+    else:
+        ang = ang
+    
+    ang = int(max(min(ang, IFLATE_ANGLE), 20))
+    cuffServo.angle = ang
+    time.sleep(0.5)
+    return ang
+
 
 # --- Ejecución principal ---
 if __name__ == "__main__":
     print("Holi")
     initialice_servo_pos()
-    cuffServo.angle = IFLATE_ANGLE
+    angle = IFLATE_ANGLE
+    cuffServo.angle = angle
     time.sleep(0.5)
     deflating = False
     while(True):
         pressure = getPressure()
-        print(f"\rPresión: {pressure:.2f} mmHg     ", end="")
-        if pressure > 190:
-            cuffServo.angle = DEFLATE_ANGLE
+        pressures.append(pressure)
+        p_velocity = calculate_velocity()
+        print(f"\rPresión: {pressure:.2f} mmHg  |   V_presion: {p_velocity}mmHg/s   ", end="")
+        if not deflating and pressure > 190:
+            angle = DEFLATE_ANGLE
+            cuffServo.angle = angle
             deflating = True
-        
-        if deflating and pressure<10:
+        elif deflating and pressure<10:
             print("Terminado")
             break
+        elif deflating:
+            angle = control_air_flow(ang=angle, p_v=p_velocity)
+
         
