@@ -1,3 +1,4 @@
+import math
 import os
 
 import numpy as np
@@ -8,6 +9,8 @@ from tkinter import Tk, filedialog
 
 prominence_min = 1.5
 prominence_max = 5
+max_height = 0
+min_height = -25
 
 
 def seleccionar_csv():
@@ -60,16 +63,16 @@ derivada_filtrada = filtro_paso_bajo(derivada_presion, fs, fc=fc)
 
 # Encontrar maximo presion
 max_presion = np.max(presion)
-indice_max_presion = np.argmax(presion) + 10 #offset para evitar cosas raras
+indice_max_presion = np.argmax(presion)
 
 # Encontrar picos vPresion
 indices_picos_vPresion, _ = find_peaks(
     derivada_filtrada,
-    height=(-25, -4),  # TODO: ajustar
+    height=(min_height, max_height),
     prominence=prominence_min,  # Primero filtrar por el maximo de las bases
-    distance=1  # TODO: filtrar los que se repitan mas para quitar ruidos
+    distance=1
 )
-width=(fs*60/200.0, fs*60/20.0)
+
 picos_vPresion = [derivada_filtrada[i] for i in indices_picos_vPresion]
 tiempo_picos_vPresion = [tiempo[i] for i in indices_picos_vPresion]
 
@@ -89,20 +92,15 @@ for i in range(len(prominencia_min)):
         # Añadimos el índice correspondiente de indices_picos_vPresion a la nueva lista
         indices_picos_filtrados.append(indices_picos_vPresion[i])
 
+print(f"Indices picos (1er filtrado): {indices_picos_filtrados}")
 
 # Volver a filtrar por el histograma de distancias para sacar los agrupados e importantes
 distancias = np.diff(indices_picos_filtrados)
-bins = 10  # Todo: ajustar xq a huevo, tal vez colocar un rango a mano para evitar errores si no se detecta ruido al principio
+distancia_min = math.floor(60 / 230 * fs)  # 230ppm
+distancia_max = math.ceil(60 / 40 * fs)  # 40ppm
+variacion_pulsos = math.ceil(60E-3 * fs)  # Maxima diferencia entre pulsos de 60ms=60E-3*fs samples
+bins = np.arange(distancia_min, distancia_max + 1, variacion_pulsos)
 hist, bin_edges = np.histogram(distancias, bins=bins)
-
-indice_moda = np.argmax(hist)
-distancia_min = bin_edges[indice_moda]
-distancia_max = bin_edges[indice_moda+1]
-
-#TODO: filtrar los indces que esten en ese rango y el doble para evitar cuando se salta un piquillo
-#
-#
-
 
 print("Histograma:", hist)
 print("Límites de los bins:", bin_edges)
@@ -114,6 +112,39 @@ plt.ylabel('Frecuencia')
 plt.title('Histograma con 4 bins')
 plt.grid(True)
 plt.show()
+
+# Encontrar punto de evaluacion
+# FIXME: cuando cae en medio no detecta algunos
+indice_moda = np.argmax(hist)
+if 0 < indice_moda < len(hist) - 1:
+    if hist[indice_moda - 1] >= hist[indice_moda + 1]:
+        distancia_filtrado = bin_edges[indice_moda]
+    else:
+        distancia_filtrado = bin_edges[indice_moda + 1]
+elif indice_moda == 0:
+    distancia_filtrado = bin_edges[1]
+else:
+    distancia_filtrado = bin_edges[indice_moda]
+
+# Obtener indices de los tramos que no cumplen con esa distancia
+# Recorrer la lista de atras adelante para que no cambien los indices
+segmentos_viables = []  # Se guardan los posibles segmentos que incluyen los picos buenos seguidos
+indice_inicio_corte = 0
+for i, distancia in enumerate(distancias):
+    desfase_distancia = abs(distancia_filtrado - distancia)
+    desfase_distancia_doble = abs(distancia_filtrado * 2 - distancia)  # Para cuando se salta un pulso
+    if desfase_distancia > variacion_pulsos :# and desfase_distancia_doble > variacion_pulsos:  # Igual*2 tambien
+        segmentos_viables.append(indices_picos_filtrados[indice_inicio_corte:i+1])
+        indice_inicio_corte = i+1
+        # print(f"Corte entre puntos {i}-{i+1}")    TODO: borrar
+segmentos_viables.append(indices_picos_filtrados[indice_inicio_corte:])
+print(segmentos_viables)
+
+indices_picos_filtrados = max(segmentos_viables, key=len)
+
+
+
+
 
 # Obtener puntos
 new_picos_vPresion = [derivada_filtrada[i] for i in indices_picos_filtrados]
