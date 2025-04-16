@@ -7,10 +7,10 @@ import matplotlib.pyplot as plt
 from scipy.signal import butter, filtfilt, find_peaks, peak_prominences
 from tkinter import Tk, filedialog
 
-prominence_min = 1.5
-prominence_max = 5
-max_height = 0
-min_height = -25
+PROMINENCE_MIN = 1.5
+PROMINENCE_MAX = 5
+HEIGHT_MAX = 0
+HEIGHT_MIN = -25
 
 
 def seleccionar_csv():
@@ -25,145 +25,156 @@ def seleccionar_csv():
     return filepath
 
 
-def cargar_datos_csv(filepath):
+def load_csv_data(filepath):
     df = pd.read_csv(filepath)
-    tiempo = df.iloc[:, 0].values
-    presion = df.iloc[:, 1].values
-    return tiempo, presion
+    time_data = df.iloc[:, 0].values
+    pressure_data = df.iloc[:, 1].values
+    return time_data, pressure_data
 
 
-def calcular_derivada(tiempo, presion):
-    derivada = np.gradient(presion, tiempo)
-    return derivada
+def calcular_derivada(_time, _pressure):
+    derivative = np.gradient(_pressure, _time)
+    return derivative
 
 
-def filtro_paso_bajo(data, fs, fc, orden=4):
-    nyquist = 0.5 * fs
-    normal_fc = fc / nyquist
-    b, a = butter(orden, normal_fc, btype='low', analog=False)
-    data_filtrada = filtfilt(b, a, data)
-    return data_filtrada
+def filtro_paso_bajo(data, _fs, _fc, order=4):
+    nyquist = 0.5 * _fs
+    normal_fc = _fc / nyquist
+    b, a = butter(order, normal_fc, btype='low', analog=False)
+    filtered_data = filtfilt(b, a, data)
+    return filtered_data
 
 
-# Paso 1: Seleccionar archivo
-ruta_csv = seleccionar_csv()
+""" Devuelve los indices de los picos de la señal proporcionada que cumplen 
+con ciertos margenes de altura y prominencia"""
 
-# Paso 2: Cargar datos
-tiempo, presion = cargar_datos_csv(ruta_csv)
 
-# Paso 3: Derivada
-derivada_presion = calcular_derivada(tiempo, presion)
+def filtrado_morfologico(signal, height_max, height_min, prominence_max, prominence_min, start_index):
+    # Encontrar picos usando altura y prominencia minima
+    signal_peaks_indexes, _ = find_peaks(
+        signal,
+        height=(height_min, height_max),
+        prominence=prominence_min,  # Por defecto calcula con la base mas alta
+        distance=1
+    )
 
-# Paso 4: Calcular frecuencia de muestreo
-fs = 1 / np.mean(np.diff(tiempo))  # Hz
+    # Filtrar picos por prominencia maxima, es decir, utilizando el minimo de las 2 bases
 
-# Paso 5: Filtrar derivada
-fc = 2
-derivada_filtrada = filtro_paso_bajo(derivada_presion, fs, fc=fc)
+    prominences, left_bases, right_bases = peak_prominences(signal, signal_peaks_indexes)
+    min_bases = np.minimum(signal[left_bases], signal[right_bases])
+    min_prominences = signal[signal_peaks_indexes] - min_bases
 
-# Encontrar maximo presion
-max_presion = np.max(presion)
-indice_max_presion = np.argmax(presion)
+    # Filtrar los picos cuya prominencia mínima sea mayor que cierto valor
+    filtered_signal_peaks_indexes = []
+    for i in range(len(min_prominences)):
+        # Si la prominencia es mayor que el umbral y el pico esta en la parte de desinflado pasa el filtro
+        if min_prominences[i] > prominence_max and signal_peaks_indexes[i] > start_index:
+            filtered_signal_peaks_indexes.append(signal_peaks_indexes[i])
 
-# Encontrar picos vPresion
-indices_picos_vPresion, _ = find_peaks(
-    derivada_filtrada,
-    height=(min_height, max_height),
-    prominence=prominence_min,  # Primero filtrar por el maximo de las bases
-    distance=1
-)
+    return filtered_signal_peaks_indexes
 
-picos_vPresion = [derivada_filtrada[i] for i in indices_picos_vPresion]
-tiempo_picos_vPresion = [tiempo[i] for i in indices_picos_vPresion]
 
-prominencias, izq_bases, der_bases = peak_prominences(derivada_filtrada, indices_picos_vPresion)
+""" Devuelve la lista de los indices correspondientes a los picos que cumplen con cierto espaciado entre si que podria
+ser interpretado como un pulso"""
 
-# Calcula "prominencia alternativa" usando el mínimo de las dos bases
-bases_min = np.minimum(derivada_filtrada[izq_bases], derivada_filtrada[der_bases])
-prominencia_min = derivada_filtrada[indices_picos_vPresion] - bases_min
 
-# Filtrar los picos cuya prominencia mínima sea mayor que cierto valor
-indices_picos_filtrados = []
+def filtrado_por_distanciamiento(peaks_indexes):
+    distances = np.diff(peaks_indexes)
+    min_distance = math.floor(60 / 230 * fs)  # Muestras correspondientes a 230ppm
+    max_distance = math.ceil(60 / 40 * fs)  # Muestras correspondientes a 40ppm
+    variance = math.ceil(60E-3 * fs)  # Maxima diferencia entre pulsos de 60ms=60E-3*fs muestras
 
-# Recorremos cada elemento de la lista prominencia_min con su índice
-for i in range(len(prominencia_min)):
-    # Si la prominencia es mayor que el umbral, el pico esta en la parte de desinflado
-    if prominencia_min[i] > prominence_max and indices_picos_vPresion[i] > indice_max_presion:
-        # Añadimos el índice correspondiente de indices_picos_vPresion a la nueva lista
-        indices_picos_filtrados.append(indices_picos_vPresion[i])
+    # Crear histograma
+    bins = np.arange(min_distance, max_distance + 1, variance)
+    hist, bin_edges = np.histogram(distances, bins=bins)
+    # print("Histograma:", hist)
+    # print("Límites de los bins:", bin_edges)
 
-print(f"Indices picos (1er filtrado): {indices_picos_filtrados}")
+    # Mostrar histograma
+    plt.hist(distances, bins=bins, edgecolor='black')
+    plt.xticks(bin_edges)  # Mostrar los bordes en el eje x
+    plt.xlabel('Distancia')
+    plt.ylabel('Frecuencia')
+    plt.title('Histograma de muestras entre picos')
+    plt.grid(True)
+    plt.show()
 
-# Volver a filtrar por el histograma de distancias para sacar los agrupados e importantes
-distancias = np.diff(indices_picos_filtrados)
-distancia_min = math.floor(60 / 230 * fs)  # 230ppm
-distancia_max = math.ceil(60 / 40 * fs)  # 40ppm
-variacion_pulsos = math.ceil(60E-3 * fs)  # Maxima diferencia entre pulsos de 60ms=60E-3*fs samples
-bins = np.arange(distancia_min, distancia_max + 1, variacion_pulsos)
-hist, bin_edges = np.histogram(distancias, bins=bins)
-
-print("Histograma:", hist)
-print("Límites de los bins:", bin_edges)
-
-plt.hist(distancias, bins=bins, edgecolor='black')
-plt.xticks(bin_edges)  # Mostrar los bordes en el eje x
-plt.xlabel('Distancia')
-plt.ylabel('Frecuencia')
-plt.title('Histograma con 4 bins')
-plt.grid(True)
-plt.show()
-
-# Encontrar punto de evaluacion
-# FIXME: cuando cae en medio no detecta algunos
-indice_moda = np.argmax(hist)
-if 0 < indice_moda < len(hist) - 1:
-    if hist[indice_moda - 1] >= hist[indice_moda + 1]:
-        distancia_filtrado = bin_edges[indice_moda]
+    # Encontrar punto de evaluacion: distancia valida mas frecuente
+    # FIXME: cuando cae en medio no detecta algunos, tal vez calcular aqui la variacion añadida
+    threshold_index = np.argmax(hist)
+    if 0 < threshold_index < len(hist) - 1:
+        if hist[threshold_index - 1] >= hist[threshold_index + 1]:
+            threshold_distance = bin_edges[threshold_index]
+        else:
+            threshold_distance = bin_edges[threshold_index + 1]
+    elif threshold_index == 0:
+        threshold_distance = bin_edges[1]
     else:
-        distancia_filtrado = bin_edges[indice_moda + 1]
-elif indice_moda == 0:
-    distancia_filtrado = bin_edges[1]
-else:
-    distancia_filtrado = bin_edges[indice_moda]
+        threshold_distance = bin_edges[threshold_index]
 
-# Obtener indices de los tramos que no cumplen con esa distancia
-# Recorrer la lista de atras adelante para que no cambien los indices
-segmentos_viables = []  # Se guardan los posibles segmentos que incluyen los picos buenos seguidos
-indice_inicio_corte = 0
-for i, distancia in enumerate(distancias):
-    desfase_distancia = abs(distancia_filtrado - distancia)
-    desfase_distancia_doble = abs(distancia_filtrado * 2 - distancia)  # Para cuando se salta un pulso
-    if desfase_distancia > variacion_pulsos :# and desfase_distancia_doble > variacion_pulsos:  # Igual*2 tambien
-        segmentos_viables.append(indices_picos_filtrados[indice_inicio_corte:i+1])
-        indice_inicio_corte = i+1
-        # print(f"Corte entre puntos {i}-{i+1}")    TODO: borrar
-segmentos_viables.append(indices_picos_filtrados[indice_inicio_corte:])
-print(segmentos_viables)
+    # Separar los picos en segmentos que cumplan con las restricciones de distancia
+    grouped_peaks = []
+    cut_index = 0
+    for i, distance in enumerate(distances):
+        current_variance = abs(threshold_distance - distance)
+        if current_variance > variance:
+            grouped_peaks.append(peaks_indexes[cut_index:i + 1])
+            cut_index = i + 1
+            # print(f"Corte entre puntos {i}-{i+1}")    TODO: borrar
 
-indices_picos_filtrados = max(segmentos_viables, key=len)
+    grouped_peaks.append(peaks_indexes[cut_index:])
+    print(grouped_peaks)
+
+    # Devolver el grupo mas amplio
+    return max(grouped_peaks, key=len)
 
 
+# Seleccionar archivo y cargar datos
+csv_rute = seleccionar_csv()
+time, pressure = load_csv_data(csv_rute)
 
+# Obtener derivada
+d_pressure = calcular_derivada(time, pressure)
 
+# Aplicar filtro de paso bajo a la derivada
+fs = 1 / np.mean(np.diff(time))  # Hz
+fc = 2  # Hz
+filtered_d_pressure = filtro_paso_bajo(data=d_pressure, _fs=fs, _fc=fc)
+
+# Obtener zona de desinflado
+max_pressure = np.max(pressure)
+max_pressure_index = np.argmax(pressure)
+
+# Encontrar picos significativos
+d_pressure_peaks_indexes = filtrado_morfologico(signal=filtered_d_pressure, height_max=HEIGHT_MAX, height_min=HEIGHT_MIN,
+                                                prominence_max=PROMINENCE_MAX, prominence_min=PROMINENCE_MIN,
+                                                start_index=max_pressure_index)
+
+print(f"Indices picos (1er filtrado): {d_pressure_peaks_indexes}")  # TODO: borrar
+
+# Volver a filtrar por distanciamiento
+d_pressure_peaks_indexes = filtrado_por_distanciamiento(d_pressure_peaks_indexes)
+print(f"Indices picos (2ndo filtrado): {d_pressure_peaks_indexes}")  # TODO: borrar
 
 # Obtener puntos
-new_picos_vPresion = [derivada_filtrada[i] for i in indices_picos_filtrados]
-new_tiempo_picos_vPresion = [tiempo[i] for i in indices_picos_filtrados]
+# TODO: ver si puedo usar picos vPresion directamente
+d_pressure_peaks = [filtered_d_pressure[i] for i in d_pressure_peaks_indexes]
+d_pressure_peaks_time = [time[i] for i in d_pressure_peaks_indexes]
 
 # Calcular presiones sys y dia
-indice_sys = indices_picos_filtrados[0]
-sys = int(presion[indice_sys])
-indice_dia = indices_picos_filtrados[-1]
-dia = int(presion[indice_dia])
+indice_sys = d_pressure_peaks_indexes[0]
+sys = int(pressure[indice_sys])
+indice_dia = d_pressure_peaks_indexes[-1]
+dia = int(pressure[indice_dia])
 print(f"Sys: {sys}mmHg  |  Dia: {dia}mmHg")
 
 # Paso 6: Graficar
 plt.figure(figsize=(12, 6))
 
 plt.subplot(2, 1, 1)
-plt.plot(tiempo, presion, label='Presión original')
-plt.scatter(tiempo[indice_sys], presion[indice_sys], color='blue', marker='o', label=f"SYS: {sys}mmHg")
-plt.scatter(tiempo[indice_dia], presion[indice_dia], color='green', marker='o', label=f"DIA: {dia}mmHg")
+plt.plot(time, pressure, label='Presión original')
+plt.scatter(time[indice_sys], pressure[indice_sys], color='blue', marker='o', label=f"SYS: {sys}mmHg")
+plt.scatter(time[indice_dia], pressure[indice_dia], color='green', marker='o', label=f"DIA: {dia}mmHg")
 plt.xlabel('Tiempo (s)')
 plt.ylabel('Presión (mmHg)')
 plt.title('Presión vs Tiempo')
@@ -171,9 +182,9 @@ plt.grid()
 plt.legend()
 
 plt.subplot(2, 1, 2)
-plt.plot(tiempo, derivada_presion, label='Derivada sin filtrar', alpha=0.6)
-plt.plot(tiempo, derivada_filtrada, label=f'Derivada filtrada ({fc} Hz)', linewidth=2)
-plt.scatter(new_tiempo_picos_vPresion, new_picos_vPresion, color='red', marker='o', label='Picos detectados')
+plt.plot(time, d_pressure, label='Derivada sin filtrar', alpha=0.6)
+plt.plot(time, filtered_d_pressure, label=f'Derivada filtrada ({fc} Hz)', linewidth=2)
+plt.scatter(d_pressure_peaks_time, d_pressure_peaks, color='red', marker='o', label='Picos detectados')
 plt.xlabel('Tiempo (s)')
 plt.ylabel('dPresión/dt (mmHg/s)')
 plt.title('Primera derivada de la presión')
