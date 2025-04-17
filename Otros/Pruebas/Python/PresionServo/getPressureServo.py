@@ -29,7 +29,7 @@ ADS.setGain(ADS.PGA_0_512V)
 
 # --- Variables globales servos --- TODO: refinar rangos servo y angulos
 IFLATE_ANGLE = 90
-DEFLATE_ANGLE = 38
+DEFLATE_ANGLE = 26
 IDLE_ANGLE = 180
 BUS_I2C = 0
 
