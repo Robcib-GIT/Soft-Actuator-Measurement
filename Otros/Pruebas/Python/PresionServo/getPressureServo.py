@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.signal import butter, filtfilt, find_peaks, peak_prominences
+import csv
 from tkinter import Tk, filedialog
 from typing import Tuple, List
 import ADS1x15
@@ -17,7 +18,7 @@ import busio
 PROMINENCE_MIN = 1.5  # Prominencia mínima para considerar un pico
 PROMINENCE_MAX = 5    # Prominencia máxima para considerar un pico
 HEIGHT_MAX = 2        # Altura máxima permitida para los picos
-HEIGHT_MIN = -25      # Altura mínima permitida para los picos
+HEIGHT_MIN = -40      # Altura mínima permitida para los picos
 FC = 2                # Frecuencia de corte del filtro paso bajo para la derivada de la señal
 INTERVAL = 0.025      # Segundos entre muestras
 pressures = []         # Vector para guardar todas las presiones
@@ -28,7 +29,7 @@ ADS.setGain(ADS.PGA_0_512V)
 
 # --- Variables globales servos --- TODO: refinar rangos servo y angulos
 IFLATE_ANGLE = 90
-DEFLATE_ANGLE = 35
+DEFLATE_ANGLE = 38
 IDLE_ANGLE = 180
 BUS_I2C = 0
 
@@ -193,7 +194,7 @@ if __name__ == "__main__":
             break
 
         elif deflating: #TODO: ajustar y mejorar
-            if p_velocity > -4 and (prev_pressure-pressure) > 15:
+            if p_velocity > -3 and (prev_pressure-pressure) > 50:
                 angle -=2
                 prev_pressure = pressure
 
@@ -203,10 +204,10 @@ if __name__ == "__main__":
     pressures= np.array(pressures)
     time = np.arange(0, len(pressures)) * INTERVAL
     fs = 1 / np.mean(np.diff(time))  # Frecuencia de muestreo
-    dp = compute_derivative(time, pressure)
+    dp = compute_derivative(time, pressures)
     dp_filtered = lowpass_filter(dp, fs, FC)
 
-    idx_max_pressure = np.argmax(pressure)  # Índice del pico máximo de presión
+    idx_max_pressure = np.argmax(pressures)  # Índice del pico máximo de presión
     morph_peaks = morphological_filter(dp_filtered, HEIGHT_MAX, HEIGHT_MIN, PROMINENCE_MAX, PROMINENCE_MIN, idx_max_pressure)
     filtered_peaks = distance_based_filter(morph_peaks, fs)
 
@@ -214,9 +215,25 @@ if __name__ == "__main__":
         print("⚠️ No valid peaks found after filtering.")
     else:
         idx_sys, idx_dia = filtered_peaks[0], filtered_peaks[-1]
-        sys, dia = int(pressure[idx_sys]), int(pressure[idx_dia])
+        sys, dia = int(pressures[idx_sys]), int(pressures[idx_dia])
         print(f"✅ SYS: {sys} mmHg  |  DIA: {dia} mmHg")
-        plot_results(time, pressure, dp, dp_filtered, filtered_peaks, idx_sys, idx_dia, sys, dia)
+        plot_results(time, pressures, dp, dp_filtered, filtered_peaks, idx_sys, idx_dia, sys, dia)
+
+        # Crear ventana de diálogo para guardar el archivo CSV
+        root = Tk()
+        root.withdraw()  # Ocultar ventana principal
+        file_path = filedialog.asksaveasfilename(defaultextension=".csv", filetypes=[("CSV files", "*.csv")])
+
+        if file_path:
+            # Guardar los datos en un archivo CSV
+            with open(file_path, mode='w', newline='') as file:
+                writer = csv.writer(file)
+                writer.writerow(['Tiempo (segundos)', 'Presión (mmHg)'])
+                for t, p in zip(time, pressures):
+                    writer.writerow([t, p])
+            print(f"Archivo guardado como {file_path}")
+        else:
+            print("No se guardó el archivo.")
 
 
         
