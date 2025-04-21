@@ -21,7 +21,9 @@ class BloodPressure:
         self.__processed_samples = 0
         self.shipping_samples = math.ceil(200E-3*fs)              # Envio cada 200ms
         self.filtered_signal = []
-        self.time = []
+        self.time = []   # TODO: manejar
+        self.systolics_time = [[], []]
+        self.diastolics_time = [[], []]
 
         # Variables para el filtro
         self.__zi: np.ndarray | None = None
@@ -52,9 +54,83 @@ class BloodPressure:
 
         return filtered_data
 
-    def analice_pulse_signal(self):
-        print("kk") #TODO: terminar
+    def get_cardiac_data(_systolics_time_list):  #TODO: retocar
+        # Convertir a numpy para mayor agilidad
+        _systolics_time = np.array(_systolics_time_list[1])
 
-    # TODO: def get_cardiac_data(_systolics_time_list):
+        # Obtener propiedades del pulso
+        if len(_systolics_time) > 1:
+            _ibi = np.diff(_systolics_time)  # Intervalo entre pulsos
+
+            # Tomar ultimos 5 pulsos para el ibi
+            if len(_ibi) > 5:
+                temp_ibi = _ibi[-5:]
+            else:
+                temp_ibi = _ibi
+
+            mean_ibi = np.mean(temp_ibi)
+            _frequency = 1000 / mean_ibi
+            _pulse = _frequency * 60
+
+            # Tomar ultimos 20 pulsos para el ibi
+            if len(_ibi) > 20:
+                temp_ibi = _ibi[-20:]
+            else:
+                temp_ibi = _ibi
+
+            if len(temp_ibi) > 2:
+                _sdnn = np.std(temp_ibi, ddof=1)  # Desviación estándar
+            else:
+                _sdnn = -1
+
+            if len(temp_ibi) > 1:
+                _rmssd = np.sqrt(
+                    np.mean(np.diff(temp_ibi) ** 2))  # Raíz cuadrada de la media de las diferencias al cuadrado
+            else:
+                _rmssd = -1
+
+                # Enviar informacion
+
+            return int(_pulse), mean_ibi, _frequency, _sdnn, _rmssd
+
+
+    def analice_pulse_signal(self):
+        filtered_signal = np.array(self.filtered_signal)
+        samples = len(filtered_signal)
+
+        if samples >= self.__min_samples_to_analice:
+            # Añadir tiempo a la señal TODO: intentar no reasignarlo tanto igual
+            self.time = np.arange(self.__processed_samples - samples, self.__processed_samples) * self.interval
+
+            # Localizar puntos de interés en los ultimos puntos
+            systolic_indexes, _ = find_peaks(
+                self.filtered_signal,
+                height=(self.BARRERA_SIS_DIA, self.MAX_SISTOLICO),
+                distance=self.__min_samples_per_beat)
+            diastolic_indexes, _ = find_peaks(
+                self.filtered_signal,
+                height=(self.MIN_DIASTOLICO, self.BARRERA_SIS_DIA),
+                distance=self.__min_samples_per_beat)
+
+            # Añadir nuevos puntos de interés
+            if len(systolic_indexes) > 0:
+                for index in systolic_indexes:
+                    # Si el pico no está se guarda
+                    if self.time[index] not in self.systolics_time[1]:
+                        self.systolics_time[0].append(self.filtered_signal[index])
+                        self.systolics_time[1].append(self.time[index])
+
+            if len(diastolic_indexes) > 0:
+                for index in diastolic_indexes:
+                    # Si el pico no está se guarda
+                    if self.time[index] not in self.systolics_time[1]:
+                        self.diastolics_time[0].append(self.filtered_signal[index])
+                        self.diastolics_time[1].append(self.time[index])
+
+            # Obtener datos médicos
+            self.get_cardiac_data(self.systolics_time)
+
+
+            # TODO: def get_cardiac_data(_systolics_time_list):
 
     # TODO: funcion para reiniio
