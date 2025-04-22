@@ -5,9 +5,9 @@ from typing import List
 
 def process_pulse_segment(segment: List[int]):
     filtered_segment = pulse.apply_low_pass_filter(pulse_segment)
-    #print(filtered_segment)
+    # print(filtered_segment)
     ppm, mean_ibi, frequency, sdnn, rmssd = pulse.analice_pulse_signal()
-    #print(f"ppm: {ppm}  |  freq: {frequency}  |  sdnn: {sdnn}  |  rmssd: {rmssd}")
+    # print(f"ppm: {ppm}  |  freq: {frequency}  |  sdnn: {sdnn}  |  rmssd: {rmssd}")
 
 
 if __name__ == "__main__":
@@ -38,5 +38,3 @@ if __name__ == "__main__":
             if len(pulse_segment) >= pulse.shipping_samples:
                 process_pulse_segment(pulse_segment)
                 pulse_segment = []
-
-

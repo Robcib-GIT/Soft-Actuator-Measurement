@@ -6,9 +6,9 @@ import matplotlib.pyplot as plt
 
 
 class Pulse:
-    MAX_SISTOLICO = 25000         # Dedo: 550 | Brazo: 580 | Cuello: 25000
-    BARRERA_SIS_DIA = 15000       # Dedo: 515 | Brazo: 525  | Cuello: 15000
-    MIN_DIASTOLICO = 10000        # Dedo: ? | Brazo: ?  | Cuello: 10000
+    MAX_SYSTOLIC = 25000         # Dedo: 550 | Brazo: 580 | Cuello: 25000
+    BARRIER_SYS_DIA = 15000       # Dedo: 515 | Brazo: 525  | Cuello: 15000
+    MIN_DIASTOLIC = 10000        # Dedo: ? | Brazo: ?  | Cuello: 10000
 
     def __init__(self, fs: float):  # Añadir un publicador como entrada para enviar segmentos
         self.fs = fs
@@ -100,11 +100,11 @@ class Pulse:
             # Localizar puntos de interés en los ultimos puntos
             systolic_indexes, _ = find_peaks(
                 self.filtered_signal,
-                height=(self.BARRERA_SIS_DIA, self.MAX_SISTOLICO),
+                height=(self.BARRIER_SYS_DIA, self.MAX_SYSTOLIC),
                 distance=self.__min_samples_per_beat)
             diastolic_indexes, _ = find_peaks(
                 self.filtered_signal,
-                height=(self.MIN_DIASTOLICO, self.BARRERA_SIS_DIA),
+                height=(self.MIN_DIASTOLIC, self.BARRIER_SYS_DIA),
                 distance=self.__min_samples_per_beat)
 
             # Añadir nuevos puntos de interés

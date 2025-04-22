@@ -158,7 +158,7 @@ def initialice_servo_pos():
     while(getPressure()>5.0):
         pass
     time.sleep(2)
-    """ cuffServo.angle = IFLATE_ANGLE
+    """ cuffServo.angle = INFLATE_ANGLE
     time.sleep(1)
     cuffServo.angle = DEFLATE_ANGLE
     time.sleep(1) """

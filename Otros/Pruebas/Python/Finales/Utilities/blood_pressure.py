@@ -15,7 +15,7 @@ class BloodPressure:
 
     def __init__(self, fs: float):
         self.fs = fs
-        self.__sample_interval = 1 / fs
+        self.sample_interval = 1 / fs
         self.pressures: np.ndarray | None = None    # TODO: comprobar que en ros no me de problema
         self.time: np.ndarray | None = None
         self.d_pressures: np.ndarray | None = None
@@ -115,7 +115,7 @@ class BloodPressure:
         plt.show()
 
     # Calcular velocidad media
-    def calculate_velocity(self, pressures: np.ndarray, sample_time=0.5):
+    def calculate_velocity(self, pressures: List[float], sample_time=0.5):
         samples = max(2, math.ceil(sample_time * self.fs))  # al menos 2 muestras
         if len(pressures) < samples:
             return 0.0
@@ -125,8 +125,8 @@ class BloodPressure:
         return velocity
 
     # Función principal para calcular la presión arterial
-    def get_blood_pressure(self, pressures: np.ndarray):
-        self.time = np.arange(0, len(pressures)) * self.__sample_interval
+    def get_blood_pressure(self, pressures: List[float]):
+        self.time = np.arange(0, len(pressures)) * self.sample_interval
         self.pressures = pressures
 
         try:
