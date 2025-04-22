@@ -2,12 +2,13 @@ import math
 from typing import List
 import numpy as np
 from scipy.signal import butter, lfilter, find_peaks
+import matplotlib.pyplot as plt
 
 
-class BloodPressure:
-    MAX_SISTOLICO = 580  # Dedo: 550 | Brazo: 580
-    BARRERA_SIS_DIA = 525  # Dedo: 515 | Brazo: 525
-    MIN_DIASTOLICO = 480
+class Pulse:
+    MAX_SISTOLICO = 25000         # Dedo: 550 | Brazo: 580 | Cuello: 25000
+    BARRERA_SIS_DIA = 15000       # Dedo: 515 | Brazo: 525  | Cuello: 15000
+    MIN_DIASTOLICO = 10000        # Dedo: ? | Brazo: ?  | Cuello: 10000
 
     def __init__(self, fs: float):  # Añadir un publicador como entrada para enviar segmentos
         self.fs = fs
@@ -20,15 +21,16 @@ class BloodPressure:
         self.__processed_samples = 0
         self.shipping_samples = math.ceil(200E-3 * fs)  # Envio cada 200ms
         self.filtered_signal = []
+        self.signal = []  # TODO: ver si borrar
         self.time = []  # TODO: manejar
         self.systolics_time = [[], []]
         self.diastolics_time = [[], []]
 
         # Variables para el filtro
         self.__zi: np.ndarray | None = None
-        self.__b, self.__a = self.init_low_pass_filter(fc=3, order=4)
+        self.__b, self.__a = self.__init_low_pass_filter(fc=5, order=4)
 
-    def init_low_pass_filter(self, fc, order=4):
+    def __init_low_pass_filter(self, fc, order=4):
         nyquist = 0.5 * self.fs
         normal_cutoff = fc / nyquist
         b, a = butter(order, normal_cutoff, btype='low', analog=False)
@@ -36,24 +38,27 @@ class BloodPressure:
 
     def apply_low_pass_filter(self, data: List[int]):
         if not data:
-            raise ValueError("Segmento vacío.")
+            return []
 
-        if self.__zi is None:
-            self.__zi = [0 for _ in range(max(len(self.__a), len(self.__b)) - 1)]
-        filtered_data, self.__zi = lfilter(self.__b, self.__a, data, zi=self.__zi)
+        else:
+            if self.__zi is None:
+                self.__zi = [0 for _ in range(max(len(self.__a), len(self.__b)) - 1)]
+            filtered_data, self.__zi = lfilter(self.__b, self.__a, data, zi=self.__zi)
 
-        # TODO: mover esta parte cuando añada publicador
-        # Actualizar señales
-        self.filtered_signal.extend(filtered_data)
-        self.processed_samples += len(data)
+            # TODO: mover esta parte cuando añada publicador
+            # Actualizar señales
+            self.filtered_signal.extend(filtered_data)
+            self.__processed_samples += len(data)
+            self.signal.extend(data)
 
-        # Eliminar sobrante
-        if len(self.filtered_signal) > self.__max_samples_to_analice:
-            self.filtered_signal = self.filtered_signal[self.shipping_samples:]
+            # Eliminar sobrante
+            if len(self.filtered_signal) > self.__max_samples_to_analice:
+                self.filtered_signal = self.filtered_signal[self.shipping_samples:]
+                self.signal = self.signal[self.shipping_samples:]
 
-        return filtered_data
+            return filtered_data
 
-    def get_cardiac_data(self):  # TODO: retocar
+    def __get_cardiac_data(self):  # TODO: retocar
         # Obtener propiedades del pulso
         if len(self.systolics_time[1]) > 2:
             ibi = np.diff(self.systolics_time[1])  # Intervalo entre pulsos
@@ -61,33 +66,32 @@ class BloodPressure:
             # Tomar últimos 5 pulsos del ibi para datos más cambiantes
             relevant_pulses = 5
             ibi_slice = ibi[-min(len(ibi), relevant_pulses):]
-            mean_ibi = np.mean(ibi_slice)
-            frequency = 1000 / mean_ibi
-            ppm = frequency * 60
+            mean_ibi: float = np.mean(ibi_slice)
+            frequency: float = 1000 / mean_ibi
+            ppm = int(frequency * 60)
 
             # Tomar últimos 20 pulsos para parámetros menos cambiantes
             relevant_pulses = 20
             ibi_slice = ibi[-min(len(ibi), relevant_pulses):]
 
             if len(ibi_slice) > 2:
-                sdnn = np.std(ibi_slice, ddof=1)  # Desviación estándar
+                sdnn: float = np.std(ibi_slice, ddof=1)  # Desviación estándar
             else:
                 sdnn = -1
 
             if len(ibi_slice) > 1:
-                rmssd = np.sqrt(
+                rmssd: float = np.sqrt(
                     np.mean(np.diff(ibi_slice) ** 2))  # Raíz cuadrada de la media de las diferencias al cuadrado
             else:
                 rmssd = -1
 
-            return int(ppm), mean_ibi, frequency, sdnn, rmssd
+            return ppm, mean_ibi, frequency, sdnn, rmssd
 
         else:
             return (-1,) * 5
 
     def analice_pulse_signal(self):
-        filtered_signal = np.array(self.filtered_signal)
-        samples = len(filtered_signal)
+        samples = len(self.filtered_signal)
 
         if samples >= self.__min_samples_to_analice:
             # Añadir tiempo a la señal TODO: intentar no reasignarlo tanto igual
@@ -119,11 +123,27 @@ class BloodPressure:
                         self.diastolics_time[1].append(self.time[index])
 
             # Obtener datos médicos
-            return self.get_cardiac_data()
+            return self.__get_cardiac_data()
+        else:
+            return (-1,) * 5
+
+    def plot_results(self):
+        plt.plot(self.time, self.signal, color='r', linewidth=1, label='Pulso original')
+        plt.plot(self.time, self.filtered_signal, color='g', linewidth=2, label='Pulso filtrado')
+        plt.scatter(self.systolics_time[1], self.systolics_time[0], color='blue', label="Picos sistólicos")
+        plt.scatter(self.diastolics_time[1], self.diastolics_time[0], color='orange', label="Picos diastólicos")
+        plt.xlabel('Time (s)')
+        plt.ylabel('Pulso (mV)')
+        plt.title('Pulso vs Tiempo')
+        plt.grid()
+        plt.legend()
+        plt.tight_layout()
+        plt.show()
 
     def restart(self):
         self.__processed_samples = 0
         self.filtered_signal = []
+        self.signal = []
         self.time = []
         self.systolics_time = [[], []]
         self.diastolics_time = [[], []]
