@@ -1,4 +1,5 @@
 import time
+from typing import List
 
 import ADS1x15
 import board
@@ -15,16 +16,16 @@ from Utilities.data_operations import save_data
 """
 
 # --- Constantes y variables presión arterial --- TODO: refinar cuando complete el actuador
-BUS_I2C_ADS115 = 0
+BUS_I2C_ADS115 = 1
 ADS = ADS1x15.ADS1115(BUS_I2C_ADS115, 0x48)
 ADS.setGain(ADS.PGA_0_512V)
 
-pressure_fs = 25  # Hz
+pressure_fs = 40  # Hz
 bp = BloodPressure(pressure_fs)
 
 # --- Constantes y variables servos --- TODO: refinar rangos servo y angulos
 INFLATE_ANGLE = 90
-DEFLATE_ANGLE = 26
+DEFLATE_ANGLE = 28
 IDLE_ANGLE = 180
 BUS_I2C_PCA965 = 0
 
@@ -70,14 +71,15 @@ if __name__ == "__main__":
 
     # Medir presiones
     deflating = False
-    pressures = [0.0]  # Vector para guardar todas las presiones
+    pressures: List[float] = []  # Vector para guardar todas las presiones
+    samples_prev_opening = 0
 
     while True:
         pressure = get_pressure()
         pressures.append(pressure)
-        p_velocity = bp.calculate_velocity(pressures)
-        print(f"\rPresión: {pressure:.2f} mmHg  |   V_presión: {p_velocity:.2f} mmHg/s   |  Ángulo: {cuffServo.angle}         ",
-              end="")
+        p_velocity = bp.calculate_velocity(pressures=pressures, sample_time=0.1)
+        print(f"\rPresión: {pressure:.2f} mmHg  |   V_presión: {p_velocity:.2f} mmHg/s   |   Ángulo: {int(cuffServo.angle)}       ",
+              end="") # 
 
         # Cuando llega a cierta presión comienza a desinflarse
         if not deflating and pressure > 190:
@@ -90,13 +92,19 @@ if __name__ == "__main__":
             break
         # Proceso de desinflado controlado
         elif deflating:  # TODO: ajustar y mejorar
-            if p_velocity > -3 and (pressures[-1] - pressures[-2]) > 50:
+            samples_prev_opening += 1
+            if p_velocity>-4 and samples_prev_opening>=int(2/bp.sample_interval):
                 cuffServo.angle -= 2
+                samples_prev_opening = 0
 
+
+    try:
     # Procesar información
-    sys, dia = bp.get_blood_pressure(pressures)
-    bp.plot_results()
-    save_data([bp.time, bp.pressures], ["Pressure [mmHg]", "Time [s]"])
+        sys, dia = bp.get_blood_pressure(pressures)
+        bp.plot_results()
+        save_data([bp.time, bp.pressures], ["Pressure [mmHg]", "Time [s]"])
+    except Exception as e:
+        print("Ocurrió un error al procesar los datos.")
 
 
 
