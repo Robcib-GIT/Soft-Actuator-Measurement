@@ -93,9 +93,22 @@ if __name__ == "__main__":
         print(f"\rPresión: {pressure:.2f} mmHg  |   V_presión: {p_velocity:.2f} mmHg/s   |   Ángulo: {int(cuffServo.angle)}       ", end="") # 
 
         # Cuando llega a cierta presión comienza a desinflarse
-        if  not deflating and pressure>=DEFLATE_THRESHOLD_PRESSURE:
-            cuffServo.angle = 27
-            deflating = True
+        if pressure >= DEFLATE_THRESHOLD_PRESSURE and not deflating_pressure_reached:
+            cuffServo.angle = DEFLATE_ANGLE
+            deflating_pressure_reached = True
+        elif not deflating and deflating_pressure_reached:
+            samples_prev_opening += 1
+            if samples_prev_opening>=int(1/bp.sample_interval):
+                turbulences_passed = True
+            if samples_prev_opening>=int(0.5/bp.sample_interval) and turbulences_passed:
+                if p_velocity>=-10:
+                    samples_prev_opening=0
+                    cuffServo.angle -=1
+                    print(f"\nVelocidad: {p_velocity:.2f}, angle: {cuffServo.angle:.0f}")
+                else:
+                    print(f"\nTerminado de abrir con presion: {pressure:.2f} y v_presion: {p_velocity:.2f}       ", end="\n")
+                    deflating = True
+                    samples_prev_opening = 0
 
         # Se abre completamente para terminar de desinflarse
         elif deflating and pressure < 15:
@@ -106,8 +119,13 @@ if __name__ == "__main__":
         elif deflating:  # TODO: ajustar y mejorar
             samples_prev_opening += 1
             if p_velocity>-2 and samples_prev_opening>=int(4/bp.sample_interval):
-                cuffServo.angle -= 1
-                samples_prev_opening = 0
+                if 170<pressure<50:
+                    if p_velocity>1:
+                        cuffServo.angle -= 1
+                        samples_prev_opening = 0
+                else:
+                    cuffServo.angle -= 1
+                    samples_prev_opening = 0
 
 
     try:

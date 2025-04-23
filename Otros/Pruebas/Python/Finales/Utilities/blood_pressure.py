@@ -144,7 +144,11 @@ class BloodPressure:
 
             self.__idx_peaks = idx_distance_peaks
             idx_sys, idx_dia = idx_distance_peaks[0], idx_distance_peaks[-1]
+
+            # Rangos extremos 240>sys>70 & 140>dia>40
             sys, dia = int(pressures[idx_sys]), int(pressures[idx_dia])
+            if not(240>sys>70) or not(140>dia>40):
+                raise ValueError("Cálculo erroneo, presiones fuera de rangos factibles.")
             print(f"SYS: {sys} mmHg  |  DIA: {dia} mmHg")
             return sys, dia
 
