@@ -56,7 +56,7 @@ def getPressure(sensor: int = 1, offset=27.0, pressureRef = 200.0, valueRef=2960
     else:
         pressure_raw = ADS.readADC_Differential_2_3()
 
-    pressure = (pressure_raw-offset)*pressureRef/valueRef
+    pressure = (pressure_raw-offset)*(pressureRef)/(valueRef-offset)
     return float(pressure)
 
 def convertPressure(p_raw, offset, pressureRef, valueRef):
@@ -79,7 +79,7 @@ if __name__ == "__main__":
             pre01 = convertPressure(p_raw=raw01, offset=11, pressureRef=200.0, valueRef=2960)
 
             raw23 = ADS.readADC_Differential_2_3()
-            pre23 = convertPressure(p_raw=raw23, offset=11, pressureRef=200.0, valueRef=2870)
+            pre23 = convertPressure(p_raw=raw23, offset=-21, pressureRef=200.0, valueRef=2870)
 
             p_raw_01.append(raw01)
             p_raw_23.append(raw23)
