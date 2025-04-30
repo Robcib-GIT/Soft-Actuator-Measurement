@@ -115,7 +115,7 @@ class BloodPressure:
         plt.show()
 
     # Calcular velocidad media
-    def calculate_velocity(self, pressures: List[float], sample_time=0.5):
+    def calculate_velocity(self, pressures: List[float], sample_time=0.5):   #TODO: hacer que sea la media de todas
         samples = max(2, math.ceil(sample_time * self.fs))  # al menos 2 muestras
         if len(pressures) < samples:
             return 0.0

@@ -31,7 +31,7 @@ ADS.setGain(ADS.PGA_0_512V)
 pressure_fs = 40  # Hz
 bp = BloodPressure(pressure_fs)
 
-DEFLATE_THRESHOLD_PRESSURE = 190 # mmHg
+DEFLATE_THRESHOLD_PRESSURE = 190  # mmHg
 
 # --- Constantes y variables servos --- TODO: refinar rangos servo y angulos
 INFLATE_ANGLE = 90
@@ -47,11 +47,13 @@ else:
 pca = PCA9685(i2c)
 pca.frequency = 50
 cuffServo = servo.Servo(pca.channels[15], min_pulse=650, max_pulse=2650)
-#TODO: añadir servo actuador
+
+
+# TODO: añadir servo actuador
 
 
 # --- Declaracion de funciones presion arterial ---
-def get_pressure(offset=27.0, pressure_ref=200.0, value_ref=2960.0):     # TODO: quitar al usar ROS
+def get_pressure(offset=27.0, pressure_ref=200.0, value_ref=2960.0):  # TODO: quitar al usar ROS
     pressure_raw = ADS.readADC_Differential_0_1()
     pressure = (pressure_raw - offset) * pressure_ref / value_ref
     time.sleep(bp.sample_interval)
@@ -72,6 +74,53 @@ def initialize_servo_pos():
     # TODO: añadir inicializacion de actuador
 
 
+# --- Otros---
+def control_cuff(pressure: float, p_velocity: float) -> bool:  # TODO: resetear atributos
+    """
+    Args:
+        pressure: valor actual de la presión
+        p_velocity: velocidad con la que varía la presión
+    Returns:
+        terminated: si la medición de presiones ha terminado o no
+    """
+
+    if not hasattr(control_cuff, "deflating"):
+        control_cuff.deflating = False
+    if not hasattr(control_cuff, "samples_prev_opening"):
+        control_cuff.samples_prev_opening = 0
+
+    terminated = False
+    if pressure == -1:
+        terminated = True
+    else:
+        print(
+            f"\rPresión: {pressure:.2f} mmHg  |   V_presión: {p_velocity:.2f} mmHg/s   |   Ángulo: {int(cuffServo.angle)}       ",
+            end="")  # TODO: borrar
+
+        # Cuando llega a cierta presión comienza a desinflarse
+        if not control_cuff.deflating and pressure >= DEFLATE_THRESHOLD_PRESSURE:
+            cuffServo.angle = 27  # TODO: puede que haya que retocar a veces
+            control_cuff.deflating = True
+
+        # Se abre completamente para terminar de desinflarse
+        elif control_cuff.deflating and pressure < 15:
+            print("\nTerminada medición")
+            cuffServo.angle = 0
+            terminated = True
+        # Proceso de desinflado controlado
+        elif control_cuff.deflating:  # TODO: ajustar y mejorar
+            control_cuff.samples_prev_opening += 1
+            if p_velocity > -2 and control_cuff.samples_prev_opening >= int(4 / bp.sample_interval):
+                cuffServo.angle -= 1
+                control_cuff.samples_prev_opening = 0
+
+    # Resetear atributos (variables estáticas) cuando se termina la medición
+    if terminated:
+        control_cuff.deflating = False
+        control_cuff.samples_prev_opening = 0
+    return terminated
+
+
 # --- Bucle principal con PID ---
 if __name__ == "__main__":
     print("Proceso de lectura de presión arterial iniciado")
@@ -90,28 +139,13 @@ if __name__ == "__main__":
         pressure = get_pressure()
         pressures.append(pressure)
         p_velocity = bp.calculate_velocity(pressures=pressures, sample_time=0.1)
-        print(f"\rPresión: {pressure:.2f} mmHg  |   V_presión: {p_velocity:.2f} mmHg/s   |   Ángulo: {int(cuffServo.angle)}       ", end="") # 
 
-        # Cuando llega a cierta presión comienza a desinflarse
-        if  not deflating and pressure>=DEFLATE_THRESHOLD_PRESSURE:
-            cuffServo.angle = 27
-            deflating = True
-
-        # Se abre completamente para terminar de desinflarse
-        elif deflating and pressure < 15:
-            print("\nTerminada medición")
-            cuffServo.angle = 0
+        terminate = control_cuff(pressure=pressure, p_velocity=p_velocity)
+        if terminate:
             break
-        # Proceso de desinflado controlado
-        elif deflating:  # TODO: ajustar y mejorar
-            samples_prev_opening += 1
-            if p_velocity>-2 and samples_prev_opening>=int(4/bp.sample_interval):
-                cuffServo.angle -= 1
-                samples_prev_opening = 0
-
 
     try:
-    # Procesar información
+        # Procesar información
         sys, dia = bp.get_blood_pressure(pressures)
         bp.plot_results()
         save_data([bp.time, bp.pressures], ["Pressure [mmHg]", "Time [s]"])
@@ -128,8 +162,4 @@ if __name__ == "__main__":
         plt.grid()
         plt.legend()
 
-        plt.show()  
-
-
-
-
+        plt.show()
