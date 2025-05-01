@@ -31,19 +31,19 @@ class Sensor:
 
 
 sensors = {
-    "Temperature": Sensor(
+    "temperature": Sensor(
         publisher=rospy.Publisher("/temperature_data", Float32, queue_size=10),
         interval=1000
     ),
-    "Actuator_Pressure": Sensor(
+    "actuator_pressure": Sensor(
         publisher=rospy.Publisher("/actuator_pressure_data", Float32, queue_size=10),
         interval=500
     ),
-    "Cuff_Pressure": Sensor(
+    "cuff_pressure": Sensor(
         publisher=rospy.Publisher("/cuff_pressure_data", Float32, queue_size=10),
         interval=500
     ),
-    "Pulse": Sensor(
+    "pulse": Sensor(
         publisher=rospy.Publisher("/pulse_data", Int32, queue_size=10),
         interval=40
     ),

@@ -91,7 +91,7 @@ if __name__ == "__main__":
             if fully_closed:
                 n +=1
                 if n>=5/INTERVAL:
-                    cuffServo.angle = DEFLATE_ANGLE
+                    cuff_servo.angle = DEFLATE_ANGLE
                     time = np.arange(len(p_raw_01))*INTERVAL
 
                     plt.figure(figsize=(12, 6))

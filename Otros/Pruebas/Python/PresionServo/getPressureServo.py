@@ -158,9 +158,9 @@ def initialice_servo_pos():
     while(getPressure()>5.0):
         pass
     time.sleep(2)
-    """ cuffServo.angle = INFLATE_ANGLE
+    """ cuff_servo.angle = INFLATE_ANGLE
     time.sleep(1)
-    cuffServo.angle = DEFLATE_ANGLE
+    cuff_servo.angle = DEFLATE_ANGLE
     time.sleep(1) """
 
 # --- Bucle principal con PID ---
