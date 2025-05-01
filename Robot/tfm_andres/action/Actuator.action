@@ -1,0 +1,9 @@
+# Actuator.action
+
+# Goal
+---
+# Result
+bool success
+---
+# Feedback
+float32 progress
