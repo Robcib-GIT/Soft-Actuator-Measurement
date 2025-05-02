@@ -57,7 +57,7 @@ def publish_sensor_data():
         current_time = rospy.Time.now().to_sec()
 
         for key, value in sensors.items():
-            if (value.publishing and (current_time - value.last_publish_time) >= value.interval / 1000.0):
+            if value.publishing and (current_time - value.last_publish_time) >= value.interval / 1000.0:
                 value.last_publish_time = current_time
 
                 value.publisher.publish(read_sensor(key))
@@ -71,7 +71,7 @@ def sensor_control_callback(msg: String):
     if sensor_name in sensors:
         sensors[sensor_name].publishing = not sensors[sensor_name].publishing
 
-        if (sensors[sensor_name].publishing):
+        if sensors[sensor_name].publishing:
             rospy.loginfo(f"Lecturas de {sensor_name} activadas")
         else:
             rospy.loginfo(f"Lecturas de {sensor_name} desactivadas")

@@ -2,7 +2,7 @@
 import rospy
 import actionlib
 from std_msgs.msg import Bool, Float32, String
-from tfm_andres.msg import ActuatorAction, ActuatorFeedback, ActuatorResult
+from tfm_andres.msg import PneumaticsAction, PneumaticsFeedback, PneumaticsResult
 from tfm_andres.blood_pressure import BloodPressure
 import board
 import busio
@@ -10,7 +10,7 @@ from adafruit_motor import servo
 from adafruit_pca9685 import PCA9685
 import time
 
-# --- Constantes y variables presión arterial --- TODO: refinar
+# --- Constantes y variables presión arterial --- TODO: refinar y recolocar
 pressure_fs = 40  # Hz
 bp = BloodPressure(pressure_fs)
 
@@ -41,47 +41,86 @@ cuff_servo = servo.Servo(pca.channels[15], min_pulse=650, max_pulse=2650)
 actuator_servo = servo.Servo(pca.channels[14], min_pulse=650, max_pulse=2650)
 
 
-class PneumaticsServer:   # TODO: cambiar para que también sirva para abrirlo
-    # TODO: añadir cancelación
-    # TODO: añadir cuff server
+class PneumaticsServer:
     def __init__(self):
         rospy.init_node('pneumatics_server')
         # Publicadores y subscriptores
         self.actuator_pressure: float = 0.0
-        self.goal_pressure = 600.0
-        self.actuator_sub = rospy.Subscriber('/cuff_pressure_data', Float32, self.actuator_pressure_callback)
+        self.cuff_pressure: float = 0.0
+        self.actuator_goal_pressure = 600.0
+        self.actuator_sub = rospy.Subscriber('/actuator_pressure_data', Float32, self.actuator_pressure_callback)
+        self.cuff_sub = rospy.Subscriber('/cuff_pressure_data', Float32, self.cuff_pressure_callback)
 
-        # Servidor de acción
-        self.server = actionlib.SimpleActionServer('actuator', ActuatorAction, self.execute, False)
-        self.server.start()
-        rospy.loginfo("Servidor de acción 'actuator' iniciado")
+        # Servidores de acción
+        self.server_blood_pressure = actionlib.SimpleActionServer('blood_pressure', PneumaticsAction, self.execute_blood_pressure, False)
+        self.server_blood_pressure.start()
+        rospy.loginfo("Servidor de acción 'close_cuff' iniciado")
+
+        self.server_close_actuator = actionlib.SimpleActionServer('close_cuff', PneumaticsAction, self.execute_close_actuator, False)
+        self.server_close_actuator.start()
+        rospy.loginfo("Servidor de acción 'close_actuator' iniciado")
 
     def actuator_pressure_callback(self, msg):
         self.actuator_pressure = msg.data
 
-    def execute(self, goal):
-        feedback = ActuatorFeedback()
-        result = ActuatorResult()
+    def cuff_pressure_callback(self, msg):
+        self.cuff_pressure = msg.data
+
+    def execute_close_actuator(self, goal):  # TODO: añadir open
+        feedback = PneumaticsFeedback()
+        result = PneumaticsResult()
 
         # Colocar válvulas
         cuff_servo.angle = CUFF_BRIDGE_ANGLE
         actuator_servo.angle = ACTUATOR_INFLATE_ANGLE
         time.sleep(1)
         # TODO: activar relé
+        rospy.loginfo("Bomba neumática activada")
 
-        while self.actuator_pressure <= self.goal_pressure:
-            if self.server.is_preempt_requested():
+        start_time = rospy.get_time()
+        while self.actuator_pressure <= self.actuator_goal_pressure and not rospy.is_shutdown():
+            if self.server_close_actuator.is_preempt_requested():
                 rospy.loginfo("Cierre del actuador cancelado")
-                self.server.set_preempted()
+                self.server_close_actuator.set_preempted()
                 return
 
-            feedback.progress = max(0, min(self.goal_pressure, self.actuator_pressure))/self.goal_pressure
-            self.server.publish_feedback(feedback)
-            rospy.loginfo(f"Progreso: {feedback.progress * 100:.0f}%")
+            # Si se supera cierto límite de tiempo de espera, se aborta
+            elapsed_time = rospy.get_time() - start_time
+            if elapsed_time > 15.0:  # TODO: ajustar tiempo
+                error_str = "Cierre del actuador abortado: tiempo de ejecución excedido"
+                rospy.logerr(error_str)
+                result.success = False
+                self.server.set_aborted(result, text=error_str)
+                rospy.loginfo("Cierre del actuador cancelado")
 
+            # Calcular y enviar progreso
+            feedback.progress = max(0.0, min(self.actuator_goal_pressure,
+                                             self.actuator_pressure)) / self.actuator_goal_pressure
+            self.server_close_actuator.publish_feedback(feedback)
+
+        # Cortar suministro de aire
+        # TODO: desactivar relé
+        rospy.loginfo("Bomba neumática desactivada")
+        actuator_servo.angle = ACTUATOR_BRIDGE_ANGLE
+        cuff_servo.angle = CUFF_BRIDGE_ANGLE
+
+        # Notificar de finalización exitosa
         result.success = True
         rospy.loginfo("Actuador cerrado con éxito")
-        self.server.set_succeeded(result)
+        self.server_close_actuator.set_succeeded(result)
+
+    def execute_blood_pressure(self, goal):
+        feedback = PneumaticsFeedback()
+        result = PneumaticsResult()
+
+        # Colocar válvulas
+        cuff_servo.angle = CUFF_BRIDGE_ANGLE
+        actuator_servo.angle = ACTUATOR_INFLATE_ANGLE
+        time.sleep(1)
+        # TODO: activar relé
+        rospy.loginfo("Bomba neumática activada")
+
+
 
 
 if __name__ == '__main__':
