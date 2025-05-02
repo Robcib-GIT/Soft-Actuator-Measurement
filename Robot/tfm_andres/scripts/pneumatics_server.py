@@ -2,20 +2,19 @@
 import rospy
 import actionlib
 from std_msgs.msg import Bool, Float32, String
-from tfm_andres.msg import PneumaticsAction, PneumaticsFeedback, PneumaticsResult
+from tfm_andres.msg import PneumaticsAction, PneumaticsFeedback, PneumaticsResult, BloodPressureData
 from tfm_andres.blood_pressure import BloodPressure
 import board
 import busio
 from adafruit_motor import servo
 from adafruit_pca9685 import PCA9685
-import time
 import threading
 
 # --- Constantes y variables presión arterial --- TODO: refinar y recolocar
 pressure_fs = 40  # Hz
 bp = BloodPressure(pressure_fs)
 
-# --- Constantes y variables servos --- TODO: refinar rangos servo y angulos
+# --- Constantes y variables servos --- TODO: refinar rangos servo y ángulos
 CUFF_INFLATE_ANGLE = 90
 CUFF_DEFLATE_ANGLE = 27
 CUFF_FULL_DEFLATE_ANGLE = 0
@@ -42,7 +41,10 @@ actuator_servo = servo.Servo(pca.channels[14], min_pulse=650, max_pulse=2650)
 
 
 class PneumaticsServer:
-    # TODO: aádir el resto de constantes
+    # TODO: añadir el resto de constantes
+    # TODO: en los timeouts añadir desinflado de emergencia + función
+    # TODO: controlar los rospy.is_shutdown restantes
+    # TODO: añadir activación y desactivación de los sensores de presión
     ACTUATOR_GOAL_PRESSURE = 600.0
     CUFF_GOAL_PRESSURE = 190.0
 
@@ -58,6 +60,8 @@ class PneumaticsServer:
         # Publicadores y subscriptores
         self.actuator_sub = rospy.Subscriber('/actuator_pressure_data', Float32, self.actuator_pressure_callback)
         self.cuff_sub = rospy.Subscriber('/cuff_pressure_data', Float32, self.cuff_pressure_callback)
+        self.sensor_command_pub = rospy.Publisher('/sensor_command', String, queue_size=10)
+        self.bp_pub = rospy.Publisher('/blood_pressure_data', BloodPressureData, queue_size=10)
 
         # Servidores de acción
         self.server_blood_pressure = actionlib.SimpleActionServer('blood_pressure', PneumaticsAction,
@@ -65,17 +69,21 @@ class PneumaticsServer:
         self.server_blood_pressure.start()
         rospy.loginfo("Servidor de acción 'close_cuff' iniciado")
 
-        self.server_close_actuator = actionlib.SimpleActionServer('close_cuff', PneumaticsAction,
+        self.server_close_actuator = actionlib.SimpleActionServer('close_actuator', PneumaticsAction,
                                                                   self.execute_close_actuator, False)
         self.server_close_actuator.start()
         rospy.loginfo("Servidor de acción 'close_actuator' iniciado")
+
+        self.server_open_actuator = actionlib.SimpleActionServer('open_actuator', PneumaticsAction,
+                                                                 self.execute_open_actuator, False)
+        self.server_open_actuator.start()
+        rospy.loginfo("Servidor de acción 'open_actuator' iniciado")
 
     @staticmethod
     def check_timeout(start_time: float, max_duration: float, server, result,
                       cancel_msg="Acción cancelada por timeout"):
         """
         Comprueba si se ha superado el tiempo máximo permitido y aborta la acción si es necesario.
-
         :param start_time: Tiempo de inicio (en segundos).
         :param max_duration: Duración máxima permitida antes de abortar (en segundos).
         :param server: Instancia de SimpleActionServer asociada a la acción.
@@ -96,8 +104,7 @@ class PneumaticsServer:
     def wait_new_value(event, check_interval: float = 1.0):
         """
             Espera de forma bloqueante (con timeout) a que se active un evento que indica la llegada de un nuevo valor.
-
-            :param event: Instancia de threading.Event que se activa cuando se recibe un nuevo dato.
+            :param event: Instancia de threading. Event que se activa cuando se recibe un nuevo dato.
             :param check_interval: Tiempo máximo (en segundos) a esperar antes de continuar.
             :return: True si llegó un nuevo valor, False si se agotó el tiempo de espera sin recibir nada.
         """
@@ -107,6 +114,12 @@ class PneumaticsServer:
         else:
             rospy.logwarn(f"No han llegado lecturas nuevas en {check_interval:.1}s")
             return False
+
+    def publish_blood_pressure(self, sys: int, dia: int):
+        msg = BloodPressureData()
+        msg.sys = sys
+        msg.dia = dia
+        self.bp_pub.publish(msg)
 
     def actuator_pressure_callback(self, msg):
         self.actuator_pressure = msg.data
@@ -162,10 +175,52 @@ class PneumaticsServer:
         rospy.loginfo("Actuador cerrado con éxito")
         self.server_close_actuator.set_succeeded(result)
 
+    def execute_open_actuator(self, goal):  # TODO: añadir open
+        rospy.loginfo("Iniciado apertura del actuador")
+        feedback = PneumaticsFeedback()
+        result = PneumaticsResult()
+
+        # Colocar válvulas
+        cuff_servo.angle = CUFF_BRIDGE_ANGLE
+        actuator_servo.angle = ACTUATOR_DEFLATE_ANGLE
+
+        start_time = rospy.get_time()
+        while self.actuator_pressure > 5.0 and not rospy.is_shutdown():
+            if self.server_close_actuator.is_preempt_requested():
+                rospy.loginfo("Apertura del actuador cancelado")
+                self.server_open_actuator.set_preempted()
+                return
+
+            # Si se supera cierto límite de tiempo de espera, se aborta
+            if self.check_timeout(start_time=start_time, max_duration=6.0, server=self.server_open_actuator,
+                                  result=result, cancel_msg="Apertura del actuador abortado por timeout"):
+                return
+
+            # Para mayor eficacia se espera a que se active el evento que indica la llegada de una nueva lectura
+            if not self.wait_new_value(self.new_actuator_pressure_event, check_interval=0.5):
+                if rospy.is_shutdown():
+                    return
+                continue
+
+            # Calcular y enviar progreso
+            feedback.progress = 1.0 - max(0.0, min(self.ACTUATOR_GOAL_PRESSURE,
+                                                   self.actuator_pressure)) / self.ACTUATOR_GOAL_PRESSURE
+            self.server_close_actuator.publish_feedback(feedback)
+
+        # Cortar suministro de aire
+        actuator_servo.angle = ACTUATOR_BRIDGE_ANGLE
+        cuff_servo.angle = CUFF_BRIDGE_ANGLE
+
+        # Notificar de finalización exitosa
+        result.success = True
+        rospy.loginfo("Actuador abierto con éxito")
+        self.server_open_actuator.set_succeeded(result)
+
     def execute_blood_pressure(self, goal):
         rospy.loginfo("Iniciada medición de la presión arterial")
         feedback = PneumaticsFeedback()
         result = PneumaticsResult()
+        pressures = []
 
         # 1- Desinflar por completo el manguito (progress: 0.0-1.0)
         rospy.loginfo("Fase 1: Comenzado vaciado completo del manguito")
@@ -187,10 +242,12 @@ class PneumaticsServer:
 
             # Calcular progreso
             feedback.progress = 1.0 - (
-                        max(0.0, min(self.cuff_pressure, self.CUFF_GOAL_PRESSURE)) / self.CUFF_GOAL_PRESSURE)
+                    max(0.0, min(self.cuff_pressure, self.CUFF_GOAL_PRESSURE)) / self.CUFF_GOAL_PRESSURE)
             self.server_blood_pressure.publish_feedback(feedback)
 
-        # 2- Inflar por completo el manguito (progress: 0.0-1.0)
+        feedback.progress = 1.0
+
+        # 2- Inflar por completo el manguito (progress: 1.0-2.0)
         rospy.loginfo("Fase 2: Comenzado inflado completo del manguito")
         cuff_servo.angle = CUFF_INFLATE_ANGLE
         rospy.sleep(0.5)
@@ -198,9 +255,78 @@ class PneumaticsServer:
         rospy.loginfo("Bomba neumática activada")
 
         start_time = rospy.get_time()
-        while not rospy.is_shutdown():
+        while self.cuff_pressure <= self.CUFF_GOAL_PRESSURE and self.cuff_pressure != -1.0 and not rospy.is_shutdown():
+            # -1.0 indica fin de la transmisión de datos
+            # Si se supera cierto límite de tiempo de espera, se aborta
+            if self.check_timeout(start_time=start_time, max_duration=10.0, server=self.server_blood_pressure,
+                                  result=result, cancel_msg="Inflado del manguito abortado por timeout"):
+                return
 
+            # Para mayor eficacia se espera a que se active el evento que indica la llegada de una nueva lectura
+            if not self.wait_new_value(self.new_cuff_pressure_event, check_interval=0.5):
+                if rospy.is_shutdown():
+                    return
+                continue
 
+            pressures.append(self.cuff_pressure)
+            # Calcular progreso
+            feedback.progress = 1.0 + (
+                    max(0.0, min(self.cuff_pressure, self.CUFF_GOAL_PRESSURE)) / self.CUFF_GOAL_PRESSURE)
+            self.server_blood_pressure.publish_feedback(feedback)
+
+        # TODO: desactivar relé
+        rospy.loginfo("Bomba neumática desactivada")
+        feedback.progress = 2.0
+
+        # 3- Desinflado controlado del manguito (progress: 2.0-3.0)
+        rospy.loginfo("Fase 3: Comenzado desinflado controlado del manguito")
+        cuff_servo.angle = CUFF_DEFLATE_ANGLE
+
+        start_time = rospy.get_time()
+        samples_prev_opening = 0
+        while self.cuff_pressure > 15.0 and not rospy.is_shutdown() and self.cuff_pressure != -1.0:
+            # Si se supera cierto límite de tiempo de espera, se aborta
+            if self.check_timeout(start_time=start_time, max_duration=60.0, server=self.server_blood_pressure,
+                                  result=result, cancel_msg="Desinflado controlado del manguito abortado por timeout"):
+                return
+
+            # Para mayor eficacia se espera a que se active el evento que indica la llegada de una nueva lectura
+            if not self.wait_new_value(self.new_cuff_pressure_event, check_interval=0.5):
+                if rospy.is_shutdown():
+                    return
+                continue
+
+            pressures.append(self.cuff_pressure)
+            samples_prev_opening += 1
+            p_velocity = bp.calculate_velocity(pressures=pressures, sample_time=0.1)  # FIXME: actualizar función
+            # Calcular progreso
+            feedback.progress = 3.0 - (
+                    max(0.0, min(self.cuff_pressure, self.CUFF_GOAL_PRESSURE)) / self.CUFF_GOAL_PRESSURE)
+            self.server_blood_pressure.publish_feedback(feedback)
+
+            if p_velocity > -2 and samples_prev_opening >= int(4 / bp.sample_interval):  # FIXME: igual poner con tiempo
+                cuff_servo.angle -= 1
+                samples_prev_opening = 0
+
+        # Dejar salir el resto del aire al terminar
+        cuff_servo.angle = CUFF_FULL_DEFLATE_ANGLE
+        feedback.progress = 3.0
+
+        # 4- Cálculo de la presión arterial
+        rospy.loginfo("Fase 4: Cálculo de la presión arterial")
+
+        try:
+            sys, dia = bp.get_blood_pressure(pressures)
+            # bp.plot_results()
+            # Notificar de finalización exitosa
+            self.publish_blood_pressure(sys=sys, dia=dia)
+            result.success = True
+            self.server_blood_pressure.set_succeeded(result)
+        except Exception:
+            rospy.logerr("Ocurrió un error al procesar los datos.")
+            self.publish_blood_pressure(sys=-1, dia=-1)
+            result.success = False
+            self.server_blood_pressure.set_succeeded(result)
 
 
 if __name__ == '__main__':
