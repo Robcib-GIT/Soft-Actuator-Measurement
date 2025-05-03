@@ -7,15 +7,17 @@ import ADS1x15
 import math
 
 # Declaración de sensores
-ADS_1 = ADS1x15.ADS1115(0, 0x48)  # Para pulso y temperatura
-ADS_1.setGain(ADS_1.PGA_6_144V)
+BUS_I2C_ADS115 = 1
+ADS_1 = ADS1x15.ADS1115(BUS_I2C_ADS115, 0x49)  # Para pulso y temperatura
+ADS_1.setGain(ADS_1.PGA_0_512V)
 
-ADS_2 = ADS1x15.ADS1115(0, 0x49)  # Para presiones
+ADS_2 = ADS1x15.ADS1115(0, 0x48)  # Para presiones
 ADS_2.setGain(ADS_2.PGA_0_512V)
 
-# Constantes para sensores
-VCC = 5.0  # Voltaje de alimentación (V)
-# TEMPERATURA
+# Constantes generales para sensores
+VCC = 5.0
+
+# Constantes para la temperatura
 R_AUX = 10000.0  # Resistencia en serie (ohmios)
 R0 = 10000.0  # Resistencia del NTC a T0 (ohmios)
 BETA = 3950.0  # Constante beta del NTC (K)
@@ -27,21 +29,21 @@ class Sensor:
     publisher: rospy.Publisher
     interval: float = 100.0  # Intervalo entre muestras [ms]
     publishing: bool = False
-    last_publish_time: float = 0.0  # Tiempo anterior de publlicacion
+    last_publish_time: float = 0.0  # Tiempo anterior de publicación [s]
 
 
 sensors = {
     "temperature": Sensor(
         publisher=rospy.Publisher("/temperature_data", Float32, queue_size=10),
-        interval=1000
+        interval=500
     ),
     "actuator_pressure": Sensor(
         publisher=rospy.Publisher("/actuator_pressure_data", Float32, queue_size=10),
-        interval=500
+        interval=25
     ),
     "cuff_pressure": Sensor(
         publisher=rospy.Publisher("/cuff_pressure_data", Float32, queue_size=10),
-        interval=500
+        interval=25
     ),
     "pulse": Sensor(
         publisher=rospy.Publisher("/pulse_data", Int32, queue_size=10),
@@ -56,11 +58,10 @@ def publish_sensor_data():
     while not rospy.is_shutdown():
         current_time = rospy.Time.now().to_sec()
 
-        for key, value in sensors.items():
-            if value.publishing and (current_time - value.last_publish_time) >= value.interval / 1000.0:
-                value.last_publish_time = current_time
-
-                value.publisher.publish(read_sensor(key))
+        for sensor_name, sensor in sensors.items():
+            if sensor.publishing and (current_time - sensor.last_publish_time) >= sensor.interval / 1000.0:
+                sensor.last_publish_time = current_time
+                sensor.publisher.publish(read_sensor(sensor_name))
                 # rospy.loginfo(f"Valor: {random_value}")
 
 
@@ -93,39 +94,41 @@ def sensor_control_callback(msg: String):
         rospy.loginfo("Todas las lecturas desactivadas")
 
 
-def get_temperature(voltage: float):
+def get_temperature() -> float:
+    voltage = ADS_1.toVoltage(ADS_1.readADC(0))
+
     if voltage == 0:
         return 25.0  # Evitar división por cero o log(0)
 
-    R_NTC = R_AUX * (VCC / voltage - 1)
-    temperaturaK = 1.0 / ((math.log(R_NTC / R0) / BETA) + (1.0 / T0))
-    return temperaturaK - 273.15  # Convertir de Kelvin a Celsius
+    r_ntc = R_AUX * (VCC / voltage - 1)
+    temperature_k = 1.0 / ((math.log(r_ntc / R0) / BETA) + (1.0 / T0))
+    return temperature_k - 273.15  # Convertir de Kelvin a Celsius
 
 
-def get_pressure(value: int):  # TODO: posibilidad de pasar a kPa o mmHg
-    # TODO: completar
-    pressure = float(value)
-    return pressure
+def get_pressure(sensor: int = 1, offset=27.0, pressure_ref=200.0, value_ref=2960.0):
+    if sensor == 1:
+        pressure_raw = ADS_2.readADC_Differential_0_1()
+    else:
+        pressure_raw = ADS_2.readADC_Differential_2_3()
+
+    pressure = (pressure_raw - offset) * pressure_ref / (value_ref - offset)
+    return float(pressure)
 
 
 # Leer sensor TODO: Modificar 
 def read_sensor(sensor: str):
     if sensor in sensors.keys():
-        if sensor == "Temperature":
-            temperature_raw = ADS_1.readADC(0)
-            temperature = ADS_1.toVoltage(temperature_raw)
-            return temperature
+        if sensor == "temperature":
+            return get_pressure()
 
-        elif sensor == "Cuff_Pressure":
-            pressure_raw = ADS_2.readADC_Differential_0_1()
-            return get_pressure(pressure_raw)
-
-        elif sensor == "Actuator_Pressure":
-            pressure_raw = ADS_2.readADC_Differential_2_3()
-            return get_pressure(pressure_raw)
-
-        elif sensor == "Pulse":
+        elif sensor == "pulse":
             return ADS_1.readADC(1)
+
+        elif sensor == "cuff_pressure":
+            return get_pressure(sensor=1, offset=11, pressure_ref=200.0, value_ref=2960)
+
+        elif sensor == "actuator_pressure":
+            return get_pressure(sensor=2, offset=-21, pressure_ref=200.0, value_ref=2870)
 
     else:
         return -2  # No afecta
@@ -137,16 +140,6 @@ if __name__ == '__main__':
 
     # Subscriber para controlar las lecturas de los sensores
     rospy.Subscriber("/sensor_command", String, sensor_control_callback)
-
-    # Leer dummy TODO: borrar
-    try:
-        file_path = "/home/andres/catkin_ws/src/tfm_andres/resources/SalidaPulsoSujeto1_derecho.txt"
-        rospy.loginfo(file_path)
-        with open(file_path, "r") as file:
-            # Cargamos todo el contenido del archivo y lo convertimos a una lista de enteros
-            pulse_dummy = [int(line.strip()) for line in file.readlines()]
-    except FileNotFoundError:
-        rospy.logwarn("El archivo no se encuentra.")
 
     try:
         publish_sensor_data()

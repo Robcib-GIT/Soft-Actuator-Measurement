@@ -11,8 +11,8 @@ from adafruit_pca9685 import PCA9685
 import threading
 
 # --- Constantes y variables presión arterial --- TODO: refinar y recolocar
-pressure_fs = 40  # Hz
-bp = BloodPressure(pressure_fs)
+PRESSURE_FS = 40  # Hz
+bp = BloodPressure(PRESSURE_FS)
 
 # --- Constantes y variables servos --- TODO: refinar rangos servo y ángulos
 CUFF_INFLATE_ANGLE = 90
