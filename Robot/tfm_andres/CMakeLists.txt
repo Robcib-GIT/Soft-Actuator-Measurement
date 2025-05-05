@@ -22,7 +22,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
 ## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
-# catkin_python_setup()
+catkin_python_setup()
 
 ################################################
 ## Declare ROS messages, services and actions ##
@@ -42,7 +42,7 @@ find_package(catkin REQUIRED COMPONENTS
 ##   * add "message_generation" and every package in MSG_DEP_SET to
 ##     find_package(catkin REQUIRED COMPONENTS ...)
 ##   * add "message_runtime" and every package in MSG_DEP_SET to
-##     catkin_package(CATKIN_DEPENDS ...)
+##     catkin_package()
 ##   * uncomment the add_*_files sections below as needed
 ##     and list every .msg/.srv/.action file to be processed
 ##   * uncomment the generate_messages entry below
@@ -74,6 +74,8 @@ generate_messages(
 	actionlib_msgs
 	std_msgs
 )
+
+catkin_package()
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -164,7 +166,6 @@ include_directories(
 catkin_install_python(PROGRAMS
 	scripts/read_sensors.py
 	scripts/process_pulse_data.py
-	scripts/process_pressure_data.py
 	scripts/pneumatics_server.py
 	DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

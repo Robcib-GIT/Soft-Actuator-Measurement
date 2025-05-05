@@ -1,0 +1,4 @@
+<launch>
+    <node name="read_sensors" pkg="tfm_andres" type="read_sensors.py" output="screen"/>
+    <node name="pneumatics_server" pkg="tfm_andres" type="pneumatics_server.py" output="screen"/>
+</launch>

@@ -11,7 +11,7 @@ BUS_I2C_ADS115 = 1
 ADS_1 = ADS1x15.ADS1115(BUS_I2C_ADS115, 0x49)  # Para pulso y temperatura
 ADS_1.setGain(ADS_1.PGA_0_512V)
 
-ADS_2 = ADS1x15.ADS1115(0, 0x48)  # Para presiones
+ADS_2 = ADS1x15.ADS1115(BUS_I2C_ADS115, 0x48)  # Para presiones
 ADS_2.setGain(ADS_2.PGA_0_512V)
 
 # Constantes generales para sensores
@@ -124,11 +124,13 @@ def read_sensor(sensor: str):
         elif sensor == "pulse":
             return ADS_1.readADC(1)
 
-        elif sensor == "cuff_pressure":
-            return get_pressure(sensor=1, offset=11, pressure_ref=200.0, value_ref=2960)
-
         elif sensor == "actuator_pressure":
-            return get_pressure(sensor=2, offset=-21, pressure_ref=200.0, value_ref=2870)
+            return get_pressure(sensor=1, offset=-21, pressure_ref=200.0, value_ref=2870)
+            # offset=11, pressure_ref=200.0, value_ref=2960
+
+        elif sensor == "cuff_pressure":
+            return get_pressure(sensor=2, offset=11, pressure_ref=200.0, value_ref=2960)
+            # offset=-21, pressure_ref=200.0, value_ref=2870
 
     else:
         return -2  # No afecta

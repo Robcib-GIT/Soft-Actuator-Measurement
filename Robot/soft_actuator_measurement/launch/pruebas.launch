@@ -1,4 +1,0 @@
-<launch>
-    <node name="sensors" pkg="soft_actuator_measurement" type="sensors.py" output="screen"/>
-    <node name="process_pulse_data" pkg="soft_actuator_measurement" type="process_pulse_data.py" output="screen"/>
-</launch>

@@ -20,9 +20,9 @@ CUFF_DEFLATE_ANGLE = 27
 CUFF_FULL_DEFLATE_ANGLE = 0
 CUFF_BRIDGE_ANGLE = 180
 
-ACTUATOR_INFLATE_ANGLE = 90
-ACTUATOR_DEFLATE_ANGLE = 27
-ACTUATOR_BRIDGE_ANGLE = 180
+ACTUATOR_INFLATE_ANGLE = 180
+ACTUATOR_DEFLATE_ANGLE = 90
+ACTUATOR_BRIDGE_ANGLE = 0
 
 """
  I2C BUS 0 (SCL: 28 | SDA: 27)
@@ -157,7 +157,7 @@ class PneumaticsServer:
         """
 
         if server.is_preempt_requested():
-            rospy.loginfo(f"{name}: cancelado por el cliente")
+            rospy.logwarn(f"{name}: cancelado por el cliente")
             server.set_preempted()
             return 'cancelled'
 
