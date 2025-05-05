@@ -15,14 +15,14 @@ PRESSURE_FS = 40  # Hz
 bp = BloodPressure(PRESSURE_FS)
 
 # --- Constantes y variables servos --- TODO: refinar rangos servo y ángulos
-CUFF_INFLATE_ANGLE = 90
-CUFF_DEFLATE_ANGLE = 27
-CUFF_FULL_DEFLATE_ANGLE = 0
-CUFF_BRIDGE_ANGLE = 180
+CUFF_INFLATE_ANGLE = 180
+CUFF_DEFLATE_ANGLE = 115
+CUFF_FULL_DEFLATE_ANGLE = 90
+CUFF_BRIDGE_ANGLE = 0
 
-ACTUATOR_INFLATE_ANGLE = 180
-ACTUATOR_DEFLATE_ANGLE = 90
-ACTUATOR_BRIDGE_ANGLE = 0
+ACTUATOR_INFLATE_ANGLE = 90
+ACTUATOR_DEFLATE_ANGLE = 0
+ACTUATOR_BRIDGE_ANGLE = 180
 
 """
  I2C BUS 0 (SCL: 28 | SDA: 27)
@@ -78,6 +78,10 @@ class PneumaticsServer:
         self.server_open_actuator = actionlib.SimpleActionServer('open_actuator', PneumaticsAction,
                                                                  self.execute_open_actuator, False)
         self.server_open_actuator.start()
+
+        cuff_servo.angle = CUFF_BRIDGE_ANGLE
+        actuator_servo.angle = ACTUATOR_BRIDGE_ANGLE
+
         rospy.loginfo("Servidor de acción 'open_actuator' iniciado")
 
     @staticmethod
@@ -277,7 +281,7 @@ class PneumaticsServer:
             # Calcular y enviar progreso
             feedback.progress = 1.0 - max(0.0, min(self.ACTUATOR_GOAL_PRESSURE,
                                                    self.actuator_pressure)) / self.ACTUATOR_GOAL_PRESSURE
-            self.server_close_actuator.publish_feedback(feedback)
+            self.server_open_actuator.publish_feedback(feedback)
 
         if not rospy.is_shutdown():
             actuator_servo.angle = ACTUATOR_BRIDGE_ANGLE
@@ -285,8 +289,8 @@ class PneumaticsServer:
 
             # Notificar de finalización exitosa
             result.success = True
-            rospy.loginfo("Actuador cerrado con éxito")
-            self.server_close_actuator.set_succeeded(result)
+            rospy.loginfo("Actuador abierto con éxito")
+            self.server_open_actuator.set_succeeded(result)
 
     def execute_blood_pressure(self, goal):
         rospy.loginfo("Iniciada medición de la presión arterial")
