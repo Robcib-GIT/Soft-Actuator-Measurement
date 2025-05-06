@@ -31,12 +31,19 @@ ADS.setGain(ADS.PGA_0_512V)
 pressure_fs = 40  # Hz
 bp = BloodPressure(pressure_fs)
 
-DEFLATE_THRESHOLD_PRESSURE = 190  # mmHg
+ACTUATOR_GOAL_PRESSURE = 600.0
+CUFF_GOAL_PRESSURE = 190.0
 
 # --- Constantes y variables servos --- TODO: refinar rangos servo y angulos
-INFLATE_ANGLE = 90
-DEFLATE_ANGLE = 30
-IDLE_ANGLE = 180
+CUFF_INFLATE_ANGLE = 180
+CUFF_DEFLATE_ANGLE = 115
+CUFF_FULL_DEFLATE_ANGLE = 90
+CUFF_BRIDGE_ANGLE = 0
+
+ACTUATOR_INFLATE_ANGLE = 90
+ACTUATOR_DEFLATE_ANGLE = 0
+ACTUATOR_BRIDGE_ANGLE = 180
+
 BUS_I2C_PCA965 = 0
 
 if BUS_I2C_PCA965 == 1:  #
@@ -46,107 +53,125 @@ else:
 
 pca = PCA9685(i2c)
 pca.frequency = 50
-cuffServo = servo.Servo(pca.channels[15], min_pulse=650, max_pulse=2650)
 
-
-# TODO: añadir servo actuador
+cuff_servo = servo.Servo(pca.channels[15], min_pulse=650, max_pulse=2650)
+actuator_servo = servo.Servo(pca.channels[14], min_pulse=650, max_pulse=2650)
 
 
 # --- Declaracion de funciones presion arterial ---
-def get_pressure(offset=27.0, pressure_ref=200.0, value_ref=2960.0):  # TODO: quitar al usar ROS
-    pressure_raw = ADS.readADC_Differential_0_1()
-    pressure = (pressure_raw - offset) * pressure_ref / value_ref
+def get_pressure(sensor: int = 1, offset=27.0, pressure_ref=200.0, value_ref=2960.0):
+    if sensor == 1: # Actuator
+        pressure_raw = ADS.readADC_Differential_0_1()
+    else:   # Cuff
+        pressure_raw = ADS.readADC_Differential_2_3()
+
+    pressure = (pressure_raw - offset) * pressure_ref / (value_ref - offset)
     time.sleep(bp.sample_interval)
     return float(pressure)
 
 
 # --- Declaracion de funciones servos ---
-def initialize_servo_pos():
-    cuffServo.angle = 0
-    while True:
-        cuff_pressure = get_pressure()
-        if cuff_pressure >= 5.0:
-            print(f"Desinflando manguito: {cuff_pressure}mmHg        ", end="\r")
-        else:
-            break
-    time.sleep(2)
-
-    # TODO: añadir inicializacion de actuador
 
 
 # --- Otros---
-def control_cuff(pressure: float, p_velocity: float) -> bool:  # TODO: resetear atributos
-    """
-    Args:
-        pressure: valor actual de la presión
-        p_velocity: velocidad con la que varía la presión
-    Returns:
-        terminated: si la medición de presiones ha terminado o no
-    """
 
-    if not hasattr(control_cuff, "deflating"):
-        control_cuff.deflating = False
-    if not hasattr(control_cuff, "samples_prev_opening"):
-        control_cuff.samples_prev_opening = 0
+def meassure_bp():
+    pressures = []
 
-    terminated = False
-    if pressure == -1:
-        terminated = True
-    else:
-        print(
-            f"\rPresión: {pressure:.2f} mmHg  |   V_presión: {p_velocity:.2f} mmHg/s   |   Ángulo: {int(cuffServo.angle)}       ",
-            end="")  # TODO: borrar
+    print("-----------------------------------")
+    print("Midiendo presión arterial", end="\n")
 
-        # Cuando llega a cierta presión comienza a desinflarse
-        if not control_cuff.deflating and pressure >= DEFLATE_THRESHOLD_PRESSURE:
-            cuffServo.angle = 27  # TODO: puede que haya que retocar a veces
-            control_cuff.deflating = True
+    print("\n1- Desinflando completo manguito")
+    actuator_servo.angle = ACTUATOR_BRIDGE_ANGLE
+    cuff_servo.angle = CUFF_FULL_DEFLATE_ANGLE
+    while True:
+        cuff_pressure = get_pressure(sensor=2, offset=11, pressure_ref=200.0, value_ref=2960)
+        print(f"\rCuff pressure: {cuff_pressure:.2f}", end="")
+        if cuff_pressure <= 5:
+            print("\nManguito completamente vacío")
+            break
+    
+    print("\n2- Inflado manguito")
+    cuff_servo.angle = CUFF_INFLATE_ANGLE
+    while True:
+        cuff_pressure = get_pressure(sensor=2, offset=11, pressure_ref=200.0, value_ref=2960)
+        print(f"\rCuff pressure: {cuff_pressure:.2f}", end="")
+        pressures.append(cuff_pressure)
+        if cuff_pressure >= CUFF_GOAL_PRESSURE:
+            cuff_servo.angle = CUFF_DEFLATE_ANGLE
+            print("\nManguito inflado")
+            break
+            
 
-        # Se abre completamente para terminar de desinflarse
-        elif control_cuff.deflating and pressure < 15:
-            print("\nTerminada medición")
-            cuffServo.angle = 0
-            terminated = True
-        # Proceso de desinflado controlado
-        elif control_cuff.deflating:  # TODO: ajustar y mejorar
-            control_cuff.samples_prev_opening += 1
-            if p_velocity > -2 and control_cuff.samples_prev_opening >= int(4 / bp.sample_interval):
-                cuffServo.angle -= 1
-                control_cuff.samples_prev_opening = 0
+    print("\n3- Desinfado controlado manguito")
+    samples_prev_opening = 0
+    while True:
+        cuff_pressure = get_pressure(sensor=2, offset=11, pressure_ref=200.0, value_ref=2960)
+        print(f"\rCuff pressure: {cuff_pressure:.2f}  |  actuator_servo: {actuator_servo.angle:.0f}  |  cuff_servo: {cuff_servo.angle:.0f}"     , end="")
+        
+        if cuff_pressure <= 15.0:
+            print("\nMedición terminada")
+            # Dejar salir el resto del aire al terminar
+            cuff_servo.angle = CUFF_FULL_DEFLATE_ANGLE
+            break
 
-    # Resetear atributos (variables estáticas) cuando se termina la medición
-    if terminated:
-        control_cuff.deflating = False
-        control_cuff.samples_prev_opening = 0
-    return terminated
+        pressures.append(cuff_pressure)
+        samples_prev_opening += 1
+        p_velocity = bp.calculate_velocity(pressures=pressures, sample_time=0.1)  # FIXME: actualizar función
 
+        if p_velocity > -2 and samples_prev_opening >= int(4 / bp.sample_interval):  # FIXME: igual poner con tiempo
+            cuff_servo.angle -= 1
+            samples_prev_opening = 0
+
+    return pressures
+
+
+def open_actuator():
+    print("-----------------------------------")
+    print("Abriendo actuador", end="\n")
+    # Colocar válvulas
+    cuff_servo.angle = CUFF_BRIDGE_ANGLE
+    actuator_servo.angle = ACTUATOR_DEFLATE_ANGLE
+
+    while True:
+        actuator_pressure = get_pressure(sensor=1, offset=-21, pressure_ref=200.0, value_ref=2870) 
+        print(f"\rActuator pressure: {actuator_pressure:.2f}", end="")
+        if actuator_pressure <= 5:
+            cuff_servo.angle = CUFF_BRIDGE_ANGLE
+            actuator_servo.angle = ACTUATOR_BRIDGE_ANGLE
+            print("\nActuador abierto")
+            break
+
+def close_actuator():
+    print("-----------------------------------")
+    print("Cerrando actuador", end="\n")
+    # Colocar válvulas
+    cuff_servo.angle = CUFF_DEFLATE_ANGLE
+    actuator_servo.angle = ACTUATOR_INFLATE_ANGLE
+    time.sleep(1)
+    # TODO: activar relé
+    print("Bomba neumática activada")
+
+    while True:
+        actuator_pressure = get_pressure(sensor=1, offset=-21, pressure_ref=200.0, value_ref=2870) 
+        print(f"\rActuator pressure: {actuator_pressure:.2f}", end="")
+        if actuator_pressure >= ACTUATOR_GOAL_PRESSURE:
+            cuff_servo.angle = CUFF_BRIDGE_ANGLE
+            actuator_servo.angle = ACTUATOR_BRIDGE_ANGLE
+            print("\nActuador abierto")
+            break
 
 # --- Bucle principal con PID ---
 if __name__ == "__main__":
-    print("Proceso de lectura de presión arterial iniciado")
-    initialize_servo_pos()
-    cuffServo.angle = INFLATE_ANGLE
-    time.sleep(0.5)
+    close_actuator()
+    pressures_data = meassure_bp()
+    time.sleep(3)
+    open_actuator()
 
-    # Medir presiones
-    deflating = False
-    deflating_pressure_reached = False
-    turbulences_passed = False
-    pressures: List[float] = []  # Vector para guardar todas las presiones
-    samples_prev_opening = 0
-
-    while True:
-        pressure = get_pressure()
-        pressures.append(pressure)
-        p_velocity = bp.calculate_velocity(pressures=pressures, sample_time=0.1)
-
-        terminate = control_cuff(pressure=pressure, p_velocity=p_velocity)
-        if terminate:
-            break
 
     try:
         # Procesar información
-        sys, dia = bp.get_blood_pressure(pressures)
+        sys, dia = bp.get_blood_pressure(pressures_data)
         bp.plot_results()
         save_data([bp.time, bp.pressures], ["Pressure [mmHg]", "Time [s]"])
     except Exception as e:
