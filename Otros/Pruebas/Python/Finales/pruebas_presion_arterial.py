@@ -191,7 +191,7 @@ if __name__ == "__main__":
         # Procesar información
         sys, dia = bp.get_blood_pressure(pressures_data)
         bp.plot_results()
-        save_data([bp.time, bp.pressures], ["Pressure [mmHg]", "Time [s]"])
+        save_data([bp.time, bp.pressures], ["Time [s]", "Pressure [mmHg]"])
     except Exception as e:
         print("Ocurrió un error al procesar los datos.")
 
