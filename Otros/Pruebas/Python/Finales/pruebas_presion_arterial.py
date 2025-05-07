@@ -7,6 +7,7 @@ import board
 import busio
 from adafruit_motor import servo
 from adafruit_pca9685 import PCA9685
+import Jetson.GPIO as GPIO
 
 from Utilities.blood_pressure import BloodPressure
 from Utilities.data_operations import save_data
@@ -22,6 +23,10 @@ TODO: Evitar que se activen los servos en el rango normal de 140-50 si no es est
  I2C BUS 0 (SCL: 28 | SDA: 27)
  I2C BUS 1 (SCL: 5  |  SDA: 3)
 """
+
+RELAY_PIN = 18
+GPIO.setmode(GPIO.BOARD)
+GPIO.setup(RELAY_PIN, GPIO.OUT)
 
 # --- Constantes y variables presión arterial --- TODO: refinar cuando complete el actuador
 BUS_I2C_ADS115 = 1
@@ -60,9 +65,9 @@ actuator_servo = servo.Servo(pca.channels[14], min_pulse=650, max_pulse=2650)
 
 # --- Declaracion de funciones presion arterial ---
 def get_pressure(sensor: int = 1, offset=27.0, pressure_ref=200.0, value_ref=2960.0):
-    if sensor == 1: # Actuator
+    if sensor == 1:  # Actuator
         pressure_raw = ADS.readADC_Differential_0_1()
-    else:   # Cuff
+    else:  # Cuff
         pressure_raw = ADS.readADC_Differential_2_3()
 
     pressure = (pressure_raw - offset) * pressure_ref / (value_ref - offset)
@@ -75,7 +80,16 @@ def get_pressure(sensor: int = 1, offset=27.0, pressure_ref=200.0, value_ref=296
 
 # --- Otros---
 
-def meassure_bp():
+def set_pump_state(on: bool = False):
+    if on:
+        GPIO.output(RELAY_PIN, GPIO.HIGH)
+        print("Bomba neumática activada")
+    else:
+        GPIO.output(RELAY_PIN, GPIO.LOW)
+        print("Bomba neumática desactivada")
+
+
+def measure_bp():
     pressures = []
 
     print("-----------------------------------")
@@ -90,25 +104,28 @@ def meassure_bp():
         if cuff_pressure <= 5:
             print("\nManguito completamente vacío")
             break
-    
+
     print("\n2- Inflado manguito")
     cuff_servo.angle = CUFF_INFLATE_ANGLE
+    set_pump_state(on=True)
     while True:
         cuff_pressure = get_pressure(sensor=2, offset=11, pressure_ref=200.0, value_ref=2960)
         print(f"\rCuff pressure: {cuff_pressure:.2f}", end="")
         pressures.append(cuff_pressure)
         if cuff_pressure >= CUFF_GOAL_PRESSURE:
+            set_pump_state(on=False)
             cuff_servo.angle = CUFF_DEFLATE_ANGLE
             print("\nManguito inflado")
             break
-            
 
     print("\n3- Desinfado controlado manguito")
     samples_prev_opening = 0
     while True:
         cuff_pressure = get_pressure(sensor=2, offset=11, pressure_ref=200.0, value_ref=2960)
-        print(f"\rCuff pressure: {cuff_pressure:.2f}  |  actuator_servo: {actuator_servo.angle:.0f}  |  cuff_servo: {cuff_servo.angle:.0f}"     , end="")
-        
+        print(
+            f"\rCuff pressure: {cuff_pressure:.2f}  |  actuator_servo: {actuator_servo.angle:.0f}  |  cuff_servo: {cuff_servo.angle:.0f}",
+            end="")
+
         if cuff_pressure <= 15.0:
             print("\nMedición terminada")
             # Dejar salir el resto del aire al terminar
@@ -134,13 +151,14 @@ def open_actuator():
     actuator_servo.angle = ACTUATOR_DEFLATE_ANGLE
 
     while True:
-        actuator_pressure = get_pressure(sensor=1, offset=-21, pressure_ref=200.0, value_ref=2870) 
+        actuator_pressure = get_pressure(sensor=1, offset=-21, pressure_ref=200.0, value_ref=2870)
         print(f"\rActuator pressure: {actuator_pressure:.2f}", end="")
         if actuator_pressure <= 5:
             cuff_servo.angle = CUFF_BRIDGE_ANGLE
             actuator_servo.angle = ACTUATOR_BRIDGE_ANGLE
             print("\nActuador abierto")
             break
+
 
 def close_actuator():
     print("-----------------------------------")
@@ -149,25 +167,25 @@ def close_actuator():
     cuff_servo.angle = CUFF_DEFLATE_ANGLE
     actuator_servo.angle = ACTUATOR_INFLATE_ANGLE
     time.sleep(1)
-    # TODO: activar relé
-    print("Bomba neumática activada")
+    set_pump_state(on=True)
 
     while True:
-        actuator_pressure = get_pressure(sensor=1, offset=-21, pressure_ref=200.0, value_ref=2870) 
+        actuator_pressure = get_pressure(sensor=1, offset=-21, pressure_ref=200.0, value_ref=2870)
         print(f"\rActuator pressure: {actuator_pressure:.2f}", end="")
         if actuator_pressure >= ACTUATOR_GOAL_PRESSURE:
+            set_pump_state(on=False)
             cuff_servo.angle = CUFF_BRIDGE_ANGLE
             actuator_servo.angle = ACTUATOR_BRIDGE_ANGLE
             print("\nActuador abierto")
             break
 
+
 # --- Bucle principal con PID ---
 if __name__ == "__main__":
     close_actuator()
-    pressures_data = meassure_bp()
+    pressures_data = measure_bp()
     time.sleep(3)
     open_actuator()
-
 
     try:
         # Procesar información
@@ -188,3 +206,5 @@ if __name__ == "__main__":
         plt.legend()
 
         plt.show()
+    finally:
+        GPIO.cleanup()

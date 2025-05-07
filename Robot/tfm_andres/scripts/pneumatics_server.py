@@ -9,20 +9,16 @@ import busio
 from adafruit_motor import servo
 from adafruit_pca9685 import PCA9685
 import threading
+import Jetson.GPIO as GPIO
 
-# --- Constantes y variables presión arterial --- TODO: refinar y recolocar
+# --- Constantes y variables presión arterial ---
 PRESSURE_FS = 40  # Hz
 bp = BloodPressure(PRESSURE_FS)
 
-# --- Constantes y variables servos --- TODO: refinar rangos servo y ángulos
-CUFF_INFLATE_ANGLE = 180
-CUFF_DEFLATE_ANGLE = 115
-CUFF_FULL_DEFLATE_ANGLE = 90
-CUFF_BRIDGE_ANGLE = 0
-
-ACTUATOR_INFLATE_ANGLE = 90
-ACTUATOR_DEFLATE_ANGLE = 0
-ACTUATOR_BRIDGE_ANGLE = 180
+# --- Constantes y variables servos ---
+RELAY_PIN = 18
+GPIO.setmode(GPIO.BOARD)
+GPIO.setup(RELAY_PIN, GPIO.OUT)
 
 """
  I2C BUS 0 (SCL: 28 | SDA: 27)
@@ -41,13 +37,19 @@ actuator_servo = servo.Servo(pca.channels[14], min_pulse=650, max_pulse=2650)
 
 
 class PneumaticsServer:
-    # TODO: añadir el resto de constantes
-    # TODO: en los timeouts añadir desinflado de emergencia + función
-    # TODO: controlar los rospy.is_shutdown restantes
-    # TODO: añadir activación y desactivación de los sensores de presión
-    # TODO: usar on_shutdown para apagar y puentear todo
+    # TODO: terminar de gestionar los shutdown
+    # TODO: comprobar lo del event clear
     ACTUATOR_GOAL_PRESSURE = 600.0
     CUFF_GOAL_PRESSURE = 190.0
+
+    CUFF_INFLATE_ANGLE = 180
+    CUFF_DEFLATE_ANGLE = 115
+    CUFF_FULL_DEFLATE_ANGLE = 90
+    CUFF_BRIDGE_ANGLE = 0
+
+    ACTUATOR_INFLATE_ANGLE = 90
+    ACTUATOR_DEFLATE_ANGLE = 0
+    ACTUATOR_BRIDGE_ANGLE = 180
 
     def __init__(self):
         rospy.init_node('pneumatics_server')
@@ -79,8 +81,11 @@ class PneumaticsServer:
                                                                  self.execute_open_actuator, False)
         self.server_open_actuator.start()
 
-        cuff_servo.angle = CUFF_BRIDGE_ANGLE
-        actuator_servo.angle = ACTUATOR_BRIDGE_ANGLE
+        cuff_servo.angle = self.CUFF_BRIDGE_ANGLE
+        actuator_servo.angle = self.ACTUATOR_BRIDGE_ANGLE
+
+        # Seguridad
+        self.set_pump_state(on=False)
 
         rospy.loginfo("Servidor de acción 'open_actuator' iniciado")
 
@@ -126,6 +131,15 @@ class PneumaticsServer:
         msg.sys = sys
         msg.dia = dia
         self.bp_pub.publish(msg)
+
+    @staticmethod
+    def set_pump_state(on: bool = False):
+        if on:
+            GPIO.output(RELAY_PIN, GPIO.HIGH)
+            rospy.loginfo("Bomba neumática activada")
+        else:
+            GPIO.output(RELAY_PIN, GPIO.LOW)
+            rospy.loginfo("Bomba neumática desactivada")
 
     def toggle_sensor(self, sensor: str):  # TODO: meterlo donde toque
         msg = String()
@@ -174,20 +188,20 @@ class PneumaticsServer:
         return 'ok'
 
     def abort_actuator(self):
-        # TODO: desactivar relé
-        rospy.loginfo("Bomba neumática desactivada")
-        cuff_servo.angle = CUFF_BRIDGE_ANGLE
-        actuator_servo.angle = ACTUATOR_DEFLATE_ANGLE
+        self.set_pump_state(on=False)
+        cuff_servo.angle = self.CUFF_BRIDGE_ANGLE
+        actuator_servo.angle = self.ACTUATOR_DEFLATE_ANGLE
         self.toggle_sensor("actuator_pressure")
+        self.new_actuator_pressure_event.clear()
 
     def abort_bp(self):
-        # TODO: desactivar relé
-        rospy.loginfo("Bomba neumática desactivada")
-        cuff_servo.angle = CUFF_DEFLATE_ANGLE
-        actuator_servo.angle = ACTUATOR_BRIDGE_ANGLE
+        self.set_pump_state(on=False)
+        cuff_servo.angle = self.CUFF_DEFLATE_ANGLE
+        actuator_servo.angle = self.ACTUATOR_BRIDGE_ANGLE
         self.toggle_sensor("cuff_pressure")
+        self.new_cuff_pressure_event.clear()
 
-    def execute_close_actuator(self, goal):  # TODO: añadir open
+    def execute_close_actuator(self, goal):
         rospy.loginfo("Iniciado cierre del actuador")
         feedback = PneumaticsFeedback()
         result = PneumaticsResult()
@@ -196,11 +210,10 @@ class PneumaticsServer:
         self.toggle_sensor("actuator_pressure")
 
         # Colocar válvulas
-        cuff_servo.angle = CUFF_BRIDGE_ANGLE
-        actuator_servo.angle = ACTUATOR_INFLATE_ANGLE
+        cuff_servo.angle = self.CUFF_DEFLATE_ANGLE  # Para que salga el poco aire del cuff que quede
+        actuator_servo.angle = self.ACTUATOR_INFLATE_ANGLE
         rospy.sleep(1)
-        # TODO: activar relé
-        rospy.loginfo("Bomba neumática activada")
+        self.set_pump_state(on=True)
 
         start_time = rospy.get_time()
         while not rospy.is_shutdown():
@@ -223,6 +236,7 @@ class PneumaticsServer:
             if self.actuator_pressure >= self.ACTUATOR_GOAL_PRESSURE:
                 # Desactivar sensor de presión
                 self.toggle_sensor("actuator_pressure")
+                self.new_actuator_pressure_event.clear()
                 break
 
             # Calcular y enviar progreso
@@ -231,12 +245,11 @@ class PneumaticsServer:
             self.server_close_actuator.publish_feedback(feedback)
 
         # Cortar suministro de aire
-        # TODO: desactivar relé
-        rospy.loginfo("Bomba neumática desactivada")
+        self.set_pump_state(on=False)
 
         if not rospy.is_shutdown():
-            actuator_servo.angle = ACTUATOR_BRIDGE_ANGLE
-            cuff_servo.angle = CUFF_BRIDGE_ANGLE
+            actuator_servo.angle = self.ACTUATOR_BRIDGE_ANGLE
+            cuff_servo.angle = self.CUFF_BRIDGE_ANGLE
 
             # Notificar de finalización exitosa
             result.success = True
@@ -252,8 +265,8 @@ class PneumaticsServer:
         self.toggle_sensor("actuator_pressure")
 
         # Colocar válvulas
-        cuff_servo.angle = CUFF_BRIDGE_ANGLE
-        actuator_servo.angle = ACTUATOR_DEFLATE_ANGLE
+        cuff_servo.angle = self.CUFF_BRIDGE_ANGLE
+        actuator_servo.angle = self.ACTUATOR_DEFLATE_ANGLE
 
         start_time = rospy.get_time()
         while not rospy.is_shutdown():
@@ -276,6 +289,8 @@ class PneumaticsServer:
             if self.actuator_pressure <= 5:
                 # Desactivar sensor de presión
                 self.toggle_sensor("actuator_pressure")
+                self.new_actuator_pressure_event.clear()
+                actuator_servo.angle = self.ACTUATOR_BRIDGE_ANGLE
                 break
 
             # Calcular y enviar progreso
@@ -284,8 +299,8 @@ class PneumaticsServer:
             self.server_open_actuator.publish_feedback(feedback)
 
         if not rospy.is_shutdown():
-            actuator_servo.angle = ACTUATOR_BRIDGE_ANGLE
-            cuff_servo.angle = CUFF_BRIDGE_ANGLE
+            actuator_servo.angle = self.ACTUATOR_BRIDGE_ANGLE
+            cuff_servo.angle = self.CUFF_BRIDGE_ANGLE
 
             # Notificar de finalización exitosa
             result.success = True
@@ -303,8 +318,8 @@ class PneumaticsServer:
         self.toggle_sensor("cuff_pressure")
 
         rospy.loginfo("Fase 1: Comenzado vaciado completo del manguito")
-        actuator_servo.angle = ACTUATOR_BRIDGE_ANGLE
-        cuff_servo.angle = CUFF_FULL_DEFLATE_ANGLE
+        actuator_servo.angle = self.ACTUATOR_BRIDGE_ANGLE
+        cuff_servo.angle = self.CUFF_FULL_DEFLATE_ANGLE
 
         start_time = rospy.get_time()
         while not rospy.is_shutdown():
@@ -336,10 +351,9 @@ class PneumaticsServer:
         # 2- Inflar por completo el manguito (progress: 1.0-2.0)
         if not rospy.is_shutdown():
             rospy.loginfo("Fase 2: Comenzado inflado completo del manguito")
-            cuff_servo.angle = CUFF_INFLATE_ANGLE
+            cuff_servo.angle = self.CUFF_INFLATE_ANGLE
             rospy.sleep(0.5)
-            # TODO: activar relé
-            rospy.loginfo("Bomba neumática activada")
+            self.set_pump_state(on=True)
 
         start_time = rospy.get_time()
         while not rospy.is_shutdown():
@@ -361,8 +375,6 @@ class PneumaticsServer:
 
             if self.cuff_pressure >= self.CUFF_GOAL_PRESSURE:
                 feedback.progress = 2.0
-                # TODO: desactivar relé
-                rospy.loginfo("Bomba neumática desactivada")
                 break
 
             pressures.append(self.cuff_pressure)
@@ -371,10 +383,11 @@ class PneumaticsServer:
                     max(0.0, min(self.cuff_pressure, self.CUFF_GOAL_PRESSURE)) / self.CUFF_GOAL_PRESSURE)
             self.server_blood_pressure.publish_feedback(feedback)
 
+        self.set_pump_state(on=False)
         # 3- Desinflado controlado del manguito (progress: 2.0-3.0)
         if not rospy.is_shutdown():
             rospy.loginfo("Fase 3: Comenzado desinflado controlado del manguito")
-            cuff_servo.angle = CUFF_DEFLATE_ANGLE
+            cuff_servo.angle = self.CUFF_DEFLATE_ANGLE
 
         start_time = rospy.get_time()
         samples_prev_opening = 0
@@ -399,8 +412,9 @@ class PneumaticsServer:
                 feedback.progress = 3.0
                 # Desactivar sensor de presión
                 self.toggle_sensor("cuff_pressure")
+                self.new_cuff_pressure_event.clear()
                 # Dejar salir el resto del aire al terminar
-                cuff_servo.angle = CUFF_FULL_DEFLATE_ANGLE
+                cuff_servo.angle = self.CUFF_FULL_DEFLATE_ANGLE
                 break
 
             pressures.append(self.cuff_pressure)
