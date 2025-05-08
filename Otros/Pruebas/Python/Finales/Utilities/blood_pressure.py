@@ -7,12 +7,12 @@ from scipy.signal import butter, filtfilt, find_peaks, peak_prominences
 
 
 class BloodPressure:
-    __PROMINENCE_MIN = 3  # Prominencia mínima para considerar un pico
-    __PROMINENCE_MAX = 30  # Prominencia máxima para considerar un pico
-    __HEIGHT_MAX = 5  # Altura máxima permitida para los picos
-    __HEIGHT_MIN = -30  # Altura mínima permitida para los picos
+    __PROMINENCE_MIN = 3.5  # Prominencia mínima para considerar un pico
+    __PROMINENCE_MAX = 60  # Prominencia máxima para considerar un pico
+    __HEIGHT_MAX = 30  # Altura máxima permitida para los picos
+    __HEIGHT_MIN = -35  # Altura mínima permitida para los picos
     __FC = 4  # Frecuencia de corte del filtro paso bajo para la derivada de la señal
-    __MAX_IBI_VARIANCE = 80E-3  # Maximo tiempo que pueden diferir los intervalos entre pulsos entre si
+    __MAX_IBI_VARIANCE = 80E-3  # Máximo tiempo que pueden diferir los intervalos entre pulsos entre si
 
     def __init__(self, fs: float):
         self.fs = fs
@@ -94,54 +94,43 @@ class BloodPressure:
         bins = np.arange(min_d, max_d + 1, var)
         hist, bin_edges = np.histogram(distances, bins=bins)
 
-        print("hist:", hist)
-        print("bin_edges:", bin_edges)
         self.plot_histogram(distances, bins)
 
         # Determinar el rango de interés
-        # Determinar el rango de concentración con más frecuencia acumulada continua (> 0)
-        max_range = (0, 0)
-        max_count = 0
+        idx_bins_range = (None, None)
+        max_peaks_count = 0
         current_start = None
-        current_count = 0
+        current_peaks_count = 0
+        max_bins = 3
 
         for i, freq in enumerate(hist):
             if freq > 0:
                 if current_start is None:
                     current_start = i
-                current_count += freq
-            if freq == 0 or i == len(hist) - 1:
-                if current_start is not None and current_count > max_count:
-                    max_range = (current_start, i if freq > 0 else i - 1)
-                    max_count = current_count
+
+                if (i - current_start) == max_bins:
+                    current_peaks_count += (freq - hist[current_start])
+                    current_start += 1
+                else:
+                    current_peaks_count += freq
+
+                if current_peaks_count > max_peaks_count:
+                    max_peaks_count = current_peaks_count
+                    idx_bins_range = (current_start, i)
+
+            else:
                 current_start = None
-                current_count = 0
+                current_peaks_count = 0
 
-        print(f"Concentración máxima entre: {max_range[0]} - {max_range[1]}")
+        if None in idx_bins_range:
+            raise ValueError("Rango de distancias aplicable no encontrado")
 
-        # Quedarme solo con los 3 juntos que mas sumen
-        if (max_range[1]-max_range[0]) > 2: #FIXME: terminar e igual simplemente hacerlo desde el principio manualmente
-            # Convolución entre el array y un array de unos (sirve para hacer la suma deslizante)
-            sums = np.convolve(hist[], np.ones(window_size, dtype=int), 'valid')
-            # Resultado de 'sums' será un array donde cada valor es la suma de 3 consecutivos
-
-            # Encontramos el índice donde esa suma es máxima
-            max_idx = np.argmax(sums)
-
-
-        idx_threshold = np.argmax(hist)
-        # Segun donde caiga el siguiente mas común se mueve la distancia objetivo hacia un lado u otro del limite
-        # TODO: a veces si hay pirámide tal vez error. Arreglar si eso calculando aquí nueva varianza
-        if 0 < idx_threshold < len(hist) - 1:
-            threshold = bin_edges[
-                idx_threshold if hist[idx_threshold - 1] >= hist[idx_threshold + 1] else idx_threshold + 1]
-        else:
-            threshold = bin_edges[min(idx_threshold + 1, len(bin_edges) - 1)]
+        search_distance_range = (bin_edges[idx_bins_range[0]], bin_edges[idx_bins_range[1] + 1])
 
         # Agrupa los picos en grupos cuyos elementos mantienen relación de distancia
         groups, i_ini = [], 0
         for i, d in enumerate(distances):
-            if abs(threshold - d) > var:
+            if not (search_distance_range[0] <= d <= search_distance_range[1]):
                 groups.append(peaks[i_ini:i + 1])
                 i_ini = i + 1
         groups.append(peaks[i_ini:])
