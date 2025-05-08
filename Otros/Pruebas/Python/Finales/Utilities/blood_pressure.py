@@ -7,11 +7,12 @@ from scipy.signal import butter, filtfilt, find_peaks, peak_prominences
 
 
 class BloodPressure:
-    __PROMINENCE_MIN = 4  # Prominencia mínima para considerar un pico
-    __PROMINENCE_MAX = 1000  # Prominencia máxima para considerar un pico  TODO: ver a ver por que con 1000 si si es biende
+    __PROMINENCE_MIN = 3  # Prominencia mínima para considerar un pico
+    __PROMINENCE_MAX = 30  # Prominencia máxima para considerar un pico
     __HEIGHT_MAX = 5  # Altura máxima permitida para los picos
-    __HEIGHT_MIN = -20  # Altura mínima permitida para los picos
+    __HEIGHT_MIN = -30  # Altura mínima permitida para los picos
     __FC = 4  # Frecuencia de corte del filtro paso bajo para la derivada de la señal
+    __MAX_IBI_VARIANCE = 80E-3  # Maximo tiempo que pueden diferir los intervalos entre pulsos entre si
 
     def __init__(self, fs: float):
         self.fs = fs
@@ -39,12 +40,46 @@ class BloodPressure:
 
     # Filtrado morfológico de picos: solo se aceptan picos entre ciertos valores de altura y prominencia situados en la zona de desinflado
     # Devuelve los índices en los que se encuentran los picos
-    def __morphological_filter(self, signal: np.ndarray, idx_start: int) -> List[int]:  # TODO: no sirve la prominencia cambiarlo
-        idx_peaks, _ = find_peaks(signal, height=(self.__HEIGHT_MIN, self.__HEIGHT_MAX),
-                                  prominence=self.__PROMINENCE_MIN)
-        prominences, left_bases, right_bases = peak_prominences(signal, idx_peaks)
-        max_prominences = signal[idx_peaks] - np.minimum(signal[left_bases], signal[right_bases])
-        return [n for i, n in enumerate(idx_peaks) if max_prominences[i] <= self.__PROMINENCE_MAX and n > idx_start]   # TODO: mirar si < o >
+    def __morphological_filter(self, signal: np.ndarray, idx_start: int) -> List[
+        int]:  # TODO: no sirve la prominencia cambiarlo
+        idx_peaks, _ = find_peaks(signal, height=(self.__HEIGHT_MIN, self.__HEIGHT_MAX))
+        idx_mins, _ = find_peaks(-signal, height=(-self.__HEIGHT_MAX, -self.__HEIGHT_MIN))
+
+        filtered_peaks = []
+        for i, idx_peak in enumerate(idx_peaks):
+            left_local_prominence = right_local_prominence = self.__PROMINENCE_MIN
+
+            # Buscar prominencia local a la izquierda
+            if i > 0:
+                posibles = [x for x in idx_mins if idx_peaks[i - 1] < x < idx_peak]
+                if posibles:
+                    left_minimum = min(signal[x] for x in posibles)
+                    left_local_prominence = signal[idx_peak] - left_minimum
+                else:
+                    # En teoría nunca llega aquí por lo de que entre picos siempre hay minimo
+                    continue
+            else:
+                # El primero siempre cumple por la izda
+                left_local_prominence = self.__PROMINENCE_MIN
+
+            # Buscar prominencia local a la derecha
+            if i < len(idx_peaks) - 1:
+                posibles = [x for x in idx_mins if idx_peak < x < idx_peaks[i + 1]]
+                if posibles:
+                    right_minimum = min(signal[x] for x in posibles)
+                    right_local_prominence = signal[idx_peak] - right_minimum
+                else:
+                    # En teoría nunca llega aquí por lo de que entre picos siempre hay minimo
+                    continue
+            else:
+                # El último siempre cumple por la derecha
+                right_local_prominence = self.__PROMINENCE_MIN
+
+            if all(self.__PROMINENCE_MIN <= p <= self.__PROMINENCE_MAX for p in
+                   (left_local_prominence, right_local_prominence)) and idx_peak > idx_start:
+                filtered_peaks.append(idx_peak)
+
+        return filtered_peaks
 
     # Filtrado basado en distanciamiento entre picos: se buscan secuencias de picos regulares
     # y compatibles con la frecuencia cardíaca
@@ -52,13 +87,49 @@ class BloodPressure:
         distances = np.diff(peaks)
         min_d = math.floor(60 / 230 * self.fs)  # Muestras correspondientes a 230ppm
         max_d = math.ceil(60 / 40 * self.fs)  # Muestras correspondientes a 40ppm
-        var = math.ceil(80E-3 * self.fs)  # Maxima diferencia entre pulsos de 60ms=60E-3*fs muestras  # FIXME: he cambiado a 80 mirar histograma
+        var = math.ceil(
+            self.__MAX_IBI_VARIANCE * self.fs)  # Maxima diferencia entre pulsos de 60ms=60E-3*fs muestras  # FIXME: he cambiado a 80 mirar histograma
 
         # Obtener histograma y obtener la distancia objetivo como la más frecuente
         bins = np.arange(min_d, max_d + 1, var)
         hist, bin_edges = np.histogram(distances, bins=bins)
-        idx_threshold = np.argmax(hist)
 
+        print("hist:", hist)
+        print("bin_edges:", bin_edges)
+        self.plot_histogram(distances, bins)
+
+        # Determinar el rango de interés
+        # Determinar el rango de concentración con más frecuencia acumulada continua (> 0)
+        max_range = (0, 0)
+        max_count = 0
+        current_start = None
+        current_count = 0
+
+        for i, freq in enumerate(hist):
+            if freq > 0:
+                if current_start is None:
+                    current_start = i
+                current_count += freq
+            if freq == 0 or i == len(hist) - 1:
+                if current_start is not None and current_count > max_count:
+                    max_range = (current_start, i if freq > 0 else i - 1)
+                    max_count = current_count
+                current_start = None
+                current_count = 0
+
+        print(f"Concentración máxima entre: {max_range[0]} - {max_range[1]}")
+
+        # Quedarme solo con los 3 juntos que mas sumen
+        if (max_range[1]-max_range[0]) > 2: #FIXME: terminar e igual simplemente hacerlo desde el principio manualmente
+            # Convolución entre el array y un array de unos (sirve para hacer la suma deslizante)
+            sums = np.convolve(hist[], np.ones(window_size, dtype=int), 'valid')
+            # Resultado de 'sums' será un array donde cada valor es la suma de 3 consecutivos
+
+            # Encontramos el índice donde esa suma es máxima
+            max_idx = np.argmax(sums)
+
+
+        idx_threshold = np.argmax(hist)
         # Segun donde caiga el siguiente mas común se mueve la distancia objetivo hacia un lado u otro del limite
         # TODO: a veces si hay pirámide tal vez error. Arreglar si eso calculando aquí nueva varianza
         if 0 < idx_threshold < len(hist) - 1:
@@ -112,6 +183,16 @@ class BloodPressure:
         plt.grid()
         plt.legend()
 
+        plt.tight_layout()
+        plt.show()
+
+    @staticmethod
+    def plot_histogram(distances, bins):
+        plt.hist(distances, bins=bins, edgecolor='black')
+        plt.xlabel("IBI")
+        plt.ylabel("Frecuencia")
+        plt.title("Histograma de IBI")
+        plt.grid(True)
         plt.tight_layout()
         plt.show()
 
@@ -178,9 +259,9 @@ class BloodPressure:
             if len(idx_morph_peaks) < 2:
                 raise ValueError("No se han encontrado picos en el análisis morfológico.")
 
-            self.plot_pruebas(idx_morph_peaks)  # TODO: quitar despues de las pruebas
+            self.plot_pruebas(idx_morph_peaks)  # TODO: Activar para las pruebas
 
-            idx_distance_peaks = self.__distance_based_filter(idx_morph_peaks)  # Descomentar para ver lo que hace
+            idx_distance_peaks = self.__distance_based_filter(idx_morph_peaks)
             if len(idx_distance_peaks) < 2:
                 raise ValueError("No se han encontrado picos en el análisis por distanciamiento.")
 
