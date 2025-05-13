@@ -8,9 +8,9 @@ GPIO.setup(RELAY_PIN, GPIO.OUT)
 
 try:
     print("Activando relé...")
-    GPIO.output(RELAY_PIN, GPIO.LOW)  # LOW si el relé es activo a nivel bajo
-    time.sleep(5)
-    print("Desactivando relé...")
     GPIO.output(RELAY_PIN, GPIO.HIGH)
+    time.sleep(2)
+    print("Desactivando relé...")
+    GPIO.output(RELAY_PIN, GPIO.LOW)
 finally:
     GPIO.cleanup()
