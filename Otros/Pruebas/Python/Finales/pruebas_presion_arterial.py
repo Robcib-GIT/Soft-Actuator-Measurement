@@ -25,7 +25,13 @@ TODO: Evitar que se activen los servos en el rango normal de 140-50 si no es est
 """
 
 RELAY_PIN = 18
-GPIO.setmode(GPIO.BOARD)
+
+try:
+    GPIO.setmode(GPIO.BOARD)
+except ValueError:
+    GPIO.cleanup()
+    GPIO.setmode(GPIO.BOARD)
+    
 GPIO.setup(RELAY_PIN, GPIO.OUT)
 
 # --- Constantes y variables presión arterial --- TODO: refinar cuando complete el actuador
@@ -66,9 +72,13 @@ actuator_servo = servo.Servo(pca.channels[14], min_pulse=650, max_pulse=2650)
 # --- Declaracion de funciones presion arterial ---
 def get_pressure(sensor: int = 1, offset=27.0, pressure_ref=200.0, value_ref=2960.0):
     if sensor == 1:  # Actuator
-        pressure_raw = ADS.readADC_Differential_0_1()
+        ADS.requestADC_Differential_0_1()  # TODO: ver si con esto soluciona
+        pressure_raw = ADS.getValue()
+        #pressure_raw = ADS.readADC_Differential_0_1()
     else:  # Cuff
-        pressure_raw = ADS.readADC_Differential_2_3()
+        ADS.requestADC_Differential_2_3()
+        pressure_raw = ADS.getValue()
+        #pressure_raw = ADS.readADC_Differential_2_3()
 
     pressure = (pressure_raw - offset) * pressure_ref / (value_ref - offset)
     time.sleep(bp.sample_interval)
@@ -152,7 +162,7 @@ def open_actuator():
 
     while True:
         actuator_pressure = get_pressure(sensor=1, offset=-21, pressure_ref=200.0, value_ref=2870)
-        print(f"\rActuator pressure: {actuator_pressure:.2f}", end="")
+        print(f"\rActuator pressure: {actuator_pressure:.2f}      ", end="")
         if actuator_pressure <= 5:
             cuff_servo.angle = CUFF_BRIDGE_ANGLE
             actuator_servo.angle = ACTUATOR_BRIDGE_ANGLE
@@ -171,7 +181,7 @@ def close_actuator():
 
     while True:
         actuator_pressure = get_pressure(sensor=1, offset=-21, pressure_ref=200.0, value_ref=2870)
-        print(f"\rActuator pressure: {actuator_pressure:.2f}", end="")
+        print(f"\rActuator pressure: {actuator_pressure:.2f}      ", end="")
         if actuator_pressure >= ACTUATOR_GOAL_PRESSURE:
             set_pump_state(on=False)
             cuff_servo.angle = CUFF_BRIDGE_ANGLE
@@ -183,6 +193,7 @@ def close_actuator():
 # --- Bucle principal con PID ---
 if __name__ == "__main__":
     close_actuator()
+    time.sleep(5)  # Para que me de tiempo
     pressures_data = measure_bp()
     time.sleep(3)
     open_actuator()
