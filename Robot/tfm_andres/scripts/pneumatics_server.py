@@ -419,7 +419,7 @@ class PneumaticsServer:
 
             pressures.append(self.cuff_pressure)
             samples_prev_opening += 1
-            p_velocity = bp.calculate_velocity(pressures=pressures, sample_time=0.1)  # FIXME: actualizar función
+            p_velocity = bp.calculate_velocity(pressures_list=pressures, sample_time=0.1)  # FIXME: actualizar función
             # Calcular progreso
             feedback.progress = 3.0 - (
                     max(0.0, min(self.cuff_pressure, self.CUFF_GOAL_PRESSURE)) / self.CUFF_GOAL_PRESSURE)
