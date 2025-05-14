@@ -202,7 +202,22 @@ if __name__ == "__main__":
         # Procesar información
         sys, dia = bp.get_blood_pressure(pressures_data)
         bp.plot_results()
-        save_data([bp.time, bp.pressures], ["Time [s]", "Pressure [mmHg]"])
+        data = {"Time": bp.time, "Pressure": bp.pressures}
+
+        real_results = {}
+        try:
+            real_sys = int(input("SYS real: "))
+            real_dia = int(input("DIA real: "))
+            real_ppm = int(input("PPM real: "))
+
+            real_results["SYS"] = real_sys
+            real_results["DIA"] = real_dia
+            real_results["PPM"] = real_ppm
+
+        except Exception:
+            print("No se registraron datos reales")
+
+        save_data(data_dict=data, results_dict=real_results)
     except Exception as e:
         print("Ocurrió un error al procesar los datos.")
 

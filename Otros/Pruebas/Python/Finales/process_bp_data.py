@@ -4,14 +4,19 @@ from matplotlib import pyplot as plt
 from Utilities.blood_pressure import BloodPressure
 from Utilities.data_operations import load_data
 
+"""
+Para procesar lecturas de pulso de uno en uno
+"""
+
 if __name__ == "__main__":
-    time, pressures = load_data()
-    fs = 1/np.mean(np.diff(time))
+    data, subject_data = load_data()
+
+    fs = 1/np.mean(np.diff(data["Time"]))
     bp = BloodPressure(fs)
 
     try:
         # Procesar información
-        sys, dia = bp.get_blood_pressure(pressures)
+        sys, dia = bp.get_blood_pressure(data["Pressure"])
         bp.plot_results()
     except Exception as e:
         print("Ocurrió un error al procesar los datos.")
