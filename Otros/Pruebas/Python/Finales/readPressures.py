@@ -85,10 +85,10 @@ def get_pressure(sensor: str):
 def set_pump_state(on: bool = False):
     if on:
         GPIO.output(RELAY_PIN, GPIO.HIGH)
-        print("Bomba neumática activada")
+        #print("Bomba neumática activada")
     else:
         GPIO.output(RELAY_PIN, GPIO.LOW)
-        print("Bomba neumática desactivada")
+        #print("Bomba neumática desactivada")
 
 def calculate_velocity(pressures_list: List[float], sample_time=0.5):
     samples = max(2, math.ceil(sample_time * pressure_fs))  # al menos 2 muestras
@@ -98,8 +98,8 @@ def calculate_velocity(pressures_list: List[float], sample_time=0.5):
     delta_pressures = pressures[-1] - pressures[-samples]
     velocity = delta_pressures / samples * self.fs
     """
-    delta_pressures = np.diff(samples)
-    velocity = float(np.mean(delta_pressures))
+    delta_pressures = np.diff(pressures_list[-samples:])
+    velocity = float(np.mean(delta_pressures))*pressure_fs
     return velocity
 
 
@@ -124,7 +124,7 @@ if __name__ == "__main__":
             if actuator_pressure >= ACTUATOR_GOAL_PRESSURE:
                 set_pump_state(on=False)
 
-            print(f"\rCuff pressure: {cuff_pressure:.2f}mmHg   ({}mmHg/s)   |   Actuator pressure: {actuator_pressure:.2f}mmHg   ({}mmHg/s)           ", end="")
+            print(f"\rCuff pressure: {cuff_pressure:.2f}mmHg   ({cuff_p_velocity:.2f}mmHg/s)   |   Actuator pressure: {actuator_pressure:.2f}mmHg   ({actuator_p_velocity:.2f}mmHg/s)           ", end="")
 
             time.sleep(INTERVAL)
     except KeyboardInterrupt:
