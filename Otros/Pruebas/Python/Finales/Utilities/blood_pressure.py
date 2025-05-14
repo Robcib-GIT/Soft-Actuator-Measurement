@@ -228,12 +228,10 @@ class BloodPressure:
         samples = max(2, math.ceil(sample_time * self.fs))  # al menos 2 muestras
         if len(pressures) < samples:
             return 0.0
-        """
-        delta_pressures = pressures[-1] - pressures[-samples]
-        velocity = delta_pressures / samples * self.fs
-        """
-        delta_pressures = np.diff(samples)
-        velocity = float(np.mean(delta_pressures))
+        
+        delta_pressures = np.diff(pressures[-samples:])
+        velocity = float(np.mean(delta_pressures))*self.fs
+
         return velocity
 
     # Función principal para calcular la presión arterial
