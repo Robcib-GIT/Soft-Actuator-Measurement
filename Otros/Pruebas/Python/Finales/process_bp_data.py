@@ -1,45 +1,29 @@
-import numpy as np
-from matplotlib import pyplot as plt
-
 from Utilities.blood_pressure import BloodPressure
 from Utilities.data_operations import load_data
 
 """
-Para procesar lecturas de pulso de uno en uno
+Para procesar lecturas de presión individuales
 """
 
 if __name__ == "__main__":
-    data, subject_data = load_data()
+    data, params_data = load_data()
+    pressures = data['Pressure']
+    # FIXME: Me he dado cuenta que no puse delay y se muestreo con 198sps aprox
+    # TODO: Probar con 40 y sino ir subiendo
+    """  
+    time = np.array(data['Time'])
+    fs = 1 / np.mean(np.diff(time))
+    """
+    fs = 198
 
-    fs = 1/np.mean(np.diff(data["Time"]))
-    bp = BloodPressure(fs)
+    bp = BloodPressure(fs=fs)
 
     try:
         # Procesar información
-        sys, dia = bp.get_blood_pressure(data["Pressure"])
-        bp.plot_results()
+        sys, dia = bp.get_blood_pressure(pressures=pressures)
+        print(f"SAM_SYS:  {sys}  |  SAM_SIA:  {dia}")
+        print(f"Real_SYS: {params_data['SYS']}  |  Real_SIA: {params_data['DIA']}")
     except Exception as e:
-        print("Ocurrió un error al procesar los datos.")
-
-        plt.figure(figsize=(12, 6))
-
-        # Gráfico de presión original con anotaciones de presión sistólica y diastólica
-        plt.subplot(2, 1, 1)
-        # Gráfico de presión original con anotaciones de presión sistólica y diastólica
-        plt.plot(bp.time, bp.pressures, label='Original pressure')
-        plt.xlabel('Time (s)')
-        plt.ylabel('Pressure (mmHg)')
-        plt.title('Pressure vs Time')
-        plt.grid()
-        plt.legend()
-
-        plt.subplot(2, 1, 2)
-        # Gráfico de presión original con anotaciones de presión sistólica y diastólica
-        plt.plot(bp.time, bp.d_pressures_filtered, label='Original pressure')
-        plt.xlabel('Time (s)')
-        plt.ylabel('d_Pressure (mmHg/s)')
-        plt.title('d_Pressure vs Time')
-        plt.grid()
-        plt.legend()
-
-        plt.show()
+        print(f"Ocurrió un error al procesar los datos.\n {e}")
+    finally:
+        bp.plot_results()

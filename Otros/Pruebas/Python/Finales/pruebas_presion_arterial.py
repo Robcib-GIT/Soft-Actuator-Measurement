@@ -88,6 +88,8 @@ def get_pressure(sensor: str):
         # pressure_raw = ADS.readADC_Differential_2_3()
 
     pressure = (pressure_raw - offset) * pressure_ref / (value_ref - offset)
+
+    time.sleep(bp.sample_interval)  # TODO: para pruebas solo
     return float(pressure)
 
 
@@ -208,22 +210,11 @@ if __name__ == "__main__":
     try:
         # Procesar información
         sys, dia = bp.get_blood_pressure(pressures_data)
-        bp.plot_results()
+
     except Exception as e:
         print("Ocurrió un error al procesar los datos.")
-
-        plt.figure(figsize=(12, 6))
-
-        # Gráfico de presión original con anotaciones de presión sistólica y diastólica
-        plt.plot(bp.time, bp.pressures, label='Original pressure')
-        plt.xlabel('Time (s)')
-        plt.ylabel('Pressure (mmHg)')
-        plt.title('Pressure vs Time')
-        plt.grid()
-        plt.legend()
-
-        plt.show()
     finally:
+        bp.plot_results()
 
         data = {"Time": bp.time, "Pressure": bp.pressures}
 
