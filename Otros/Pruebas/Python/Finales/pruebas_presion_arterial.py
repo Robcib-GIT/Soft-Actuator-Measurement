@@ -242,4 +242,4 @@ if __name__ == "__main__":
 
         save_data(data_dict=data, results_dict=real_results)
         
-    GPIO.cleanup()
+    GPIO.cleanup()  # FIXME: error de no se qué

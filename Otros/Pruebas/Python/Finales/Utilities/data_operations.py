@@ -8,63 +8,12 @@ import re
 data_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data')
 
 
-def save_data_borrar(data, column_labels: List[str]):
-    """
-    Guarda los datos en un archivo CSV con el número de columnas personalizado.
-
-    Args:
-        data: Lista de listas (o tupla de listas) con los datos que se van a guardar.
-              Cada sublista debe contener los datos correspondientes a una columna.
-        column_labels: Lista con los nombres de las columnas.
-    """
-    # Crear ventana de diálogo para guardar el archivo CSV
-    root = Tk()
-    root.withdraw()  # Ocultar ventana principal
-    file_path = filedialog.asksaveasfilename(
-        initialdir=data_dir,
-        defaultextension=".csv",
-        filetypes=[("CSV files", "*.csv")])
-
-    if file_path:
-        # Guardar los datos en un archivo CSV
-        with open(file_path, mode='w', newline='') as file:
-            writer = csv.writer(file)
-            writer.writerow(column_labels)  # Escribe los encabezados de las columnas
-            rows = zip(*data)  # Transponer la lista de listas para que cada fila contenga los datos correspondientes
-            writer.writerows(rows)  # Escribe las filas de datos
-        print(f"Archivo guardado como {file_path}")
-    else:
-        print("No se guardó el archivo.")
-
-
-def load_data_borrar() -> List[List[any]]:
-    """
-    Carga los datos de un archivo CSV en una lista de listas, donde cada sublista
-    representa una columna de datos.
-
-    Returns:
-        Una lista de listas (o tupla de listas) donde cada sublista corresponde
-        a una columna de datos del archivo CSV.
-    """
-    root = Tk()
-    root.withdraw()
-    filepath = filedialog.askopenfilename(
-        initialdir=data_dir,
-        title="Select CSV file",
-        filetypes=[("CSV files", "*.csv")]
-    )
-
-    df = pd.read_csv(filepath)
-    return df.values.T.tolist()  # Transpone los datos y los convierte en una lista de listas
-
-
-def save_data(data_dict: Dict[str, List[float]], results_dict: Dict[str, int]): # TODO: cambiar nombre a save_data y en los otros ficheros adaptar
+def save_data(data_dict: Dict[str, List[float]], results_dict: Dict[str, int]):
     """
     Guarda los datos de dos diccionarios en un archivo CSV.
 
-    Args:
-        data_dict: Diccionario con claves como string y valores como lista de floats.
-        results_dict: Diccionario con claves como string y valores como string.
+    :param data_dict: Diccionario con los encabezados como clave y una lista de datos como valor
+    :param results_dict: Diccionario con parámetros que se comentaran al principio del csv
     """
     # Crear ventana de diálogo para guardar el archivo CSV
     root = Tk()
@@ -99,23 +48,23 @@ def save_data(data_dict: Dict[str, List[float]], results_dict: Dict[str, int]): 
         print("No se guardó el archivo.")
 
 
-def load_data() -> Tuple[Dict[str, List[float]], Dict[str, Any]]:  # TODO: cambiar nombre a load_data y en los otros ficheros adaptar
+def load_data(filepath: str | None = None) -> Tuple[Dict[str, List[float]], Dict[str, Any]]:
     """
-    Carga un archivo CSV con metainformación comentada (# Param: valor) y una tabla de datos.
-    Devuelve dos diccionarios:
-    - Uno con los datos (columnas como claves y listas de valores).
-    - Otro con los parámetros (convertidos automáticamente a int o float si es posible).
+    Carga información de un CSV y también los datos comentados al principio de este.
 
-    Returns:
-        Tupla con un diccionario que contiene la información del csv y otro diccionario con la información comentada al principio de este
+    :param filepath: Ruta del archivo CSV. Si es None, se abre un diálogo para seleccionar el archivo.
+    :returns: Una tupla con dos elementos:
+        - data_dict (dict): Diccionario que contiene la información general del CSV.
+        - param_dict (dict): Diccionario que contiene la información comentada del CSV.
     """
-    root = Tk()
-    root.withdraw()
-    filepath = filedialog.askopenfilename(
-        initialdir=data_dir,
-        title="Select CSV file",
-        filetypes=[("CSV files", "*.csv")]
-    )
+    if filepath is None:
+        root = Tk()
+        root.withdraw()
+        filepath = filedialog.askopenfilename(
+            initialdir=data_dir,
+            title="Select CSV file",
+            filetypes=[("CSV files", "*.csv")]
+        )
 
     with open(filepath, "r", encoding="utf-8") as f:
         lines = f.readlines()

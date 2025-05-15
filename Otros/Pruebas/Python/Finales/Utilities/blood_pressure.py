@@ -83,7 +83,7 @@ class BloodPressure:
 
     # Filtrado basado en distanciamiento entre picos: se buscan secuencias de picos regulares
     # y compatibles con la frecuencia cardíaca
-    def __distance_based_filter(self, peaks: List[int]) -> List[int]:  # TODO: mirar si pillar ambos lados en vez de uno
+    def __distance_based_filter(self, peaks: List[int], plot_through: bool = False) -> List[int]:  # TODO: mirar si pillar ambos lados en vez de uno
         distances = np.diff(peaks)
         min_d = math.floor(60 / 230 * self.fs)  # Muestras correspondientes a 230ppm
         max_d = math.ceil(60 / 40 * self.fs)  # Muestras correspondientes a 40ppm
@@ -94,7 +94,8 @@ class BloodPressure:
         bins = np.arange(min_d, max_d + 1, var)
         hist, bin_edges = np.histogram(distances, bins=bins)
 
-        self.plot_histogram(distances, bins)
+        if plot_through:
+            self.plot_histogram(distances, bins)
 
         # Determinar el rango de interés
         idx_bins_range = (None, None)
@@ -235,7 +236,7 @@ class BloodPressure:
         return velocity
 
     # Función principal para calcular la presión arterial
-    def get_blood_pressure(self, pressures: List[float]):
+    def get_blood_pressure(self, pressures: List[float], plot_through: bool = False):
         self.time = np.arange(0, len(pressures)) * self.sample_interval
         self.pressures = pressures
 
@@ -249,7 +250,8 @@ class BloodPressure:
             if len(idx_morph_peaks) < 2:
                 raise ValueError("No se han encontrado picos en el análisis morfológico.")
 
-            self.plot_pruebas(idx_morph_peaks)  # TODO: Activar para las pruebas
+            if plot_through:
+                self.plot_pruebas(idx_morph_peaks)
 
             idx_distance_peaks = self.__distance_based_filter(idx_morph_peaks)
             if len(idx_distance_peaks) < 2:
@@ -262,8 +264,12 @@ class BloodPressure:
             sys, dia = int(pressures[idx_sys]), int(pressures[idx_dia])
             if not (240 > sys > 70) or not (140 > dia > 40):
                 raise ValueError("Cálculo erróneo, presiones fuera de rangos factibles.")
-            print(f"SYS: {sys} mmHg  |  DIA: {dia} mmHg")
+
+            if plot_through:
+                print(f"SYS: {sys} mmHg  |  DIA: {dia} mmHg")
+
             return sys, dia
 
         except ValueError as e:
-            print(f"ValueError: {e}")
+            if plot_through:
+                print(f"ValueError: {e}")
