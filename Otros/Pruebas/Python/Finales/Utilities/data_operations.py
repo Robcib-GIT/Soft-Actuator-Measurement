@@ -48,7 +48,7 @@ def save_data(data_dict: Dict[str, List[float]], results_dict: Dict[str, int]):
         print("No se guardó el archivo.")
 
 
-def load_data(filepath: str | None = None) -> Tuple[Dict[str, List[float]], Dict[str, Any]]:
+def load_data(filepath = None) -> Tuple[Dict[str, List[float]], Dict[str, Any]]:
     """
     Carga información de un CSV y también los datos comentados al principio de este.
 

@@ -25,7 +25,7 @@ class BloodPressure:
         self.dia: int | None = None
         self.ppm: int | None = None
 
-        # Aplica un filtro paso bajo Butterworth
+        # Aplica un filtro paso banda
     def __fir_filter(self, low_cut: float = 0.5, high_cut: float = 4.0):
         # Define los parámetros del filtro
         nyq = 0.5 * self.fs  # frecuencia de Nyquist
@@ -84,7 +84,7 @@ class BloodPressure:
         bins = np.arange(min_d, max_d + 1, var)
         hist, bin_edges = np.histogram(distances, bins=bins)
 
-        # self.plot_histogram(distances, bins)  # TODO: descomentar solo para pruebas
+        self.plot_histogram(distances, bins)  # TODO: descomentar solo para pruebas
 
         # Determinar el rango de interés cogiendo los 3 bins consecutivos que contienen la mayor cantidad de picos
         idx_bins_range = (None, None)

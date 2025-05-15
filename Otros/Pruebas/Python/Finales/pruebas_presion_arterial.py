@@ -39,7 +39,7 @@ BUS_I2C_ADS115 = 1
 ADS = ADS1x15.ADS1115(BUS_I2C_ADS115, 0x48)
 ADS.setGain(ADS.PGA_0_512V)
 
-pressure_fs = 40  # Hz
+pressure_fs = 100  # Hz
 bp = BloodPressure(pressure_fs)
 
 ACTUATOR_GOAL_PRESSURE = 600.0
@@ -147,10 +147,10 @@ def measure_bp():
             break
 
         pressures.append(cuff_pressure)
-        p_velocity = bp.calculate_velocity(pressures=pressures, sample_time=0.5)  # FIXME: actualizar función
+        p_velocity = bp.calculate_velocity(pressures=pressures, sample_time=0.5) 
 
         print(
-            f"\rCuff pressure: {cuff_pressure:.2f}  |  Cuff v_pressure: {p_velocity.angle:.2f}     ", end="")
+            f"\rCuff pressure: {cuff_pressure:.2f}  |  Cuff v_pressure: {p_velocity:.2f}     ", end="")
 
     return pressures
 
