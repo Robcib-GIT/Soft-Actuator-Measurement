@@ -14,15 +14,15 @@ if __name__ == "__main__":
     time = np.array(data['Time'])
     fs = 1 / np.mean(np.diff(time))
     """
-    fs = 198
+    fs = 250
 
     bp = BloodPressure(fs=fs)
 
     try:
         # Procesar información
-        sys, dia = bp.get_blood_pressure(pressures=pressures)
-        print(f"SAM_SYS:  {sys}  |  SAM_SIA:  {dia}")
-        print(f"Real_SYS: {params_data['SYS']}  |  Real_SIA: {params_data['DIA']}")
+        sys, dia, ppm = bp.get_blood_pressure(pressures=pressures)
+        print(f"SAM_SYS:  {sys}  |  SAM_SIA:  {dia}  |  |  SAM_PPM:  {ppm}")
+        print(f"Real_SYS: {params_data['SYS']}  |  Real_SIA: {params_data['DIA']}  |  |  Real_PPM: {params_data['PPM']}")
     except Exception as e:
         print(f"Ocurrió un error al procesar los datos.\n {e}")
     finally:

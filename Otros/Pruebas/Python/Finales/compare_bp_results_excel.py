@@ -15,7 +15,7 @@ if __name__ == "__main__":
             data_dict, param_dict = load_data(filepath)
             # print(param_dict)
 
-            fs = 1 / np.mean(np.diff(data_dict["Time"]))
+            fs = 250 #1 / np.mean(np.diff(data_dict["Time"]))  TODO descomentar con nuevas muestras
             bp = BloodPressure(fs)
 
             # Obtener información
@@ -30,12 +30,14 @@ if __name__ == "__main__":
 
             # Calcular presiones con mi algoritmo
             try:
-                sys, dia = bp.get_blood_pressure(data_dict["Pressure"])
+                sys, dia, ppm = bp.get_blood_pressure(data_dict["Pressure"])
                 results["sam_sys"] = sys
                 results["sam_dia"] = dia
+                results["sam_ppm"] = ppm
             except Exception:
                 results["sam_sys"] = None
                 results["sam_dia"] = None
+                results["sam_ppm"] = None
 
             # Almacenar informacion
             all_data.setdefault(subject, {})[version] = results
@@ -55,6 +57,7 @@ if __name__ == "__main__":
             sheet.cell(row=row, column=3).value = version
             sheet.cell(row=row, column=4).value = results['sam_sys'] if results['sam_sys'] is not None else '=NA()'
             sheet.cell(row=row, column=5).value = results['sam_dia'] if results['sam_dia'] is not None else '=NA()'
+            sheet.cell(row=row, column=6).value = results['sam_ppm'] if results['sam_ppm'] is not None else '=NA()'
             sheet.cell(row=row, column=7).value = results['real_sys'] if results['real_sys'] is not None else '=NA()'
             sheet.cell(row=row, column=8).value = results['real_dia'] if results['real_dia'] is not None else '=NA()'
             sheet.cell(row=row, column=9).value = results['real_ppm'] if results['real_ppm'] is not None else '=NA()'

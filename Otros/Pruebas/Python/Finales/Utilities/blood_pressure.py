@@ -21,6 +21,9 @@ class BloodPressure:
         self.__d_pressures: np.ndarray | None = None
         self.__idx_peaks: List[int] | None = None
         self.__all_idx_peaks: List[int] | None = None
+        self.sys: int | None = None
+        self.dia: int | None = None
+        self.ppm: int | None = None
 
         # Aplica un filtro paso bajo Butterworth
     def __fir_filter(self, low_cut: float = 0.5, high_cut: float = 4.0):
@@ -114,6 +117,9 @@ class BloodPressure:
 
         search_distance_range = (bin_edges[idx_bins_range[0]], bin_edges[idx_bins_range[1] + 1])
 
+        # Obtener ppm
+        self.ppm = int(60*self.fs/np.mean(search_distance_range))
+
         # Agrupa los picos en grupos cuyos elementos mantienen relación de distancia
         groups, i_ini = [], 0
         for i, d in enumerate(distances):
@@ -166,10 +172,12 @@ class BloodPressure:
             if not (240 > sys > 70) or not (140 > dia > 40):
                 raise ValueError(f"Presiones fuera de rangos factibles. (SYS: {sys}, DIA: {dia})")
 
-            return sys, dia
+            self.sys = sys
+            self.dia = dia
+            return sys, dia, self.ppm
 
         except ValueError:
-            return None, None
+            return None, None, None
 
     def plot_results(self):
         try:
