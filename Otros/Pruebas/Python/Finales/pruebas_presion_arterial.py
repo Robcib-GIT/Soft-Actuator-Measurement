@@ -137,27 +137,20 @@ def measure_bp():
             break
 
     print("\n3- Desinfado controlado manguito")
-    samples_prev_opening = 0
     while True:
         cuff_pressure = get_pressure(sensor="cuff")
 
-        if cuff_pressure <= 30.0:
+        if cuff_pressure <= 40.0:
             print("\nMedición terminada")
             # Dejar salir el resto del aire al terminar
             cuff_servo.angle = CUFF_FULL_DEFLATE_ANGLE
             break
 
         pressures.append(cuff_pressure)
-        samples_prev_opening += 1
         p_velocity = bp.calculate_velocity(pressures=pressures, sample_time=0.5)  # FIXME: actualizar función
 
         print(
-            f"\rCuff pressure: {cuff_pressure:.2f}  |  actuator_servo: {actuator_servo.angle:.0f}  |  cuff_servo: {cuff_servo.angle:.0f}",
-            end="")
-
-        if p_velocity > -2 and samples_prev_opening >= int(4 / bp.sample_interval):  # FIXME: igual poner con tiempo
-            #cuff_servo.angle -= 1
-            samples_prev_opening = 0
+            f"\rCuff pressure: {cuff_pressure:.2f}  |  Cuff v_pressure: {p_velocity.angle:.2f}     ", end="")
 
     return pressures
 
@@ -195,12 +188,14 @@ def close_actuator():
             set_pump_state(on=False)
             cuff_servo.angle = CUFF_BRIDGE_ANGLE
             actuator_servo.angle = ACTUATOR_BRIDGE_ANGLE
-            print("\nActuador abierto")
+            print("\nActuador cerrado")
             break
 
 
 # --- Bucle principal con PID ---
 if __name__ == "__main__":
+    open_actuator()
+    time.sleep(1)
     close_actuator()
     time.sleep(5)  # Para que me de tiempo
     pressures_data = measure_bp()
@@ -209,7 +204,8 @@ if __name__ == "__main__":
 
     try:
         # Procesar información
-        sys, dia = bp.get_blood_pressure(pressures_data)
+        sys, dia, ppm = bp.get_blood_pressure(pressures_data)
+        print(f"SAM_SYS:  {sys}  |  SAM_SIA:  {dia}  |  |  SAM_PPM:  {ppm}")
 
     except Exception as e:
         print("Ocurrió un error al procesar los datos.")
@@ -219,6 +215,7 @@ if __name__ == "__main__":
         data = {"Time": bp.time, "Pressure": bp.pressures}
 
         real_results = {}
+        print("Introduce las lecturas reales:")
         try:
             real_sys = int(input("SYS real: "))
             real_dia = int(input("DIA real: "))
