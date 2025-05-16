@@ -5,17 +5,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.signal import firwin, filtfilt, find_peaks
 
-PLOT_THROUGH = True
+PLOT_THROUGH = False
 
 
 class BloodPressure:
-    __DIA_H = 1.5  # Altura de la derivada de la presion para considerar DIA
     __MIN_PEAK_H = -100
     __PROMINENCE = 5  # Prominencia mínima para considerar un pico
-    __FC = 4  # Frecuencia de corte del filtro paso bajo para la derivada de la señal
     __MAX_IBI_VARIANCE = 80E-3  # Máximo tiempo que pueden diferir los intervalos entre pulsos entre si
-    __SYS_RATIO = 0.8
-    __DIA_RATIO = 0.5
+    __SYS_RATIO = 0.83  # @0.83: 6.29  inicialmente 0.8
+    __DIA_RATIO = 0.41   # @0.41: 8.38  inicialmente 0.5
 
     def __init__(self, fs: float):
         self.fs = fs
