@@ -39,7 +39,7 @@ BUS_I2C_ADS115 = 1
 ADS = ADS1x15.ADS1115(BUS_I2C_ADS115, 0x48)
 ADS.setGain(ADS.PGA_0_512V)
 
-pressure_fs = 100  # Hz
+pressure_fs = 100  # Hz  # TODO: variar si eso pero con 100 va bien
 bp = BloodPressure(pressure_fs)
 
 ACTUATOR_GOAL_PRESSURE = 600.0

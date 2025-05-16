@@ -5,12 +5,17 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.signal import firwin, filtfilt, find_peaks
 
+PLOT_THROUGH = True
+
 
 class BloodPressure:
-    __DIA_H = 1.5       # Altura de la derivada de la presion para considerar DIA
-    __PROMINENCE = 2.5  # Prominencia mínima para considerar un pico
+    __DIA_H = 1.5  # Altura de la derivada de la presion para considerar DIA
+    __MIN_PEAK_H = -100
+    __PROMINENCE = 5  # Prominencia mínima para considerar un pico
     __FC = 4  # Frecuencia de corte del filtro paso bajo para la derivada de la señal
     __MAX_IBI_VARIANCE = 80E-3  # Máximo tiempo que pueden diferir los intervalos entre pulsos entre si
+    __SYS_RATIO = 0.8
+    __DIA_RATIO = 0.5
 
     def __init__(self, fs: float):
         self.fs = fs
@@ -26,6 +31,7 @@ class BloodPressure:
         self.ppm: int | None = None
 
         # Aplica un filtro paso banda
+
     def __fir_filter(self, low_cut: float = 0.5, high_cut: float = 4.0):
         # Define los parámetros del filtro
         nyq = 0.5 * self.fs  # frecuencia de Nyquist
@@ -37,14 +43,37 @@ class BloodPressure:
         # Aplica el filtro a la señal de presión
         self.__filtered_pressures = filtfilt(fir_coeffs, [1.0], self.pressures)
 
+    def get_amplitudes(self, peaks: List[int]):
+        amplitudes = []
+
+        for i, peak in enumerate(peaks):
+            # Buscar mínimo a la izquierda
+            left_min = np.min(self.__d_pressures[peaks[i - 1]:peak]) if i > 0 else self.__d_pressures[peak]
+
+            # Buscar mínimo a la derecha
+            if i < len(peaks) - 1:  # and peak < len(self.pressures)-1:
+                right_min = np.min(self.__d_pressures[peak:peaks[i + 1]])
+            else:
+                right_min = np.min(self.__d_pressures[peak:])
+
+            # Diferencias de altura
+            amp_left = self.__d_pressures[peak] - left_min
+            amp_right = self.__d_pressures[peak] - right_min
+
+            # Tomar la mayor de las dos
+            amplitudes.append(max(amp_left, amp_right))
+
+        return amplitudes
+
     """
-    Según parece viendo las graficas, el tensiómetro digital toma como sys el aquel pico de presión cuya derivada es >=0
-    y como día el ultimo pico cuya derivada alcanza un minimo de altura tras pasar el MAP
+    Según parece Omron y demas tienen ciertos coeficientes fijos y los usan para obtener sys y dia sabiendo map
     """
+
     def __morphological_filter(self) -> List[int]:
         # Sacar los picos de la primera zona (desinflado y d_pressures>0)
-        idx_peaks, properties = find_peaks(self.__d_pressures, height=0, prominence=self.__PROMINENCE)
-        heights = properties["peak_heights"]
+        wlen = 2 * math.ceil(60 / 40 * self.fs)  # Ventana para la prominencia el doble del max intervalo entre pulsos
+        idx_peaks, properties = find_peaks(self.__d_pressures, height=self.__MIN_PEAK_H, prominence=self.__PROMINENCE,
+                                           wlen=wlen)  # TODO: configurar
         self.__all_idx_peaks = idx_peaks  # Para plotear luego sin más
 
         # Recortar parte de desinflado
@@ -54,20 +83,7 @@ class BloodPressure:
             if val > idx_deflate:
                 # TODO: tal vez un raise
                 idx_peaks = idx_peaks[i:]
-                heights = heights[i:]
                 break
-
-        # Obtener MAP
-        idx_map = idx_peaks[np.argmax(heights)]
-        # pressure_map = pressures[idx_map]
-
-        # Encontrar el ultimo pico del DIA
-        for i, val in enumerate(idx_peaks):
-            if val > idx_map:
-                if heights[i] < self.__DIA_H:  # TODO: añadir que si el siguiente es mas alto que el anterior parta
-                    idx_peaks = idx_peaks[:i]
-                    # print(f"Ultimo dia: h->{heights[i - 1]}")
-                    break
 
         return idx_peaks
 
@@ -84,7 +100,8 @@ class BloodPressure:
         bins = np.arange(min_d, max_d + 1, var)
         hist, bin_edges = np.histogram(distances, bins=bins)
 
-        #self.plot_histogram(distances, bins)  # TODO: descomentar solo para pruebas
+        if PLOT_THROUGH:
+            self.plot_histogram(distances, bins)
 
         # Determinar el rango de interés cogiendo los 3 bins consecutivos que contienen la mayor cantidad de picos
         idx_bins_range = (None, None)
@@ -118,7 +135,7 @@ class BloodPressure:
         search_distance_range = (bin_edges[idx_bins_range[0]], bin_edges[idx_bins_range[1] + 1])
 
         # Obtener ppm
-        self.ppm = int(60*self.fs/np.mean(search_distance_range))
+        self.ppm = int(60 * self.fs / np.mean(search_distance_range))
 
         # Agrupa los picos en grupos cuyos elementos mantienen relación de distancia
         groups, i_ini = [], 0
@@ -135,9 +152,9 @@ class BloodPressure:
         samples = max(2, math.ceil(sample_time * self.fs))  # al menos 2 muestras
         if len(pressures) < samples:
             return 0.0
-        
+
         delta_pressures = np.diff(pressures[-samples:])
-        velocity = float(np.mean(delta_pressures))*self.fs
+        velocity = float(np.mean(delta_pressures)) * self.fs
 
         return velocity
 
@@ -158,17 +175,57 @@ class BloodPressure:
             if len(idx_peaks) < 2:
                 raise ValueError("No se han encontrado picos en el análisis morfológico.")
 
+            self.plot_tests(idx_peaks)
+
             # Volver a filtrar por distanciamiento para quitar falsos picos
             idx_peaks = self.__distance_based_filter(idx_peaks)
             if len(idx_peaks) < 2:
                 raise ValueError("No se han encontrado picos en el análisis por distanciamiento.")
 
-            # Obtener sys y dia
-            self.__idx_peaks = idx_peaks
-            idx_sys, idx_dia = idx_peaks[0], idx_peaks[-1]
+            self.plot_tests(idx_peaks)
+
+            # Obtener MAP
+            peak_amplitudes = self.get_amplitudes(peaks=idx_peaks)
+            idx_map = np.argmax(peak_amplitudes)    # FIXME: a veces el primero muy alto por la cara y luego baja
+            idx_peak_map = idx_peaks[idx_map]
+            pressure_map = self.pressures[idx_peak_map]
+            if PLOT_THROUGH:
+                print(f"MAP: {pressure_map:.2f}mmHg en i={idx_map}")
+                print("\nAmplitudes:")
+                for i, amplitude in enumerate(peak_amplitudes):
+                    print(f"{i}: {amplitude:.2f}")
+
+            # Obtener sys como el último pico antes de map que supere el umbral
+            idx_sys = sys = idx_first_pulse = None
+            for i in range(idx_map, -1, -1):
+                if peak_amplitudes[i] >= peak_amplitudes[idx_map] * self.__SYS_RATIO:
+                    idx_sys = idx_peaks[i]
+                    idx_first_pulse = i  # TODO: poner bonito
+                else:
+                    break
+
+            if idx_sys is None:
+                raise ValueError(f"Presión sistólica no detectada")
+
+            sys = int(self.pressures[idx_sys])
+
+            # Obtener dia como el primer pico después de map que no supere el umbral
+            idx_dia = dia = idx_last_pulse = None
+            for i in range(idx_map, len(peak_amplitudes)):
+                if peak_amplitudes[i] >= peak_amplitudes[idx_map] * self.__DIA_RATIO:
+                    idx_dia = idx_peaks[i]
+                    idx_last_pulse = i
+                else:
+                    break
+
+            if idx_dia is None:
+                raise ValueError(f"Presión diastólica no detectada")
+
+            dia = int(self.pressures[idx_dia])
+
+            self.__idx_peaks = idx_peaks[idx_first_pulse:idx_last_pulse+1]
 
             # Rangos extremos 240>sys>70 & 140>dia>40
-            sys, dia = int(pressures[idx_sys]), int(pressures[idx_dia])
             if not (240 > sys > 70) or not (140 > dia > 40):
                 raise ValueError(f"Presiones fuera de rangos factibles. (SYS: {sys}, DIA: {dia})")
 
@@ -258,3 +315,35 @@ class BloodPressure:
         plt.grid(True)
         plt.tight_layout()
         plt.show()
+
+    def plot_tests(self, idx_peaks: List[int]):
+        if PLOT_THROUGH:
+            peaks_time = [self.time[i] for i in idx_peaks]
+            peaks_pressure = [self.pressures[i] for i in idx_peaks]
+            peaks_d_pressure = [self.__d_pressures[i] for i in idx_peaks]
+
+            plt.figure(figsize=(12, 6))
+
+            # Gráfico de presión original con anotaciones de presión sistólica y diastólica
+            plt.subplot(2, 1, 1)
+            plt.plot(self.time, self.pressures, label='Original pressure')
+            plt.plot(self.time, self.__filtered_pressures, label='FIR filtered pressure')
+            plt.scatter(peaks_time, peaks_pressure, color='green', label="Pulse peaks", s=26)
+            plt.xlabel('Time (s)')
+            plt.ylabel('Pressure (mmHg)')
+            plt.title('Pressure vs Time')
+            plt.grid()
+            plt.legend()
+
+            # Gráfico de derivada de presión con picos detectados
+            plt.subplot(2, 1, 2)
+            plt.plot(self.time, self.__d_pressures, label='Pressure derivative')
+            plt.scatter(peaks_time, peaks_d_pressure, color='green', label='Filtered peaks')
+            plt.xlabel('Time (s)')
+            plt.ylabel('dPressure/dt (mmHg/s)')
+            plt.title('Pressure derivative')
+            plt.grid()
+            plt.legend()
+
+            plt.tight_layout()
+            plt.show()
