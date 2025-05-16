@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.signal import firwin, filtfilt, find_peaks
 
-PLOT_THROUGH = True
+PLOT_THROUGH = False
 
 
 class BloodPressure:
@@ -47,7 +47,7 @@ class BloodPressure:
         amplitudes = []
 
         for i, peak in enumerate(peaks):
-            # Buscar mínimo a la izquierda
+            # Buscar mínimo a la izquierda (se suele descartar el primero)
             left_min = np.min(self.__d_pressures[peaks[i - 1]:peak]) if i > 0 else self.__d_pressures[peak]
 
             # Buscar mínimo a la derecha
@@ -61,7 +61,7 @@ class BloodPressure:
             amp_right = self.__d_pressures[peak] - right_min
 
             # Tomar la mayor de las dos
-            amplitudes.append(max(amp_left, amp_right))
+            amplitudes.append(min(amp_left, amp_right))
 
         return amplitudes
 
@@ -73,7 +73,7 @@ class BloodPressure:
         # Sacar los picos de la primera zona (desinflado y d_pressures>0)
         wlen = 2 * math.ceil(60 / 40 * self.fs)  # Ventana para la prominencia el doble del max intervalo entre pulsos
         idx_peaks, properties = find_peaks(self.__d_pressures, height=self.__MIN_PEAK_H, prominence=self.__PROMINENCE,
-                                           wlen=wlen)  # TODO: configurar
+                                           wlen=wlen)
         self.__all_idx_peaks = idx_peaks  # Para plotear luego sin más
 
         # Recortar parte de desinflado
@@ -81,7 +81,6 @@ class BloodPressure:
 
         for i, val in enumerate(idx_peaks):
             if val > idx_deflate:
-                # TODO: tal vez un raise
                 idx_peaks = idx_peaks[i:]
                 break
 
@@ -134,9 +133,6 @@ class BloodPressure:
 
         search_distance_range = (bin_edges[idx_bins_range[0]], bin_edges[idx_bins_range[1] + 1])
 
-        # Obtener ppm
-        self.ppm = int(60 * self.fs / np.mean(search_distance_range))
-
         # Agrupa los picos en grupos cuyos elementos mantienen relación de distancia
         groups, i_ini = [], 0
         for i, d in enumerate(distances):
@@ -148,7 +144,7 @@ class BloodPressure:
         return max(groups, key=len) if groups else []
 
     # Calcular velocidad media
-    def calculate_velocity(self, pressures: List[float], sample_time=0.5):  # TODO: hacer que sea la media de todas
+    def calculate_velocity(self, pressures: List[float], sample_time=0.5):
         samples = max(2, math.ceil(sample_time * self.fs))  # al menos 2 muestras
         if len(pressures) < samples:
             return 0.0
@@ -196,31 +192,31 @@ class BloodPressure:
                     print(f"{i}: {amplitude:.2f}")
 
             # Obtener sys como el último pico antes de map que supere el umbral
-            idx_sys = sys = idx_first_pulse = None
+            idx_first_pulse = None
             for i in range(idx_map, -1, -1):
                 if peak_amplitudes[i] >= peak_amplitudes[idx_map] * self.__SYS_RATIO:
-                    idx_sys = idx_peaks[i]
-                    idx_first_pulse = i  # TODO: poner bonito
+                    idx_first_pulse = i
                 else:
                     break
 
-            if idx_sys is None:
+            if idx_first_pulse is None:
                 raise ValueError(f"Presión sistólica no detectada")
 
+            idx_sys = idx_peaks[idx_first_pulse]
             sys = int(self.pressures[idx_sys])
 
             # Obtener dia como el primer pico después de map que no supere el umbral
-            idx_dia = dia = idx_last_pulse = None
+            idx_last_pulse = None
             for i in range(idx_map, len(peak_amplitudes)):
                 if peak_amplitudes[i] >= peak_amplitudes[idx_map] * self.__DIA_RATIO:
-                    idx_dia = idx_peaks[i]
                     idx_last_pulse = i
                 else:
                     break
 
-            if idx_dia is None:
+            if idx_last_pulse is None:
                 raise ValueError(f"Presión diastólica no detectada")
 
+            idx_dia = idx_peaks[idx_last_pulse]
             dia = int(self.pressures[idx_dia])
 
             self.__idx_peaks = idx_peaks[idx_first_pulse:idx_last_pulse+1]
@@ -229,9 +225,13 @@ class BloodPressure:
             if not (240 > sys > 70) or not (140 > dia > 40):
                 raise ValueError(f"Presiones fuera de rangos factibles. (SYS: {sys}, DIA: {dia})")
 
+            # Obtener ppm
+            ppm = int(60 * self.fs / np.mean(np.diff(idx_peaks)))
+
             self.sys = sys
             self.dia = dia
-            return sys, dia, self.ppm
+            self.ppm
+            return sys, dia, ppm
 
         except ValueError:
             return None, None, None
