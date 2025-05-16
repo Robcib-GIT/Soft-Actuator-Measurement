@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.signal import firwin, filtfilt, find_peaks
 
-PLOT_THROUGH = False
+PLOT_THROUGH = True
 
 
 class BloodPressure:
@@ -28,6 +28,7 @@ class BloodPressure:
         self.__all_idx_peaks: List[int] | None = None
         self.sys: int | None = None
         self.dia: int | None = None
+        self.map: int | None = None
         self.ppm: int | None = None
 
         # Aplica un filtro paso banda
@@ -154,6 +155,26 @@ class BloodPressure:
 
         return velocity
 
+    def __get_map(self, idx_peaks: List[int]):
+        peak_amplitudes = self.get_amplitudes(peaks=idx_peaks)
+        idx_amplitude_peaks, properties = find_peaks(peak_amplitudes, width=0)
+        # Se obtiene map como el pico más ancho
+        idx_map = idx_amplitude_peaks[np.argmax(properties['widths'])]
+
+        # Obtener map real
+        idx_map_peak = idx_peaks[idx_map]  # Indice en el que se encuentra
+        self.map = self.pressures[idx_map_peak]
+
+        if PLOT_THROUGH:
+            print(f"MAP: {self.map:.2f}mmHg en amplitudes[{idx_map}]")
+            print(f"Amplitudes: {[f'{a:.2f}' for a in peak_amplitudes]}")
+
+        # Obtener thresholds a partir de map
+        sys_threshold = peak_amplitudes[idx_map] * self.__SYS_RATIO
+        dia_threshold = peak_amplitudes[idx_map] * self.__DIA_RATIO
+
+        return peak_amplitudes, idx_map
+
     # Función principal para calcular la presión arterial
     def get_blood_pressure(self, pressures: List[float]):
         self.time = np.arange(0, len(pressures)) * self.sample_interval
@@ -181,15 +202,7 @@ class BloodPressure:
             self.plot_tests(idx_peaks)
 
             # Obtener MAP
-            peak_amplitudes = self.get_amplitudes(peaks=idx_peaks)
-            idx_map = np.argmax(peak_amplitudes)    # FIXME: a veces el primero muy alto por la cara y luego baja
-            idx_peak_map = idx_peaks[idx_map]
-            pressure_map = self.pressures[idx_peak_map]
-            if PLOT_THROUGH:
-                print(f"MAP: {pressure_map:.2f}mmHg en i={idx_map}")
-                print("\nAmplitudes:")
-                for i, amplitude in enumerate(peak_amplitudes):
-                    print(f"{i}: {amplitude:.2f}")
+            peak_amplitudes, idx_map = self.__get_map(idx_peaks=idx_peaks)
 
             # Obtener sys como el último pico antes de map que supere el umbral
             idx_first_pulse = None
@@ -204,6 +217,7 @@ class BloodPressure:
 
             idx_sys = idx_peaks[idx_first_pulse]
             sys = int(self.pressures[idx_sys])
+
 
             # Obtener dia como el primer pico después de map que no supere el umbral
             idx_last_pulse = None
