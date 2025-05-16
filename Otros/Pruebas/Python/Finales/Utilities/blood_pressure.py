@@ -84,7 +84,7 @@ class BloodPressure:
         bins = np.arange(min_d, max_d + 1, var)
         hist, bin_edges = np.histogram(distances, bins=bins)
 
-        self.plot_histogram(distances, bins)  # TODO: descomentar solo para pruebas
+        #self.plot_histogram(distances, bins)  # TODO: descomentar solo para pruebas
 
         # Determinar el rango de interés cogiendo los 3 bins consecutivos que contienen la mayor cantidad de picos
         idx_bins_range = (None, None)

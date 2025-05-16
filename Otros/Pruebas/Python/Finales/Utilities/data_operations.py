@@ -8,7 +8,7 @@ import re
 data_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data')
 
 
-def save_data(data_dict: Dict[str, List[float]], results_dict: Dict[str, int]):
+def save_data(data_dict: Dict[str, List[float]], results_dict: Dict[str, int] = {}):
     """
     Guarda los datos de dos diccionarios en un archivo CSV.
 
@@ -41,7 +41,12 @@ def save_data(data_dict: Dict[str, List[float]], results_dict: Dict[str, int]):
 
             # Convertir las listas de valores en filas y escribirlas
             rows = zip(*data_dict.values())
-            writer.writerows(rows)
+            # Dejar solo 3 decimales por limpieza
+            rounded_rows = [
+                [round(val, 3) if isinstance(val, float) else val for val in row]
+                for row in rows
+            ]
+            writer.writerows(rounded_rows)
 
         print(f"Archivo guardado como {file_path}")
     else:

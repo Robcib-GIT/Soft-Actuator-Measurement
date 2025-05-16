@@ -15,7 +15,7 @@ if __name__ == "__main__":
             data_dict, param_dict = load_data(filepath)
             # print(param_dict)
 
-            fs = 250 #1 / np.mean(np.diff(data_dict["Time"]))  TODO descomentar con nuevas muestras
+            fs = 1 / np.mean(np.diff(data_dict["Time"]))
             bp = BloodPressure(fs)
 
             # Obtener información
