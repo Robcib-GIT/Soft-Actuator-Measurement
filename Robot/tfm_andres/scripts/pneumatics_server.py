@@ -11,20 +11,29 @@ from adafruit_pca9685 import PCA9685
 import threading
 import Jetson.GPIO as GPIO
 
-# --- Constantes y variables presión arterial ---
-PRESSURE_FS = 40  # Hz
-bp = BloodPressure(PRESSURE_FS)
-
-# --- Constantes y variables servos ---
-RELAY_PIN = 18
-GPIO.setmode(GPIO.BOARD)
-GPIO.setup(RELAY_PIN, GPIO.OUT)
-
 """
  I2C BUS 0 (SCL: 28 | SDA: 27)
  I2C BUS 1 (SCL: 5  |  SDA: 3)
 """
+
+# --- Configuración del relé ---
+RELAY_PIN = 18
+
+try:
+    GPIO.setmode(GPIO.BOARD)
+except ValueError:
+    GPIO.cleanup()
+    GPIO.setmode(GPIO.BOARD)
+
+GPIO.setup(RELAY_PIN, GPIO.OUT)
+
+# --- Configuración para presión arterial ---
+PRESSURE_FS = 100  # Hz  # TODO: variar si eso pero con 100 va bien
+bp = BloodPressure(PRESSURE_FS)  # TODO: comprobar si hay que resetear
+
+# --- Configuración servos ---
 BUS_I2C_PCA965 = 0
+
 if BUS_I2C_PCA965 == 1:  #
     i2c = board.I2C()  # o busio.I2C(board.SCL, board.SDA)
 else:
@@ -32,6 +41,7 @@ else:
 
 pca = PCA9685(i2c)
 pca.frequency = 50
+
 cuff_servo = servo.Servo(pca.channels[15], min_pulse=650, max_pulse=2650)
 actuator_servo = servo.Servo(pca.channels[14], min_pulse=650, max_pulse=2650)
 
@@ -43,8 +53,7 @@ class PneumaticsServer:
     CUFF_GOAL_PRESSURE = 190.0
 
     CUFF_INFLATE_ANGLE = 180
-    CUFF_DEFLATE_ANGLE = 115
-    CUFF_FULL_DEFLATE_ANGLE = 90
+    CUFF_DEFLATE_ANGLE = 90
     CUFF_BRIDGE_ANGLE = 0
 
     ACTUATOR_INFLATE_ANGLE = 90
@@ -126,10 +135,11 @@ class PneumaticsServer:
             rospy.logwarn(f"No han llegado lecturas nuevas en {check_interval:.1}s")
             return False
 
-    def publish_blood_pressure(self, sys: int, dia: int):
+    def publish_blood_pressure(self, sys: int, dia: int, ppm: int):
         msg = BloodPressureData()
         msg.sys = sys
         msg.dia = dia
+        msg.ppm = ppm
         self.bp_pub.publish(msg)
 
     @staticmethod
@@ -141,7 +151,7 @@ class PneumaticsServer:
             GPIO.output(RELAY_PIN, GPIO.LOW)
             rospy.loginfo("Bomba neumática desactivada")
 
-    def toggle_sensor(self, sensor: str):  # TODO: meterlo donde toque
+    def toggle_sensor(self, sensor: str):  # TODO: mirar si queda por meter en algun lado
         msg = String()
         msg.data = sensor
         self.sensor_command_pub.publish(msg)
@@ -256,7 +266,7 @@ class PneumaticsServer:
             rospy.loginfo("Actuador cerrado con éxito")
             self.server_close_actuator.set_succeeded(result)
 
-    def execute_open_actuator(self, goal):  # TODO: añadir open
+    def execute_open_actuator(self, goal):
         rospy.loginfo("Iniciado apertura del actuador")
         feedback = PneumaticsFeedback()
         result = PneumaticsResult()
@@ -319,7 +329,7 @@ class PneumaticsServer:
 
         rospy.loginfo("Fase 1: Comenzado vaciado completo del manguito")
         actuator_servo.angle = self.ACTUATOR_BRIDGE_ANGLE
-        cuff_servo.angle = self.CUFF_FULL_DEFLATE_ANGLE
+        cuff_servo.angle = self.CUFF_DEFLATE_ANGLE
 
         start_time = rospy.get_time()
         while not rospy.is_shutdown():
@@ -341,6 +351,7 @@ class PneumaticsServer:
 
             if self.cuff_pressure <= 5.0:
                 feedback.progress = 1.0
+                self.server_blood_pressure.publish_feedback(feedback)
                 break
 
             # Calcular progreso
@@ -373,21 +384,23 @@ class PneumaticsServer:
             if status == 'no_new_value':
                 continue
 
+            pressures.append(self.cuff_pressure)
+
             if self.cuff_pressure >= self.CUFF_GOAL_PRESSURE:
                 feedback.progress = 2.0
+                self.server_blood_pressure.publish_feedback(feedback)
                 break
 
-            pressures.append(self.cuff_pressure)
             # Calcular progreso
             feedback.progress = 1.0 + (
                     max(0.0, min(self.cuff_pressure, self.CUFF_GOAL_PRESSURE)) / self.CUFF_GOAL_PRESSURE)
             self.server_blood_pressure.publish_feedback(feedback)
 
         self.set_pump_state(on=False)
+
         # 3- Desinflado controlado del manguito (progress: 2.0-3.0)
         if not rospy.is_shutdown():
             rospy.loginfo("Fase 3: Comenzado desinflado controlado del manguito")
-            cuff_servo.angle = self.CUFF_DEFLATE_ANGLE
 
         start_time = rospy.get_time()
         samples_prev_opening = 0
@@ -408,41 +421,38 @@ class PneumaticsServer:
             if status == 'no_new_value':
                 continue
 
-            if self.cuff_pressure <= 15.0:
+            pressures.append(self.cuff_pressure)
+
+            if self.cuff_pressure <= 40.0:
                 feedback.progress = 3.0
+                self.server_blood_pressure.publish_feedback(feedback)
                 # Desactivar sensor de presión
                 self.toggle_sensor("cuff_pressure")
                 self.new_cuff_pressure_event.clear()
+
                 # Dejar salir el resto del aire al terminar
-                cuff_servo.angle = self.CUFF_FULL_DEFLATE_ANGLE
+                cuff_servo.angle = self.CUFF_DEFLATE_ANGLE
                 break
 
-            pressures.append(self.cuff_pressure)
-            samples_prev_opening += 1
-            p_velocity = bp.calculate_velocity(pressures_list=pressures, sample_time=0.1)  # FIXME: actualizar función
             # Calcular progreso
             feedback.progress = 3.0 - (
                     max(0.0, min(self.cuff_pressure, self.CUFF_GOAL_PRESSURE)) / self.CUFF_GOAL_PRESSURE)
             self.server_blood_pressure.publish_feedback(feedback)
-
-            if p_velocity > -2 and samples_prev_opening >= int(4 / bp.sample_interval):  # FIXME: igual poner con tiempo
-                cuff_servo.angle -= 1
-                samples_prev_opening = 0
 
         # 4- Cálculo de la presión arterial
         if not rospy.is_shutdown():
             rospy.loginfo("Fase 4: Cálculo de la presión arterial")
 
             try:
-                sys, dia = bp.get_blood_pressure(pressures)
-                # bp.plot_results()
+                sys, dia, ppm = bp.get_blood_pressure(pressures)
+
                 # Notificar de finalización exitosa
-                self.publish_blood_pressure(sys=sys, dia=dia)
+                self.publish_blood_pressure(sys=sys, dia=dia, ppm=ppm)
                 result.success = True
                 self.server_blood_pressure.set_succeeded(result)
             except Exception:
                 rospy.logerr("Ocurrió un error al procesar los datos.")
-                self.publish_blood_pressure(sys=-1, dia=-1)
+                self.publish_blood_pressure(sys=-1, dia=-1, ppm=-1)
                 result.success = False
                 self.server_blood_pressure.set_succeeded(result)
 

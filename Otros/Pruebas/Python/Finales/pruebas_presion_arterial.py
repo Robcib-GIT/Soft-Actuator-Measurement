@@ -12,18 +12,13 @@ import Jetson.GPIO as GPIO
 from Utilities.blood_pressure import BloodPressure
 from Utilities.data_operations import save_data
 
-"""
-TAREAS PENDIENTES
-TODO: Recopilar instantes en los que se mueven los servos para meterlos a bp y no tener en cuenta esos momentos, ademas plotearlos
-TODO: Evitar que se activen los servos en el rango normal de 140-50 si no es estrictamente necesario
-
-"""
 
 """
  I2C BUS 0 (SCL: 28 | SDA: 27)
  I2C BUS 1 (SCL: 5  |  SDA: 3)
 """
 
+# --- Configuración del relé ---
 RELAY_PIN = 18
 
 try:
@@ -34,7 +29,7 @@ except ValueError:
     
 GPIO.setup(RELAY_PIN, GPIO.OUT)
 
-# --- Constantes y variables presión arterial --- TODO: refinar cuando complete el actuador
+# --- Constantes y variables presión arterial ---
 BUS_I2C_ADS115 = 1
 ADS = ADS1x15.ADS1115(BUS_I2C_ADS115, 0x48)
 ADS.setGain(ADS.PGA_0_512V)
