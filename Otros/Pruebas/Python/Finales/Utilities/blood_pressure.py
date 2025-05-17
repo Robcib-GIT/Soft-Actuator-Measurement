@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.signal import firwin, filtfilt, find_peaks
 
-PLOT_THROUGH = True
+PLOT_THROUGH = False
 
 
 class BloodPressure:
@@ -13,7 +13,7 @@ class BloodPressure:
     __PROMINENCE = 5  # Prominencia mínima para considerar un pico
     __MAX_IBI_VARIANCE = 80E-3  # Máximo tiempo que pueden diferir los intervalos entre pulsos entre si
     __SYS_RATIO = 0.83  # @0.83: 6.29  inicialmente 0.8
-    __DIA_RATIO = 0.5   # @0.41: 8.38  inicialmente 0.5
+    __DIA_RATIO = 0.41  # @0.41: 8.38  inicialmente 0.5
 
     def __init__(self, fs: float):
         self.fs = fs
@@ -133,7 +133,7 @@ class BloodPressure:
         search_distance_range = (bin_edges[idx_bins_range[0]], bin_edges[idx_bins_range[1] + 1])
 
         # Agrupa los picos en grupos cuyos elementos mantienen relación de distancia
-        # FIXME: si hay un pico de ruido entre medias se lia (no suele pasar pero corregir)
+        # Además si 2 consecutivos suman una distancia equivalente a un pulso también los considera para omitir ruido
         groups, i_ini = [], 0
         i = 0
         while i < len(distances):
@@ -164,10 +164,16 @@ class BloodPressure:
 
     def __get_map(self, idx_peaks: List[int]):
         peak_amplitudes = self.get_amplitudes(peaks=idx_peaks)
-        idx_amplitude_peaks, properties = find_peaks(peak_amplitudes, width=2, height=0)
-        # Se obtiene map como el pico más ancho que 2 muestras y mas alto
 
-        idx_map = idx_amplitude_peaks[np.argmax(properties['peak_heights'])]
+        # Se selecciona el map como el pico de amplitudes más ancho
+        idx_amplitude_peaks, properties = find_peaks(peak_amplitudes, width=0)
+        # Se obtiene map como el pico más ancho
+        idx_map = idx_amplitude_peaks[np.argmax(properties['widths'])]
+
+        # Se selecciona el map como el pico de amplitudes más alto con ancho superior a 2
+        # idx_amplitude_peaks, properties = find_peaks(peak_amplitudes, width=1, height=0)
+        # # Se obtiene map como el pico más ancho que 2 muestras y más alto
+        # idx_map = idx_amplitude_peaks[np.argmax(properties['peak_heights'])]
 
         # Obtener map real
         idx_map_peak = idx_peaks[idx_map]  # Indice en el que se encuentra
@@ -177,11 +183,66 @@ class BloodPressure:
             print(f"MAP: {self.map:.2f}mmHg en amplitudes[{idx_map}]")
             print(f"Amplitudes: {[f'{a:.2f}' for a in peak_amplitudes]}")
 
-        # Obtener thresholds a partir de map
-        sys_threshold = peak_amplitudes[idx_map] * self.__SYS_RATIO
-        dia_threshold = peak_amplitudes[idx_map] * self.__DIA_RATIO
-
         return peak_amplitudes, idx_map
+
+    def __get_sys_dia(self, idx_peaks: List[int], peak_amplitudes: List[int], idx_map: int):
+        # ---------------OBTENER SYS--------------------
+        idx_first_pulse = None
+
+        """
+        # Tomar sys como primer pulso mas cercano a MAP que no supere el umbral ni su siguiente
+        for i in range(idx_map, -1, -1):
+            if peak_amplitudes[i] >= peak_amplitudes[idx_map] * self.__SYS_RATIO:
+                idx_first_pulse = i
+            else:
+                if i > 0 and peak_amplitudes[i - 1] >= peak_amplitudes[idx_map] * self.__SYS_RATIO:  # el FIXME
+                    continue
+                break
+        """
+        # Tomar sys como último pulso más cercano a MAP que no supere el umbral
+        for i in range(idx_map, -1, -1):
+            if peak_amplitudes[i] >= peak_amplitudes[idx_map] * self.__SYS_RATIO:
+                idx_first_pulse = i
+
+        if idx_first_pulse is None:
+            raise ValueError(f"Presión sistólica no detectada")
+
+        idx_sys = idx_peaks[idx_first_pulse]
+        sys = int(self.pressures[idx_sys])
+
+        # ---------------OBTENER SYS--------------------
+        idx_last_pulse = None
+
+        # Obtener dia como el primer pico después de map que no supere el umbral ni su siguiente (DIA_RATIO = 0.41)
+        for i in range(idx_map, len(peak_amplitudes)):
+            if peak_amplitudes[i] >= peak_amplitudes[idx_map] * self.__DIA_RATIO:
+                idx_last_pulse = i
+            else:
+                if i < len(peak_amplitudes) - 1 and peak_amplitudes[i + 1] >= peak_amplitudes[idx_map] * self.__DIA_RATIO:
+                    continue
+                break
+
+        # Tomar dia como último pulso más cercano a MAP que no supere el umbral (DIA_RATIO = 0.5)
+        # for i in range(idx_map, len(peak_amplitudes)):
+        #     if peak_amplitudes[i] >= peak_amplitudes[idx_map] * self.__DIA_RATIO:
+        #         idx_last_pulse = i
+        #
+        # if idx_last_pulse is None:
+        #     raise ValueError(f"Presión diastólica no detectada")
+
+        idx_dia = idx_peaks[idx_last_pulse]
+        dia = int(self.pressures[idx_dia])
+
+        # Rangos extremos 240>sys>70 & 140>dia>40
+        if not (240 > sys > 70) or not (140 > dia > 40):
+            raise ValueError(f"Presiones fuera de rangos factibles. (SYS: {sys}, DIA: {dia})")
+
+        self.sys = sys
+        self.dia = dia
+
+        self.__idx_peaks = idx_peaks[idx_first_pulse:idx_last_pulse + 1]
+
+        return self.__idx_peaks
 
     # Función principal para calcular la presión arterial
     def get_blood_pressure(self, pressures: List[float]):
@@ -212,54 +273,14 @@ class BloodPressure:
             # Obtener MAP
             peak_amplitudes, idx_map = self.__get_map(idx_peaks=idx_peaks)
 
-            # Obtener sys como el último pico antes de map que supere el umbral
-            # FIXME: evitar que las bajadas leves afecten si vuelve a subir
-            idx_first_pulse = None
-            for i in range(idx_map, -1, -1):
-                if peak_amplitudes[i] >= peak_amplitudes[idx_map] * self.__SYS_RATIO:
-                    idx_first_pulse = i
-                else:
-                    if i>0 and peak_amplitudes[i-1] >= peak_amplitudes[idx_map] * self.__SYS_RATIO:  # el FIXME
-                        continue
-                    break
-
-            if idx_first_pulse is None:
-                raise ValueError(f"Presión sistólica no detectada")
-
-            idx_sys = idx_peaks[idx_first_pulse]
-            sys = int(self.pressures[idx_sys])
-
-
-            # Obtener dia como el primer pico después de map que no supere el umbral
-            # FIXME: evitar que las bajadas leves afecten si vuelve a subir
-            idx_last_pulse = None
-            for i in range(idx_map, len(peak_amplitudes)):
-                if peak_amplitudes[i] >= peak_amplitudes[idx_map] * self.__DIA_RATIO:
-                    idx_last_pulse = i
-                else:
-                    if i<len(peak_amplitudes)-1 and peak_amplitudes[i+1] >= peak_amplitudes[idx_map] * self.__DIA_RATIO:  # el FIXME
-                        continue
-                    break
-
-            if idx_last_pulse is None:
-                raise ValueError(f"Presión diastólica no detectada")
-
-            idx_dia = idx_peaks[idx_last_pulse]
-            dia = int(self.pressures[idx_dia])
-
-            self.__idx_peaks = idx_peaks[idx_first_pulse:idx_last_pulse+1]
-
-            # Rangos extremos 240>sys>70 & 140>dia>40
-            if not (240 > sys > 70) or not (140 > dia > 40):
-                raise ValueError(f"Presiones fuera de rangos factibles. (SYS: {sys}, DIA: {dia})")
+            # Obtener SYS y DIA
+            idx_peaks = self.__get_sys_dia(idx_peaks=idx_peaks, peak_amplitudes=peak_amplitudes, idx_map=idx_map)
 
             # Obtener ppm
             ppm = int(60 * self.fs / np.mean(np.diff(idx_peaks)))
+            self.ppm = ppm
 
-            self.sys = sys
-            self.dia = dia
-            self.ppm
-            return sys, dia, ppm
+            return self.sys, self.dia, self.ppm
 
         except ValueError:
             return None, None, None
