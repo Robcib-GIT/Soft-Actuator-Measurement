@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.signal import firwin, filtfilt, find_peaks
 
-PLOT_THROUGH = False
+PLOT_THROUGH = True
 
 
 class BloodPressure:
@@ -13,7 +13,7 @@ class BloodPressure:
     __PROMINENCE = 5  # Prominencia mínima para considerar un pico
     __MAX_IBI_VARIANCE = 80E-3  # Máximo tiempo que pueden diferir los intervalos entre pulsos entre si
     __SYS_RATIO = 0.83  # @0.83: 6.29  inicialmente 0.8
-    __DIA_RATIO = 0.41   # @0.41: 8.38  inicialmente 0.5
+    __DIA_RATIO = 0.5   # @0.41: 8.38  inicialmente 0.5
 
     def __init__(self, fs: float):
         self.fs = fs
@@ -133,11 +133,20 @@ class BloodPressure:
         search_distance_range = (bin_edges[idx_bins_range[0]], bin_edges[idx_bins_range[1] + 1])
 
         # Agrupa los picos en grupos cuyos elementos mantienen relación de distancia
+        # FIXME: si hay un pico de ruido entre medias se lia (no suele pasar pero corregir)
         groups, i_ini = [], 0
-        for i, d in enumerate(distances):
+        i = 0
+        while i < len(distances):
+            d = distances[i]
             if not (search_distance_range[0] <= d <= search_distance_range[1]):
+                if i < len(distances) - 1 and (
+                        search_distance_range[0] <= d + distances[i + 1] <= search_distance_range[1]):
+                    i += 2
+                    continue
+
                 groups.append(peaks[i_ini:i + 1])
                 i_ini = i + 1
+            i += 1
         groups.append(peaks[i_ini:])
 
         return max(groups, key=len) if groups else []
@@ -155,9 +164,10 @@ class BloodPressure:
 
     def __get_map(self, idx_peaks: List[int]):
         peak_amplitudes = self.get_amplitudes(peaks=idx_peaks)
-        idx_amplitude_peaks, properties = find_peaks(peak_amplitudes, width=0)
-        # Se obtiene map como el pico más ancho
-        idx_map = idx_amplitude_peaks[np.argmax(properties['widths'])]
+        idx_amplitude_peaks, properties = find_peaks(peak_amplitudes, width=2, height=0)
+        # Se obtiene map como el pico más ancho que 2 muestras y mas alto
+
+        idx_map = idx_amplitude_peaks[np.argmax(properties['peak_heights'])]
 
         # Obtener map real
         idx_map_peak = idx_peaks[idx_map]  # Indice en el que se encuentra
@@ -203,11 +213,14 @@ class BloodPressure:
             peak_amplitudes, idx_map = self.__get_map(idx_peaks=idx_peaks)
 
             # Obtener sys como el último pico antes de map que supere el umbral
+            # FIXME: evitar que las bajadas leves afecten si vuelve a subir
             idx_first_pulse = None
             for i in range(idx_map, -1, -1):
                 if peak_amplitudes[i] >= peak_amplitudes[idx_map] * self.__SYS_RATIO:
                     idx_first_pulse = i
                 else:
+                    if i>0 and peak_amplitudes[i-1] >= peak_amplitudes[idx_map] * self.__SYS_RATIO:  # el FIXME
+                        continue
                     break
 
             if idx_first_pulse is None:
@@ -218,11 +231,14 @@ class BloodPressure:
 
 
             # Obtener dia como el primer pico después de map que no supere el umbral
+            # FIXME: evitar que las bajadas leves afecten si vuelve a subir
             idx_last_pulse = None
             for i in range(idx_map, len(peak_amplitudes)):
                 if peak_amplitudes[i] >= peak_amplitudes[idx_map] * self.__DIA_RATIO:
                     idx_last_pulse = i
                 else:
+                    if i<len(peak_amplitudes)-1 and peak_amplitudes[i+1] >= peak_amplitudes[idx_map] * self.__DIA_RATIO:  # el FIXME
+                        continue
                     break
 
             if idx_last_pulse is None:
