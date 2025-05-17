@@ -34,7 +34,6 @@ data class MsgMultiArrayDimension(
     val stride: Int? = null
 )
 
-
 data class RosMsg(
     val operation: String,
     val topic: String,
@@ -47,21 +46,10 @@ data class TopicInfo(
     val subscribedTo: MutableState<Boolean> = mutableStateOf(false)
 )
 
-// Todo: ver si reubicar a actuationData
-data class PneumaticFeedback(
-    val current_progress: Float = 0f,
-    val current_state: Int = 0
-)
-
 data class Stamp(
     val secs: Int = 0,
     val nsecs: Int = 0
 )
-
-data class PneumaticsGoal(  //TODO
-    val first_state: Int,
-    val last_state: Int
-):MsgTypes()
 
 sealed class MsgTypes(){ //Añadir aqui más si hace falta
     data class IntMsg(
@@ -95,8 +83,9 @@ sealed class MsgTypes(){ //Añadir aqui más si hace falta
 
     //Personales
     data class BloodPressureMsg(
-        val sys: Int? = null,
-        val dia: Int? = null
+        val sys: Int = -1,
+        val dia: Int = -1,
+        val ppm: Int = -1
     ):MsgTypes()
     /*
     int32 ppm
@@ -118,7 +107,7 @@ sealed class MsgTypes(){ //Añadir aqui más si hace falta
     data class PneumaticFeedbackMsg(  //TODO
         val header: Any,
         val status: Any,
-        val feedback: PneumaticFeedback
+        val feedback: FloatMsg
     ):MsgTypes()
 
     data class ActionGoal(  //TODO

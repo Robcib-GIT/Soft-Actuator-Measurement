@@ -20,7 +20,6 @@ import com.tfm.druidapp.data.ActuatorUtilities
 import com.tfm.druidapp.data.MainViewModel
 import com.tfm.druidapp.data.MsgOp
 import com.tfm.druidapp.data.MsgTypes
-import com.tfm.druidapp.data.PneumaticsGoal
 import com.tfm.druidapp.data.RosMsg
 import com.tfm.druidapp.data.Screen
 import com.tfm.druidapp.ui.theme.DruidAppTheme
@@ -29,9 +28,11 @@ import com.tfm.druidapp.views.customElements.ProcessProgressIndicator
 
 @Composable
 fun ActuationView(viewModel: MainViewModel, navController: NavHostController) {
-    val state by viewModel.vitalsMonitoring
-    val actuatorStates by viewModel.actuatorStates.collectAsState()
     val connected by viewModel.connectionState
+    val state by viewModel.vitalsMonitoring
+    val openActuatorState by viewModel.openActuatorState.collectAsState()
+    val closeActuatorState by viewModel.closeActuatorState.collectAsState()
+    val measureBPState by viewModel.measureBPState.collectAsState()
     val actuatorUtilities = ActuatorUtilities(viewModel)
 
     Column(
@@ -40,7 +41,7 @@ fun ActuationView(viewModel: MainViewModel, navController: NavHostController) {
             .fillMaxSize(),
         //verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        ProcessProgressIndicator( //TODO:retocar para los cambios nuevos
+        /*ProcessProgressIndicator( //TODO:retocar para los cambios nuevos
             state = state,
             text = if (state == MonitoringState.Disabled || state == MonitoringState.Enabling || state == MonitoringState.EnPaused) {
                 "Iniciar monitorización"
@@ -125,7 +126,7 @@ fun ActuationView(viewModel: MainViewModel, navController: NavHostController) {
                     viewModel.showToast("Monitorización desactivada ")
                 }
             }
-        )
+        )*/
     }
 }
 

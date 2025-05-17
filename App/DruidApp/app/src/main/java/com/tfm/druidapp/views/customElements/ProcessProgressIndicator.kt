@@ -7,6 +7,7 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -38,6 +40,61 @@ import com.tfm.druidapp.R
 import com.tfm.druidapp.data.ActuationState
 import com.tfm.druidapp.ui.theme.DruidAppTheme
 
+@Composable
+fun singleActionProcess(process: ActuationState){
+    Row(
+        modifier = Modifier
+
+            .clip(
+                RoundedCornerShape(
+                    topStart = 10.dp,
+                    topEnd = 10.dp,
+                    bottomStart = 10.dp,
+                    bottomEnd = 10.dp
+                )
+            )
+            .background(Color.DarkGray)
+            .padding(6.dp)
+            .fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Absolute.SpaceEvenly
+
+    ) {
+        Column(
+            modifier = Modifier,
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Text(
+                text = process.name,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onPrimary
+            )
+            LinearProgressIndicator(
+                progress = { process.progress*0.5f },
+                color = Color.Green,
+                trackColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                gapSize = 0.dp,
+                drawStopIndicator = {}
+            )
+        }
+
+        Icon(
+            painter = painterResource(id = R.drawable.rounded_lock_24),
+            contentDescription = null,
+            tint = Color.White,
+            modifier = Modifier
+                .size(50.dp)
+        )
+    }
+
+
+
+}
+
+
+
+
+//TODO: borrar
 enum class MonitoringState {
     Enabled,
     Enabling,
@@ -227,6 +284,29 @@ fun processControlButton(painterId: Int, onClick: () -> Unit) {
 
 @Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
+fun singleActionProcessPreview() {
+    DruidAppTheme {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .padding(6.dp)
+        ) {
+            Spacer(modifier = Modifier.height(16.dp))
+            singleActionProcess(
+                process = ActuationState(
+                    name = "Cerrar actuador",
+                    progress = 1f
+                )
+            )
+        }
+    }
+}
+
+
+/*
+@Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
 fun ProcessProgressIndicatorsPreview() {
     DruidAppTheme {
         Column(
@@ -255,4 +335,4 @@ fun ProcessProgressIndicatorsPreview() {
             )
         }
     }
-}
+}*/

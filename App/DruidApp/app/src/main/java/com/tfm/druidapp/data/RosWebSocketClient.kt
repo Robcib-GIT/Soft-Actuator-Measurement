@@ -39,12 +39,12 @@ class RosWebSocketClient(uri: URI, private val viewModel: MainViewModel) : WebSo
 
                 "/ppg_data" -> {
                     val msg = parsedMsg.msg as? MsgTypes.FloatArrayMsg
-                    if (msg != null) {
-                        msg.layout.data_offset?.let {
-                            viewModel.updatePulseSampleRate(it.toLong())
+                    msg?.let {
+                        it.layout.data_offset?.let {offset->
+                            viewModel.updatePulseSampleRate(offset.toLong())
                         }
 
-                        viewModel.sendToChannel(msg.data)
+                        viewModel.sendToChannel(it.data)
                         if (_firstPulseList){
                             viewModel.startProcessingPulseChannel()
                             _firstPulseList = false
@@ -55,17 +55,41 @@ class RosWebSocketClient(uri: URI, private val viewModel: MainViewModel) : WebSo
 
                 "/cardiac_data" -> {
                     val msg = parsedMsg.msg as? MsgTypes.CardiacMsg
-                    if (msg != null) {
-                        viewModel.updateCardiacData(msg)
+                    msg?.let {
+                        viewModel.updateCardiacData(it)
                     }
                 }
 
-                "/pneumatics/feedback" -> {
+                "blood_pressure_data" -> {
+                    val msg = parsedMsg.msg as? MsgTypes.BloodPressureMsg
+                    msg?.let {
+                        viewModel.updateBloodPressureData(it)
+                    }
+                }
+
+                "/open_actuator/feedback" -> {
                     val msg = parsedMsg.msg as? MsgTypes.PneumaticFeedbackMsg
-                    if (msg != null) {
-                        viewModel.updateActuatorStateProgress(
-                            state = msg.feedback.current_state,
-                            progress = msg.feedback.current_progress
+                    msg?.let{
+                        viewModel.updateOpenActuatorProgress(
+                            progress = it.feedback.data
+                        )
+                    }
+                }
+
+                "/close_actuator/feedback" -> {
+                    val msg = parsedMsg.msg as? MsgTypes.PneumaticFeedbackMsg
+                    msg?.let {
+                        viewModel.updateCloseActuatorProgress(
+                            progress = it.feedback.data
+                        )
+                    }
+                }
+
+                "/blood_pressure/feedback" -> {
+                    val msg = parsedMsg.msg as? MsgTypes.PneumaticFeedbackMsg
+                    msg?.let {
+                        viewModel.updateMeasureBPProgress(
+                            progress = it.feedback.data
                         )
                     }
                 }
@@ -85,7 +109,6 @@ class RosWebSocketClient(uri: URI, private val viewModel: MainViewModel) : WebSo
         }
         //Deshabilitar monitorizacion
         viewModel.updateVitalsMonitoring(MonitoringState.Disabled)
-        viewModel.resetActuatorStates()
         //Resetear medic data
         viewModel.resetMedicData()
     }

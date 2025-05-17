@@ -120,11 +120,13 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
     }
 
     //Mensajes
-    val topicsMap: Map<String, TopicInfo> = mapOf( //TODO poner los que haga falta
+    val topicsMap: Map<String, TopicInfo> = mapOf( //TODO poner los que haga falta y mover si eso
         "/sensor1_data" to TopicInfo(MsgTypes.FloatMsg::class.java),
         "/ppg_data" to TopicInfo(MsgTypes.FloatArrayMsg::class.java),
         "/cardiac_data" to TopicInfo(MsgTypes.CardiacMsg::class.java),
-        "/pneumatics/feedback" to TopicInfo(MsgTypes.PneumaticFeedbackMsg::class.java)
+        "/open_actuator/feedback" to TopicInfo(MsgTypes.PneumaticFeedbackMsg::class.java),
+        "/close_actuator/feedback" to TopicInfo(MsgTypes.PneumaticFeedbackMsg::class.java),
+        "/blood_pressure/feedback" to TopicInfo(MsgTypes.PneumaticFeedbackMsg::class.java),
     )
 
 
@@ -132,6 +134,7 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
     fun resetMedicData(){ //TODO: añadir donde toque
         clearAmplitudes()
         updateTemperature(null)
+        updateCardiacData(MsgTypes.CardiacMsg())
         updateBloodPressureData(MsgTypes.BloodPressureMsg())
     }
 
@@ -219,6 +222,11 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
     val pressureData: State<MsgTypes.BloodPressureMsg> = _pressureData
     fun updateBloodPressureData(data: MsgTypes.BloodPressureMsg){
         _pressureData.value = data
+
+        //Actualizar las pulsaciones sacadas del analisis de bp
+        data.ppm.takeIf { it > -1 }?.let {ppm->
+            updateCardiacData(_cardiacData.value.copy(ppm = ppm))
+        }
     }
 
     //Temperatura
@@ -229,27 +237,54 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
         _temperature.value = newTemperature
     }
 
-
-
-    //TODO borrar
-    private val _sensor1Data: MutableStateFlow<Double?> = MutableStateFlow(null)
-    val sensor1Data: StateFlow<Double?> = _sensor1Data
-    fun updateSensor1Data(data: Double?){
-        _sensor1Data.value = data
+    ////////////////// RELACIONADO CON ACTUADOR ///////////////////////////// TODO: comprobar lo del reset
+    private val _openActuatorState = MutableStateFlow(
+        ActuationState(name = "Abrir actuador")
+    )
+    val openActuatorState: StateFlow<ActuationState> = _openActuatorState
+    fun updateOpenActuatorProgress(progress: Float){
+        Log.d("ActuatorFeedback", "Open actuator: ${_openActuatorState.value.progress}") //TODO: comentar
+        _openActuatorState.value = _openActuatorState.value.copy(progress = progress)
     }
 
-    private val _sensor2Data: MutableStateFlow<Double?> = MutableStateFlow(null)
-    val sensor2Data: StateFlow<Double?> = _sensor2Data
-    fun updateSensor2Data(data: Double?){
-        _sensor2Data.value = data
+    private val _closeActuatorState = MutableStateFlow(
+        ActuationState(name = "Cerrar actuador")
+    )
+    val closeActuatorState: StateFlow<ActuationState> = _closeActuatorState
+    fun updateCloseActuatorProgress(progress: Float){
+        Log.d("ActuatorFeedback", "Close actuator: ${_closeActuatorState.value.progress}") //TODO: comentar
+        _closeActuatorState.value = _closeActuatorState.value.copy(progress = progress)
     }
 
-    private val _sensor3Data: MutableStateFlow<Double?> = MutableStateFlow(null)
-    val sensor3Data: StateFlow<Double?> = _sensor3Data
-    fun updateSensor3Data(data: Double?){
-        _sensor3Data.value = data
-    }
+    private val _measureBPState = MutableStateFlow(listOf(
+        ActuationState("Desinflado"),
+        ActuationState("Inflado"),
+        ActuationState("Procesamiento")
+        )
+    )
+    val measureBPState: StateFlow<List<ActuationState>> = _measureBPState
+    fun updateMeasureBPProgress(progress: Float){
+        val statesProgress = FloatArray(3) { 0f }
+        when (progress) {
+            in 0f..1f -> {
+                statesProgress[0] = progress
+            }
+            in 1f..2f -> {
+                statesProgress[0] = 1f
+                statesProgress[1] = progress - 1f
+            }
+            in 2f..3f -> {
+                statesProgress[0] = 1f
+                statesProgress[1] = 1f
+                statesProgress[2] = progress - 2f
+            }
+        }
 
+        _measureBPState.value = measureBPState.value.mapIndexed { index, state ->
+            state.copy(progress=statesProgress[index])
+        }
+
+    }
 
     ////////////////// RELACIONADO CON UI /////////////////////////////
     //ActuationView
@@ -259,88 +294,9 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
         _vitalsMonitoring.value = monitoring
     }
 
-    private val _actuatorStates = MutableStateFlow(listOf(
-        ActuationState("Home"),
-        ActuationState("Close actuator"),
-        ActuationState("Inflate cuff"),
-        ActuationState("Deflate cuff"),
-        ActuationState("Open actuator"),
-        ActuationState("IDLE") //TODO: igual quitar
-        )
-    )
-    val actuatorStates: StateFlow<List<ActuationState>> = _actuatorStates
-    fun updateActuatorStateProgress(state: Int, progress: Float){
-        Log.d("ActuatorFeedback", "State: ${_actuatorStates.value[state].name}  |   Progres: ${progress*100}%")
-        _actuatorStates.value = _actuatorStates.value.toMutableList().apply {
-            this[state] = this[state].copy(progress=progress)
-        }
-    }
-    fun resetActuatorStates(){
-        _actuatorStates.value = _actuatorStates.value.toMutableList().apply {
-            forEachIndexed { index, state ->
-                this[index] = state.copy(progress = 0f)
-            }
-        }
-    }
 
 
     /*
-    TODO: borrar
-    val activationProcessMap: StateFlow<Map<String, Float>> get() = _activationProcessMap
-    fun updateActivationMap(key: String, newValue: Float) {
-        _activationProcessMap.value = _activationProcessMap.value.toMutableMap().apply {
-            this[key] = newValue
-        }
-    }
-    fun resetActivationMap(){
-        _activationProcessMap.value = _activationProcessMap.value.toMutableMap().apply {
-            keys.forEach { key ->
-                this[key] = 0f
-            }
-        }
-    }
-
-    private val _activationProcessMap = MutableStateFlow(mapOf<String, Float>(
-        "Acoplamiento" to 0f,
-        "Inflado" to 0f,
-        "Proceso1" to 0f,
-        "Proceso2" to 0f
-    ))
-    val activationProcessMap: StateFlow<Map<String, Float>> get() = _activationProcessMap
-    fun updateActivationMap(key: String, newValue: Float) {
-        _activationProcessMap.value = _activationProcessMap.value.toMutableMap().apply {
-            this[key] = newValue
-        }
-    }
-    fun resetActivationMap(){
-        _activationProcessMap.value = _activationProcessMap.value.toMutableMap().apply {
-            keys.forEach { key ->
-                this[key] = 0f
-            }
-        }
-    }
-
-    private val _deactivationProcessMap = MutableStateFlow(mapOf<String, Float>(
-        "Desinflado" to 0f,
-        "Desacoplamiento" to 0f,
-        "Proceso1" to 0f,
-        "Proceso2" to 0f
-    ))
-    val deactivationProcessMap: StateFlow<Map<String, Float>> get() = _deactivationProcessMap
-    fun updateDectivationMap(key: String, newValue: Float) {
-        _deactivationProcessMap.value = _deactivationProcessMap.value.toMutableMap().apply {
-            this[key] = newValue
-        }
-    }
-    fun resetDeactivationMap(){
-        _deactivationProcessMap.value = _deactivationProcessMap.value.toMutableMap().apply {
-            keys.forEach { key ->
-                this[key] = 0f
-            }
-        }
-    }*/
-
-
     fun simularProcesos() { //TODO: borrar
         viewModelScope.launch {
             if (vitalsMonitoring.value == MonitoringState.Enabling) {
@@ -357,7 +313,7 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
             }
         }
     }
-
+    */
 
     //RobotView
     private val _wsUriEdited = MutableStateFlow("")//MutableState<String> = mutableStateOf("")//192.168.2.181//192.168.1.67//ws://192.168.1.67:9090
