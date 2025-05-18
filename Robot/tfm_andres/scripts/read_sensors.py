@@ -35,19 +35,19 @@ class Sensor:
 sensors = {
     "temperature": Sensor(
         publisher=rospy.Publisher("/temperature_data", Float32, queue_size=10),
-        interval=500
+        interval=500  # 2Hz
     ),
     "actuator_pressure": Sensor(
         publisher=rospy.Publisher("/actuator_pressure_data", Float32, queue_size=10),
-        interval=25
+        interval=10  # 100Hz
     ),
     "cuff_pressure": Sensor(
         publisher=rospy.Publisher("/cuff_pressure_data", Float32, queue_size=10),
-        interval=25
+        interval=10  # 100Hz
     ),
     "pulse": Sensor(
         publisher=rospy.Publisher("/pulse_data", Int32, queue_size=10),
-        interval=40
+        interval=40  # 25Hz
     ),
 }
 
@@ -105,11 +105,22 @@ def get_temperature() -> float:
     return temperature_k - 273.15  # Convertir de Kelvin a Celsius
 
 
-def get_pressure(sensor: int = 1, offset=27.0, pressure_ref=200.0, value_ref=2960.0):
-    if sensor == 1:
-        pressure_raw = ADS_2.readADC_Differential_0_1()
-    else:
-        pressure_raw = ADS_2.readADC_Differential_2_3()
+def get_pressure(sensor: str):
+    if sensor == "actuator":  # Actuator
+        offset = -21
+        pressure_ref = 200.0
+        value_ref = 2870
+
+        ADS_2.requestADC_Differential_0_1()  # TODO: ver si con esto soluciona
+        pressure_raw = ADS_2.getValue()
+        # pressure_raw = ADS.readADC_Differential_0_1()
+    else:  # Cuff
+        offset = 11
+        pressure_ref = 200.0
+        value_ref = 2960
+        ADS_2.requestADC_Differential_2_3()
+        pressure_raw = ADS_2.getValue()
+        # pressure_raw = ADS.readADC_Differential_2_3()
 
     pressure = (pressure_raw - offset) * pressure_ref / (value_ref - offset)
     return float(pressure)
@@ -125,12 +136,10 @@ def read_sensor(sensor: str):
             return ADS_1.readADC(1)
 
         elif sensor == "actuator_pressure":
-            return get_pressure(sensor=1, offset=-21, pressure_ref=200.0, value_ref=2870)
-            # offset=11, pressure_ref=200.0, value_ref=2960
+            return get_pressure(sensor='actuator')
 
         elif sensor == "cuff_pressure":
-            return get_pressure(sensor=2, offset=11, pressure_ref=200.0, value_ref=2960)
-            # offset=-21, pressure_ref=200.0, value_ref=2870
+            return get_pressure(sensor='cuff')
 
     else:
         return -2  # No afecta

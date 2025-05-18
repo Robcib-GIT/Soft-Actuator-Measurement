@@ -79,7 +79,7 @@ class PneumaticsServer:
         self.server_blood_pressure = actionlib.SimpleActionServer('blood_pressure', PneumaticsAction,
                                                                   self.execute_blood_pressure, False)
         self.server_blood_pressure.start()
-        rospy.loginfo("Servidor de acción 'close_cuff' iniciado")
+        rospy.loginfo("Servidor de acción 'blood_pressure' iniciado")
 
         self.server_close_actuator = actionlib.SimpleActionServer('close_actuator', PneumaticsAction,
                                                                   self.execute_close_actuator, False)
@@ -273,6 +273,7 @@ class PneumaticsServer:
         result = PneumaticsResult()
 
         # Activar sensor de presión
+        rospy.loginfo("Togleando sensor")
         self.toggle_sensor("actuator_pressure")
 
         # Colocar válvulas
@@ -297,7 +298,7 @@ class PneumaticsServer:
             if status == 'no_new_value':
                 continue
 
-            if self.actuator_pressure <= 5:
+            if self.actuator_pressure <= 5 and self.actuator_pressure != -1:
                 # Desactivar sensor de presión
                 self.toggle_sensor("actuator_pressure")
                 self.new_actuator_pressure_event.clear()
