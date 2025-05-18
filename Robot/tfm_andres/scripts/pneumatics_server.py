@@ -186,7 +186,8 @@ class PneumaticsServer:
 
         if server.is_preempt_requested():
             rospy.logwarn(f"{name}: cancelado por el cliente")
-            server.set_preempted()
+            result.success = False
+            server.set_preempted(result, text="Cancelado por el cliente")
             return 'cancelled'
 
         if self.check_timeout(start_time=start_time, max_duration=timeout, server=server, result=result, name=name):

@@ -21,9 +21,10 @@ class ActuatorUtilities(val viewModel: MainViewModel) {
             RosMsg(
                 operation = MsgOp.PUBLISH,
                 topic = "/close_actuator/goal",
-                msg = MsgTypes.ActionGoal(goal = emptyMap<String, Float>())
+                msg = MsgTypes.ActionGoalMsg(goal = emptyMap<String, Float>())
             )
         )
+        viewModel.updateActuatorState(state = ActuatorStates.Closing)
     }
 
     fun cancelCloseActuator(){
@@ -31,9 +32,11 @@ class ActuatorUtilities(val viewModel: MainViewModel) {
         val msg = RosMsg(
             operation = MsgOp.PUBLISH,
             topic = "/close_actuator/cancel",
-            msg = MsgTypes.ActionCancel()
+            msg = MsgTypes.ActionCancelMsg()
         )
         viewModel.wsClient.publishToTopic(msg)
+
+        viewModel.updateActuatorState(state = ActuatorStates.Open)
     }
 
     fun openActuator(){
@@ -41,9 +44,11 @@ class ActuatorUtilities(val viewModel: MainViewModel) {
             RosMsg(
                 operation = MsgOp.PUBLISH,
                 topic = "/open_actuator/goal",
-                msg = MsgTypes.ActionGoal(goal = emptyMap<String, Float>())
+                msg = MsgTypes.ActionGoalMsg(goal = emptyMap<String, Float>())
             )
         )
+
+        viewModel.updateActuatorState(state = ActuatorStates.Opening)
     }
 
     fun cancelOpenActuator(){
@@ -51,9 +56,11 @@ class ActuatorUtilities(val viewModel: MainViewModel) {
         val msg = RosMsg(
             operation = MsgOp.PUBLISH,
             topic = "/open_actuator/cancel",
-            msg = MsgTypes.ActionCancel()
+            msg = MsgTypes.ActionCancelMsg()
         )
         viewModel.wsClient.publishToTopic(msg)
+
+        viewModel.updateActuatorState(state = ActuatorStates.Closed)  //TODO: tal vez un prev state pero ñe
     }
 
     fun measureBP(){
@@ -61,9 +68,11 @@ class ActuatorUtilities(val viewModel: MainViewModel) {
             RosMsg(
                 operation = MsgOp.PUBLISH,
                 topic = "/blood_pressure/goal",
-                msg = MsgTypes.ActionGoal(goal = emptyMap<String, Float>())
+                msg = MsgTypes.ActionGoalMsg(goal = emptyMap<String, Float>())
             )
         )
+
+        viewModel.updateActuatorState(state = ActuatorStates.MeasuringBP)
     }
 
     fun cancelMeasureBP(){
@@ -71,8 +80,10 @@ class ActuatorUtilities(val viewModel: MainViewModel) {
         val msg = RosMsg(
             operation = MsgOp.PUBLISH,
             topic = "/blood_pressure/cancel",
-            msg = MsgTypes.ActionCancel()
+            msg = MsgTypes.ActionCancelMsg()
         )
         viewModel.wsClient.publishToTopic(msg)
+
+        viewModel.updateActuatorState(state = ActuatorStates.Closed)
     }
 }

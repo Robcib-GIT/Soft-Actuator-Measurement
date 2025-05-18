@@ -51,6 +51,13 @@ data class Stamp(
     val nsecs: Int = 0
 )
 
+data class PneumaticFeedback(
+    val progress: Float
+)
+data class PneumaticResult(
+    val success: Boolean
+)
+
 sealed class MsgTypes(){ //Añadir aqui más si hace falta
     data class IntMsg(
         val data: Int
@@ -107,14 +114,20 @@ sealed class MsgTypes(){ //Añadir aqui más si hace falta
     data class PneumaticFeedbackMsg(  //TODO
         val header: Any,
         val status: Any,
-        val feedback: FloatMsg
+        val feedback: PneumaticFeedback
     ):MsgTypes()
 
-    data class ActionGoal(  //TODO
+    data class PneumaticResultMsg(  //TODO
+        val header: Any,
+        val status: Any,
+        val result: PneumaticResult
+    ):MsgTypes()
+
+    data class ActionGoalMsg(  //TODO
         val goal: Any
     ):MsgTypes()
 
-    data class  ActionCancel(
+    data class  ActionCancelMsg(
         val stamp: Stamp = Stamp(),
         val id: String = ""
     ):MsgTypes()

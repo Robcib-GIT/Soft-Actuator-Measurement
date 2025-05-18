@@ -71,7 +71,7 @@ class RosWebSocketClient(uri: URI, private val viewModel: MainViewModel) : WebSo
                     val msg = parsedMsg.msg as? MsgTypes.PneumaticFeedbackMsg
                     msg?.let{
                         viewModel.updateOpenActuatorProgress(
-                            progress = it.feedback.data
+                            progress = it.feedback.progress
                         )
                     }
                 }
