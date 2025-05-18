@@ -2,12 +2,14 @@ package com.tfm.druidapp.views.customElements
 
 import android.content.res.Configuration
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,11 +18,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Done
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -41,56 +44,175 @@ import com.tfm.druidapp.data.ActuationState
 import com.tfm.druidapp.ui.theme.DruidAppTheme
 
 @Composable
-fun singleActionProcess(process: ActuationState){
-    Row(
-        modifier = Modifier
+fun singleActionProcess(
+    process: ActuationState,
+    painterId: Int,
+    enabled: Boolean,
+    onClick: () -> Unit
+){
+    //TODO: no deshabilitar porsiaca, solo cambiar el color
+    val textColor =
+        if(enabled)
+            MaterialTheme.colorScheme.onPrimary
+        else
+            MaterialTheme.colorScheme.onPrimaryContainer
+    Button(
+        onClick = onClick,
+        enabled = enabled,
+        shape = RoundedCornerShape(
+            topStart = 10.dp,
+            topEnd = 10.dp,
+            bottomStart = 10.dp,
+            bottomEnd = 10.dp
+        ),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color.DarkGray,
+            disabledContainerColor = MaterialTheme.colorScheme.onPrimaryContainer
+        ),
+        contentPadding = PaddingValues(
+            vertical = 6.dp,
+            horizontal = 16.dp
+        )
+    ){
+        Row(
+            modifier = Modifier
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Absolute.SpaceBetween
 
-            .clip(
-                RoundedCornerShape(
-                    topStart = 10.dp,
-                    topEnd = 10.dp,
-                    bottomStart = 10.dp,
-                    bottomEnd = 10.dp
-                )
-            )
-            .background(Color.DarkGray)
-            .padding(6.dp)
-            .fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Absolute.SpaceEvenly
-
-    ) {
-        Column(
-            modifier = Modifier,
-            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            Text(
-                text = process.name,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onPrimary
-            )
-            LinearProgressIndicator(
-                progress = { process.progress*0.5f },
-                color = Color.Green,
-                trackColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                gapSize = 0.dp,
-                drawStopIndicator = {}
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text(
+                    text = process.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = textColor
+                )
+                LinearProgressIndicator(
+                    progress = { process.progress },
+                    color = Color.Green,
+                    trackColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    gapSize = 0.dp,
+                    drawStopIndicator = {},
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(end = 10.dp)
+                )
+            }
+
+            Icon(
+                painter = painterResource(id = painterId),
+                contentDescription = null,
+                tint = textColor,
+                modifier = Modifier
+                    .size(50.dp)
             )
         }
-
-        Icon(
-            painter = painterResource(id = R.drawable.rounded_lock_24),
-            contentDescription = null,
-            tint = Color.White,
-            modifier = Modifier
-                .size(50.dp)
-        )
     }
-
-
-
 }
 
+@Composable
+fun multipleActionProcess(
+    title: String,
+    processes: List<ActuationState>,
+    painterId: Int,
+    expanded: Boolean,
+    enabled: Boolean,
+    onClick: () -> Unit
+){
+    val textColor =
+        if(enabled)
+            MaterialTheme.colorScheme.onPrimary
+        else
+            MaterialTheme.colorScheme.onPrimaryContainer
+    Button(
+        onClick = onClick,
+        enabled = enabled,
+        shape = RoundedCornerShape(
+            topStart = 10.dp,
+            topEnd = 10.dp,
+            bottomStart = 10.dp,
+            bottomEnd = 10.dp
+        ),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color.DarkGray,
+            disabledContainerColor = MaterialTheme.colorScheme.onPrimaryContainer
+        ),
+        contentPadding = PaddingValues(
+            vertical = 6.dp,
+            horizontal = 16.dp
+        )
+    ) {
+        Column(
+            modifier = Modifier
+            //verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = textColor
+                )
+
+                Icon(
+                    painter = painterResource(id = painterId),
+                    contentDescription = null,
+                    tint = textColor,
+                    modifier = Modifier
+                        .size(50.dp)
+                )
+            }
+
+            AnimatedVisibility(
+                visible = expanded,
+                enter = expandVertically(
+                    animationSpec = tween(durationMillis = 600) // más lento
+                ),
+                exit = shrinkVertically(
+                    animationSpec = tween(durationMillis = 600)
+                )
+            ){
+                HorizontalDivider(
+                    thickness = 1.dp,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.padding(top = 6.dp)
+                ) {
+                    processes.forEach{process->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = process.name,
+                                style = MaterialTheme.typography.titleSmall,
+                                color = textColor
+                            )
+                            LinearProgressIndicator(
+                                progress = { process.progress },
+                                color = Color.Green,
+                                trackColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                gapSize = 0.dp,
+                                drawStopIndicator = {}
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+}
 
 
 
@@ -290,14 +412,41 @@ fun singleActionProcessPreview() {
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
-                .padding(6.dp)
+                .padding(6.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
+            //Spacer(modifier = Modifier.height(16.dp))
             singleActionProcess(
                 process = ActuationState(
                     name = "Cerrar actuador",
                     progress = 1f
-                )
+                ),
+                painterId = R.drawable.rounded_lock_24,
+                enabled = true,
+                onClick = {}
+            )
+            singleActionProcess(
+                process = ActuationState(
+                    name = "Abrir actuador",
+                    progress = 1f
+                ),
+                painterId = R.drawable.rounded_lock_open_right_24,
+                enabled = false,
+                onClick = {}
+            )
+
+            val procesos = listOf(
+                ActuationState("Desinflado", 1f),
+                ActuationState("Inflado", 1f),
+                ActuationState("Procesamiento", 0.68f)
+            )
+            multipleActionProcess(
+                title = "Medir presión arterial",
+                processes = procesos,
+                painterId = R.drawable.rounded_blood_pressure_24,
+                expanded = true,
+                enabled = true,
+                onClick = {}
             )
         }
     }
