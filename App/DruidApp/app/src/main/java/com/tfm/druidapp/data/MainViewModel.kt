@@ -120,12 +120,15 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
 
     //Mensajes
     val topicsMap: Map<String, TopicInfo> = mapOf( //TODO poner los que haga falta y mover si eso
-        "/sensor1_data" to TopicInfo(MsgTypes.FloatMsg::class.java),
+        "/blood_pressure_data" to TopicInfo(MsgTypes.BloodPressureMsg::class.java),
         "/ppg_data" to TopicInfo(MsgTypes.FloatArrayMsg::class.java),
         "/cardiac_data" to TopicInfo(MsgTypes.CardiacMsg::class.java),
         "/open_actuator/feedback" to TopicInfo(MsgTypes.PneumaticFeedbackMsg::class.java),
         "/close_actuator/feedback" to TopicInfo(MsgTypes.PneumaticFeedbackMsg::class.java),
         "/blood_pressure/feedback" to TopicInfo(MsgTypes.PneumaticFeedbackMsg::class.java),
+        "/open_actuator/result" to TopicInfo(MsgTypes.PneumaticResultMsg::class.java),
+        "/close_actuator/result" to TopicInfo(MsgTypes.PneumaticResultMsg::class.java),
+        "/blood_pressure/result" to TopicInfo(MsgTypes.PneumaticResultMsg::class.java),
     )
 
 

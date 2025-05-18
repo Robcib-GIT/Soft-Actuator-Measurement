@@ -24,6 +24,7 @@ class ActuatorUtilities(val viewModel: MainViewModel) {
                 msg = MsgTypes.ActionGoalMsg(goal = emptyMap<String, Float>())
             )
         )
+        viewModel.updateOpenActuatorProgress(progress = 0f)
         viewModel.updateActuatorState(state = ActuatorStates.Closing)
     }
 
@@ -36,6 +37,7 @@ class ActuatorUtilities(val viewModel: MainViewModel) {
         )
         viewModel.wsClient.publishToTopic(msg)
 
+        viewModel.updateCloseActuatorProgress(progress = 0f)
         viewModel.updateActuatorState(state = ActuatorStates.Open)
     }
 
@@ -48,6 +50,7 @@ class ActuatorUtilities(val viewModel: MainViewModel) {
             )
         )
 
+        viewModel.updateCloseActuatorProgress(progress = 0f)
         viewModel.updateActuatorState(state = ActuatorStates.Opening)
     }
 
@@ -60,6 +63,7 @@ class ActuatorUtilities(val viewModel: MainViewModel) {
         )
         viewModel.wsClient.publishToTopic(msg)
 
+        viewModel.updateOpenActuatorProgress(progress = 0f)
         viewModel.updateActuatorState(state = ActuatorStates.Closed)  //TODO: tal vez un prev state pero ñe
     }
 
@@ -84,6 +88,7 @@ class ActuatorUtilities(val viewModel: MainViewModel) {
         )
         viewModel.wsClient.publishToTopic(msg)
 
+        viewModel.updateMeasureBPProgress(progress = 0f)
         viewModel.updateActuatorState(state = ActuatorStates.Closed)
     }
 }

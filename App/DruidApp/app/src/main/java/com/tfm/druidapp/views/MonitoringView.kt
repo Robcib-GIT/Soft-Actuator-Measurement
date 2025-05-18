@@ -172,7 +172,7 @@ fun PressureItem(title: String, value: Int?, color: Color){ //TODO comprobar que
             )
         }
         Text(
-            text = value?.toString() ?: "--",
+            text = value?.takeIf { it != -1 }?.toString() ?: "--",
             style = MaterialTheme.typography.labelLarge,
             textAlign = TextAlign.End,
             modifier = Modifier.fillMaxWidth(),
@@ -193,7 +193,7 @@ fun TemperatureDisplay(temperature: Float?, color: Color){
             horizontalArrangement = Arrangement.Center
         ) {
             Text(
-                text = temperature?.let{String.format("%.1f", temperature)} ?: "--",
+                text = temperature?.takeIf { it != -1f }?.let { String.format("%.1f", it) } ?: "--",
                 style = MaterialTheme.typography.labelLarge,
                 textAlign = TextAlign.Center,
                 color = color

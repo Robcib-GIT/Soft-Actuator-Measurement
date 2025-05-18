@@ -142,7 +142,7 @@ object MedicUtilities{
     )
     fun setColor(value: Int?, range: NormalRange<Int>, enabled: Boolean, colors: MedicDataColors = MedicDataColors()): Color{
         return if(enabled){
-            value?.let {
+            value.takeIf { it != -1 }?.let {
                 if(it in range.min..range.max){
                     colors.onCorrect
                 }else{
@@ -155,7 +155,7 @@ object MedicUtilities{
     }
     fun setColor(value: Float?, range: NormalRange<Float>, enabled: Boolean, colors: MedicDataColors = MedicDataColors()): Color{
         return if(enabled){
-            value?.let {
+            value.takeIf { it != -1f }?.let {
                 if(it in range.min..range.max){
                     colors.onCorrect
                 }else{

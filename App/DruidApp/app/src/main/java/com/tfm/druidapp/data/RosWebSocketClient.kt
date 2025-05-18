@@ -31,7 +31,7 @@ class RosWebSocketClient(uri: URI, private val viewModel: MainViewModel) : WebSo
     private var _firstPulseList = true
     override fun onMessage(message: String?) {
         safelyExecute{
-            //Log.d("RosWebSocket", message?:"null message")
+            Log.d("RosWebSocket", message?:"null message")
 
             val parsedMsg = parseRosMessage(message, viewModel.topicsMap)
 
@@ -60,7 +60,7 @@ class RosWebSocketClient(uri: URI, private val viewModel: MainViewModel) : WebSo
                     }
                 }
 
-                "blood_pressure_data" -> {
+                "/blood_pressure_data" -> {
                     val msg = parsedMsg.msg as? MsgTypes.BloodPressureMsg
                     msg?.let {
                         viewModel.updateBloodPressureData(it)
@@ -91,6 +91,61 @@ class RosWebSocketClient(uri: URI, private val viewModel: MainViewModel) : WebSo
                         viewModel.updateMeasureBPProgress(
                             progress = it.feedback.progress
                         )
+                    }
+                }
+
+                "/open_actuator/result" -> {
+                    val msg = parsedMsg.msg as? MsgTypes.PneumaticResultMsg
+                    msg?.let{
+                        if (it.result.success){
+                            viewModel.updateOpenActuatorProgress(
+                                progress = 1f
+                            )
+                            viewModel.updateActuatorState(ActuatorStates.Open)
+                        }else{
+                            viewModel.updateOpenActuatorProgress(
+                                progress = 0f
+                            )
+                            viewModel.updateActuatorState(ActuatorStates.Closed)
+                        }
+
+                    }
+                }
+
+                "/close_actuator/result" -> {
+                    val msg = parsedMsg.msg as? MsgTypes.PneumaticResultMsg
+                    msg?.let{
+                        if (it.result.success){
+                            viewModel.updateCloseActuatorProgress(
+                                progress = 1f
+                            )
+                            viewModel.updateActuatorState(ActuatorStates.Closed)
+                        }else{
+                            viewModel.updateCloseActuatorProgress(
+                                progress = 0f
+                            )
+                            viewModel.updateActuatorState(ActuatorStates.Open)
+                        }
+
+                    }
+                }
+
+                "/blood_pressure/result" -> {
+                    val msg = parsedMsg.msg as? MsgTypes.PneumaticResultMsg
+                    msg?.let{
+                        viewModel.updateMeasureBPProgress(progress = 0f)
+                        if (it.result.success){
+                            viewModel.updateMeasureBPProgress(
+                                progress = 3f
+                            )
+                            viewModel.updateActuatorState(ActuatorStates.Closed)
+                        }else{
+                            viewModel.updateMeasureBPProgress(
+                                progress = 0f
+                            )
+                            viewModel.updateActuatorState(ActuatorStates.Closed)
+                        }
+
                     }
                 }
 
