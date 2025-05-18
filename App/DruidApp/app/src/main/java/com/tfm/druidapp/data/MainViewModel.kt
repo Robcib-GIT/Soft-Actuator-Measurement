@@ -251,7 +251,7 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
     )
     val openActuatorState: StateFlow<ActuationState> = _openActuatorState
     fun updateOpenActuatorProgress(progress: Float){
-        Log.d("ActuatorFeedback", "Open actuator: ${_openActuatorState.value.progress}") //TODO: comentar
+        //Log.d("ActuatorFeedback", "Open actuator: ${_openActuatorState.value.progress}") //TODO: comentar
         _openActuatorState.value = _openActuatorState.value.copy(progress = progress)
     }
 
@@ -260,7 +260,7 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
     )
     val closeActuatorState: StateFlow<ActuationState> = _closeActuatorState
     fun updateCloseActuatorProgress(progress: Float){
-        Log.d("ActuatorFeedback", "Close actuator: ${_closeActuatorState.value.progress}") //TODO: comentar
+        //Log.d("ActuatorFeedback", "Close actuator: ${_closeActuatorState.value.progress}") //TODO: comentar
         _closeActuatorState.value = _closeActuatorState.value.copy(progress = progress)
     }
 

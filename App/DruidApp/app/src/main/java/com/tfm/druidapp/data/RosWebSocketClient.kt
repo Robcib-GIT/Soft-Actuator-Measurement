@@ -31,7 +31,7 @@ class RosWebSocketClient(uri: URI, private val viewModel: MainViewModel) : WebSo
     private var _firstPulseList = true
     override fun onMessage(message: String?) {
         safelyExecute{
-            Log.d("RosWebSocket", message?:"null message")
+            //Log.d("RosWebSocket", message?:"null message")
 
             val parsedMsg = parseRosMessage(message, viewModel.topicsMap)
 
