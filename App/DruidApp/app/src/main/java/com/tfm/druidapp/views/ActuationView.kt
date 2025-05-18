@@ -24,7 +24,6 @@ import com.tfm.druidapp.data.RosMsg
 import com.tfm.druidapp.data.Screen
 import com.tfm.druidapp.ui.theme.DruidAppTheme
 import com.tfm.druidapp.views.customElements.MonitoringState
-import com.tfm.druidapp.views.customElements.ProcessProgressIndicator
 
 @Composable
 fun ActuationView(viewModel: MainViewModel, navController: NavHostController) {
