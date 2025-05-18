@@ -1,5 +1,14 @@
 package com.tfm.druidapp.data
 
+enum class ActuatorStates {
+    Closing,
+    Closed,
+    Opening,
+    Open,
+    MeasuringBP,
+    Connected,
+    Disconnected
+}
 data class ActuationState(
     val name: String,
     val progress: Float = 0f

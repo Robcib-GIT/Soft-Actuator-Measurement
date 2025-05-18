@@ -11,13 +11,10 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Divider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -33,9 +30,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.tfm.druidapp.data.ActuatorStates
 import com.tfm.druidapp.data.DataStoreManager
 import com.tfm.druidapp.data.MainViewModel
 import com.tfm.druidapp.data.MedicUtilities
@@ -43,7 +40,6 @@ import com.tfm.druidapp.data.MedicUtilities.setColor
 import com.tfm.druidapp.data.Screen
 import com.tfm.druidapp.ui.theme.DruidAppTheme
 import com.tfm.druidapp.views.customElements.GlasgowGauge
-import com.tfm.druidapp.views.customElements.MonitoringState
 import com.tfm.druidapp.views.customElements.PPG
 import com.tfm.druidapp.views.customElements.ThermometerIcon
 
@@ -51,7 +47,7 @@ import com.tfm.druidapp.views.customElements.ThermometerIcon
 fun MonitoringView(viewModel: MainViewModel, navController: NavHostController){
     val temperature by viewModel.temperature.collectAsState()
     val pressureData by viewModel.pressureData
-    val enabled = (viewModel.vitalsMonitoring.value == MonitoringState.Enabled)
+    val enabled = (viewModel.actuatorState.value == ActuatorStates.Closed)
     val normalRanges by viewModel.normalMedicRanges
 
     Column(

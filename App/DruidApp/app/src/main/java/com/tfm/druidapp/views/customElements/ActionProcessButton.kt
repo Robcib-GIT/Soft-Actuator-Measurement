@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -58,7 +59,7 @@ fun ActionProcessButton(
     val textColor: Color
     val progressIndicatorColor: Color
 
-    if (enabled && focus) {
+    if (focus) {
         backgroundColor = Color.DarkGray
         textColor = MaterialTheme.colorScheme.onPrimary
         progressIndicatorColor = Color.Green
@@ -79,7 +80,7 @@ fun ActionProcessButton(
         ),
         colors = ButtonDefaults.buttonColors(
             containerColor = backgroundColor,
-            disabledContainerColor = MaterialTheme.colorScheme.onPrimaryContainer
+            disabledContainerColor = backgroundColor
         ),
         contentPadding = PaddingValues(
             vertical = 6.dp,
@@ -155,7 +156,7 @@ fun ActionProcessButton(
     val textColor: Color
     val progressIndicatorColor: Color
 
-    if (enabled && focus) {
+    if (focus) {
         backgroundColor = Color.DarkGray
         textColor = MaterialTheme.colorScheme.onPrimary
         progressIndicatorColor = Color.Green
@@ -176,7 +177,7 @@ fun ActionProcessButton(
         ),
         colors = ButtonDefaults.buttonColors(
             containerColor = backgroundColor,
-            disabledContainerColor = MaterialTheme.colorScheme.onPrimaryContainer
+            disabledContainerColor = backgroundColor
         ),
         contentPadding = PaddingValues(
             vertical = 6.dp,
@@ -234,14 +235,16 @@ fun ActionProcessButton(
                             Text(
                                 text = process.name,
                                 style = MaterialTheme.typography.titleSmall,
-                                color = textColor
+                                color = textColor,
+                                modifier = Modifier.width(105.dp)
                             )
                             LinearProgressIndicator(
                                 progress = { process.progress },
                                 color = progressIndicatorColor,
                                 trackColor = MaterialTheme.colorScheme.onPrimaryContainer,
                                 gapSize = 0.dp,
-                                drawStopIndicator = {}
+                                drawStopIndicator = {},
+                                modifier = Modifier.weight(1f)
                             )
                         }
                     }
@@ -249,18 +252,6 @@ fun ActionProcessButton(
             }
         }
     }
-}
-
-
-
-//TODO: borrar
-enum class MonitoringState {
-    Enabled,
-    Enabling,
-    Disabled,
-    Disabling,
-    EnPaused,
-    DisPaused
 }
 
 @Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
@@ -281,8 +272,8 @@ fun actionProcessButtonPreview() {
                     progress = 1f
                 ),
                 painterId = R.drawable.rounded_lock_24,
-                enabled = true,
-                focus = false,
+                enabled = false,
+                focus = true,
                 onClick = {}
             )
             ActionProcessButton(
@@ -314,7 +305,7 @@ fun actionProcessButtonPreview() {
                 painterId = R.drawable.rounded_blood_pressure_24,
                 expanded = true,
                 enabled = true,
-                focus = false,
+                focus = true,
                 onClick = {}
             )
         }

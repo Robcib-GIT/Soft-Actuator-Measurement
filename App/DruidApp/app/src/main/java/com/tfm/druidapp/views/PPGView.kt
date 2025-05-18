@@ -1,7 +1,6 @@
 package com.tfm.druidapp.views
 
 import android.content.res.Configuration
-import android.provider.CalendarContract
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -22,15 +21,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.tfm.druidapp.R
+import com.tfm.druidapp.data.ActuatorStates
 import com.tfm.druidapp.data.DataStoreManager
 import com.tfm.druidapp.data.MainViewModel
 import com.tfm.druidapp.data.MedicUtilities
 import com.tfm.druidapp.data.NormalRange
 import com.tfm.druidapp.views.customElements.bpmInfo
 import com.tfm.druidapp.ui.theme.DruidAppTheme
-import com.tfm.druidapp.views.customElements.MonitoringState
 import com.tfm.druidapp.views.customElements.PPG
 import com.tfm.druidapp.views.customElements.RotatingIcon
 
@@ -40,7 +38,7 @@ private const val col2Width = 100
 @Composable
 fun PPGView(viewModel: MainViewModel){
     val cardiacData by viewModel.cardiacData.collectAsState()
-    val enabled = (viewModel.vitalsMonitoring.value == MonitoringState.Enabled)
+    val enabled = (viewModel.actuatorState.value == ActuatorStates.Closed)
     val ranges by viewModel.normalMedicRanges
 
     Column(

@@ -1,12 +1,13 @@
 package com.tfm.druidapp.views
 
 import android.content.res.Configuration
-import android.util.Log
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -16,19 +17,18 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.tfm.druidapp.R
+import com.tfm.druidapp.data.ActuationState
+import com.tfm.druidapp.data.ActuatorStates
 import com.tfm.druidapp.data.ActuatorUtilities
 import com.tfm.druidapp.data.MainViewModel
-import com.tfm.druidapp.data.MsgOp
-import com.tfm.druidapp.data.MsgTypes
-import com.tfm.druidapp.data.RosMsg
-import com.tfm.druidapp.data.Screen
 import com.tfm.druidapp.ui.theme.DruidAppTheme
-import com.tfm.druidapp.views.customElements.MonitoringState
+import com.tfm.druidapp.views.customElements.ActionProcessButton
 
 @Composable
 fun ActuationView(viewModel: MainViewModel, navController: NavHostController) {
     val connected by viewModel.connectionState
-    val state by viewModel.vitalsMonitoring
+    val state by viewModel.actuatorState
     val openActuatorState by viewModel.openActuatorState.collectAsState()
     val closeActuatorState by viewModel.closeActuatorState.collectAsState()
     val measureBPState by viewModel.measureBPState.collectAsState()
@@ -38,94 +38,79 @@ fun ActuationView(viewModel: MainViewModel, navController: NavHostController) {
         modifier = Modifier
             .padding(16.dp)
             .fillMaxSize(),
-        //verticalArrangement = Arrangement.spacedBy(6.dp)
+        verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        /*ProcessProgressIndicator( //TODO:retocar para los cambios nuevos
-            state = state,
-            text = if (state == MonitoringState.Disabled || state == MonitoringState.Enabling || state == MonitoringState.EnPaused) {
-                "Iniciar monitorización"
-            } else {
-                "Detener monitorización"
-            },
-            statesList = if (state == MonitoringState.Disabled || state == MonitoringState.Enabling || state == MonitoringState.EnPaused) {
-                //Activacion
-                actuatorStates.slice(actuatorUtilities.activationFirstState ..actuatorUtilities.activationLastState)
-            } else {
-                actuatorStates.slice(actuatorUtilities.deactivationFirstState ..actuatorUtilities.deactivationLastState)
-            },
-            onRun = {
-                if (state == MonitoringState.Disabled) {
-                    if (connected){
-                        viewModel.updateVitalsMonitoring(MonitoringState.Enabling)
+        Text(text = "hola")
 
-                        // Activar el actuador
-                        actuatorUtilities.activateActuator()
-                    }else{
-                        viewModel.showToast("Robot no conectado")
-                    }
+    }
+}
 
-                } else {
-                    viewModel.updateVitalsMonitoring(MonitoringState.Disabling)
+@Composable
+fun ActuationContent(){
+    val state = ActuatorStates.MeasuringBP
+    val openActuatorState = ActuationState(name = "Abrir actuador", progress = 0f)
+    val closeActuatorState = ActuationState(name = "Cerrar actuador", progress = 0f)
+    val measureBPState = listOf(
+        ActuationState("Desinflado", progress = 1f),
+        ActuationState("Inflado", progress = 0.5f),
+        ActuationState("Procesamiento", progress = 0.1f)
+    )
 
-                    // Desactivar el actuador
-                    actuatorUtilities.deactivateActuator()
-                }
-            },
-            onPause = {
-                if (state == MonitoringState.EnPaused) {
-                    viewModel.updateVitalsMonitoring(MonitoringState.Enabling)
-                    //TODO: seguir con enabling
-                    actuatorUtilities.pauseActuator(pause = false)
-                } else if(state == MonitoringState.DisPaused){
-                    viewModel.updateVitalsMonitoring(MonitoringState.Disabling)
-                    //TODO: seguir con disabling
-                    actuatorUtilities.pauseActuator(pause = false)
-                }else {
-                    if (state == MonitoringState.Enabling){
-                        viewModel.updateVitalsMonitoring(MonitoringState.EnPaused)
-                    }else{
-                        viewModel.updateVitalsMonitoring(MonitoringState.DisPaused)
-                    }
-                    //TODO: pausar
-                    actuatorUtilities.pauseActuator(pause = true)
-                }
+    Column(
+        modifier = Modifier
+            .padding(16.dp)
+            .fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        ActionProcessButton(
+            process = closeActuatorState,
+            painterId = R.drawable.rounded_lock_24,
+            enabled = state !in listOf(
+                ActuatorStates.Opening,
+                ActuatorStates.Closing,
+                ActuatorStates.MeasuringBP,
+                ActuatorStates.Disconnected
+                ),
+            focus = state in listOf(
+                ActuatorStates.Connected,
+                ActuatorStates.Closing,
+                ActuatorStates.Open
+            ),
+            onClick = {}
+        )
 
-            },
-            onStop = { //TODO: manejar pause
-                viewModel.resetActuatorStates()
+        ActionProcessButton(
+            process = openActuatorState,
+            painterId = R.drawable.rounded_lock_open_right_24,
+            enabled = state !in listOf(
+                ActuatorStates.Opening,
+                ActuatorStates.Closing,
+                ActuatorStates.MeasuringBP,
+                ActuatorStates.Disconnected
+            ),
+            focus = state in listOf(
+                ActuatorStates.Connected,
+                ActuatorStates.Opening,
+                ActuatorStates.Closed
+            ),
+            onClick = {}
+        )
 
-                if (state == MonitoringState.Enabling || state == MonitoringState.EnPaused) {
-                    viewModel.updateVitalsMonitoring(MonitoringState.Disabling)
+        ActionProcessButton(
+            title = "Medir presión arterial",
+            processes = measureBPState,
+            painterId = R.drawable.rounded_blood_pressure_24,
+            enabled = state in listOf(
+                ActuatorStates.Closed
+            ),
+            focus = state in listOf(
+                ActuatorStates.MeasuringBP,
+                ActuatorStates.Closed
+            ),
+            expanded = if (state==ActuatorStates.MeasuringBP) true else false,
+            onClick = {}
+        )
 
-                    // Cancelar la accion
-                    actuatorUtilities.stopActuator()
-
-                    // Desactivar el actuador
-                    actuatorUtilities.deactivateActuator()
-
-                } else {
-                    viewModel.updateVitalsMonitoring(MonitoringState.Enabling)
-                    //TODO: comprobar que funciona
-                    // Cancelar la accion
-                    actuatorUtilities.stopActuator()
-
-                    // Activar el actuador
-                    actuatorUtilities.activateActuator()
-                }
-            },
-            onEnd = {
-                if (state == MonitoringState.Enabling) {
-                    navController.navigate(Screen.Monitoring.route)
-                    viewModel.updateVitalsMonitoring(MonitoringState.Enabled)
-                    viewModel.resetActuatorStates()
-                    viewModel.showToast("Monitorización activada")
-                } else {
-                    viewModel.updateVitalsMonitoring(MonitoringState.Disabled)
-                    viewModel.resetActuatorStates()
-                    viewModel.showToast("Monitorización desactivada ")
-                }
-            }
-        )*/
     }
 }
 
@@ -138,9 +123,7 @@ fun ActuationViewPreview() {
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background
         ) {
-            val vm: MainViewModel = viewModel()
-            val navController = rememberNavController()
-            ActuationView(vm, navController)
+            ActuationContent()
         }
     }
 }

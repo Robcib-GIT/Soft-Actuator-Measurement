@@ -4,7 +4,6 @@ import android.util.Log
 import androidx.lifecycle.viewModelScope
 import com.tfm.druidapp.data.RosMsgUtilities.createJsonMessage
 import com.tfm.druidapp.data.RosMsgUtilities.parseRosMessage
-import com.tfm.druidapp.views.customElements.MonitoringState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -26,6 +25,7 @@ class RosWebSocketClient(uri: URI, private val viewModel: MainViewModel) : WebSo
             topicInfo.subscribedTo.value = true
         }
         viewModel.showToast("Conexión exitosa")
+        viewModel.updateActuatorState(ActuatorStates.Connected)
     }
 
     private var _firstPulseList = true
@@ -94,6 +94,7 @@ class RosWebSocketClient(uri: URI, private val viewModel: MainViewModel) : WebSo
                     }
                 }
 
+                //TODO: meter results y cambiar actuator state
                 else -> {}
             }
         }
@@ -108,7 +109,7 @@ class RosWebSocketClient(uri: URI, private val viewModel: MainViewModel) : WebSo
             }
         }
         //Deshabilitar monitorizacion
-        viewModel.updateVitalsMonitoring(MonitoringState.Disabled)
+        viewModel.updateActuatorState(ActuatorStates.Disconnected)
         //Resetear medic data
         viewModel.resetMedicData()
     }

@@ -8,7 +8,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tfm.druidapp.data.MedicUtilities.calculateNormalRanges
-import com.tfm.druidapp.views.customElements.MonitoringState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -238,6 +237,12 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
     }
 
     ////////////////// RELACIONADO CON ACTUADOR ///////////////////////////// TODO: comprobar lo del reset
+    private val _actuatorState = mutableStateOf(ActuatorStates.Disconnected)
+    val actuatorState: State<ActuatorStates> get() = _actuatorState
+    fun updateActuatorState(state: ActuatorStates){
+        _actuatorState.value = state
+    }
+
     private val _openActuatorState = MutableStateFlow(
         ActuationState(name = "Abrir actuador")
     )
@@ -288,18 +293,14 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
 
     ////////////////// RELACIONADO CON UI /////////////////////////////
     //ActuationView
-    private val _vitalsMonitoring = mutableStateOf(MonitoringState.Disabled)
-    val vitalsMonitoring: State<MonitoringState> get() = _vitalsMonitoring
-    fun updateVitalsMonitoring(monitoring: MonitoringState){
-        _vitalsMonitoring.value = monitoring
-    }
+
 
 
 
     /*
     fun simularProcesos() { //TODO: borrar
         viewModelScope.launch {
-            if (vitalsMonitoring.value == MonitoringState.Enabling) {
+            if (actuatorState.value == ActuatorStates.Enabling) {
                 // Lanza un proceso por cada elemento en el mapa
                 actuatorStates.value.forEachIndexed{ index, state ->
                     var currentProgress = state.progress
