@@ -12,7 +12,7 @@ if __name__ == "__main__":
 
     time = np.array(data['Time'])
     fs = 1 / np.mean(np.diff(time))
-    print(f"{params_data['Subject']} v{params_data['Version']} @{fs}Hz")
+    print(f"{params_data['subject']} v{params_data['version']} @{fs}Hz")
 
     bp = BloodPressure(fs=fs)
 

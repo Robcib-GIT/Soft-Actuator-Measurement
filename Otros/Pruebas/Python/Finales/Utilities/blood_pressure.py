@@ -10,10 +10,10 @@ PLOT_THROUGH = False
 
 class BloodPressure:
     __MIN_PEAK_H = -100
-    __PROMINENCE = 5  # Prominencia mínima para considerar un pico
-    __MAX_IBI_VARIANCE = 80E-3  # Máximo tiempo que pueden diferir los intervalos entre pulsos entre si
-    __SYS_RATIO = 0.83  # @0.83: 6.29  inicialmente 0.8
-    __DIA_RATIO = 0.41  # @0.41: 8.38  inicialmente 0.5
+    __PROMINENCE = 4    # Prominencia mínima para considerar un pico  5
+    __MAX_IBI_VARIANCE = 90E-3  # Máximo tiempo que pueden diferir los intervalos entre pulsos entre si  80
+    __SYS_RATIO = 0.87  # @0.83: 6.29  inicialmente 0.8
+    __DIA_RATIO = 0.42  # @0.41: 8.38  inicialmente 0.5
 
     def __init__(self, fs: float):
         self.fs = fs
@@ -189,16 +189,15 @@ class BloodPressure:
         # ---------------OBTENER SYS--------------------
         idx_first_pulse = None
 
-        """
         # Tomar sys como primer pulso mas cercano a MAP que no supere el umbral ni su siguiente
-        for i in range(idx_map, -1, -1):
-            if peak_amplitudes[i] >= peak_amplitudes[idx_map] * self.__SYS_RATIO:
-                idx_first_pulse = i
-            else:
-                if i > 0 and peak_amplitudes[i - 1] >= peak_amplitudes[idx_map] * self.__SYS_RATIO:  # el FIXME
-                    continue
-                break
-        """
+        # for i in range(idx_map, -1, -1):
+        #     if peak_amplitudes[i] >= peak_amplitudes[idx_map] * self.__SYS_RATIO:
+        #         idx_first_pulse = i
+        #     else:
+        #         if i > 0 and peak_amplitudes[i - 1] >= peak_amplitudes[idx_map] * self.__SYS_RATIO:  # el FIXME
+        #             continue
+        #         break
+
         # Tomar sys como último pulso más cercano a MAP que no supere el umbral
         for i in range(idx_map, -1, -1):
             if peak_amplitudes[i] >= peak_amplitudes[idx_map] * self.__SYS_RATIO:
@@ -207,6 +206,7 @@ class BloodPressure:
         if idx_first_pulse is None:
             raise ValueError(f"Presión sistólica no detectada")
 
+        # idx_first_pulse += 1  # TODO: por la cara pero ver si funciona
         idx_sys = idx_peaks[idx_first_pulse]
         sys = int(self.pressures[idx_sys])
 
@@ -227,9 +227,11 @@ class BloodPressure:
         #     if peak_amplitudes[i] >= peak_amplitudes[idx_map] * self.__DIA_RATIO:
         #         idx_last_pulse = i
         #
-        # if idx_last_pulse is None:
-        #     raise ValueError(f"Presión diastólica no detectada")
+        if idx_last_pulse is None:
+            raise ValueError(f"Presión diastólica no detectada")
 
+        # if idx_last_pulse < len(peak_amplitudes)-1:
+        #     idx_last_pulse += 1 # TODO: por la cara pero ver si funciona
         idx_dia = idx_peaks[idx_last_pulse]
         dia = int(self.pressures[idx_dia])
 

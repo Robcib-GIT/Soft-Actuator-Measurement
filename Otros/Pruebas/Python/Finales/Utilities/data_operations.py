@@ -104,8 +104,8 @@ def load_data(filepath = None) -> Tuple[Dict[str, List[float]], Dict[str, Any]]:
     filename = os.path.basename(filepath)
     match = re.match(r"PRESION_(.+?)_v(\d+)\.csv", filename)
     if match:
-        param_dict["Subject"] = match.group(1)
-        param_dict["Version"] = int(match.group(2))
+        param_dict["subject"] = match.group(1)
+        param_dict["version"] = int(match.group(2))
     else:
         print("El nombre del archivo no sigue el patrón esperado, datos sobre el sujeto no extraidos")
     return data_dict, param_dict
