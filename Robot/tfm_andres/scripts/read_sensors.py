@@ -130,7 +130,7 @@ def get_pressure(sensor: str):
 def read_sensor(sensor: str):
     if sensor in sensors.keys():
         if sensor == "temperature":
-            return get_pressure()
+            return get_temperature()
 
         elif sensor == "pulse":
             return ADS_1.readADC(1)
