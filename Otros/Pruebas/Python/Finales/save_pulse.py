@@ -32,7 +32,7 @@ GPIO.setup(RELAY_PIN, GPIO.OUT)
 # --- Constantes y variables presión arterial ---
 BUS_I2C_ADS115 = 1
 ADS_1 = ADS1x15.ADS1115(BUS_I2C_ADS115, 0x49)  # Para pulso y temperatura
-ADS_1.setGain(ADS_1.PGA_0_512V)
+ADS_1.setGain(ADS_1.PGA_6_144V)
 PULSE_INTERVAL = 1 / 25  # ms
 
 

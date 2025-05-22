@@ -200,7 +200,7 @@ if __name__ == "__main__":
     try:
         # Procesar información
         sys, dia, ppm = bp.get_blood_pressure(pressures_data)
-        print(f"SAM_SYS:  {sys}  |  SAM_SIA:  {dia}  |  |  SAM_PPM:  {ppm}")
+        print(f"SAM_SYS:  {sys}  |  SAM_DIA:  {dia}  |  SAM_PPM:  {ppm}")
 
     except Exception as e:
         print("Ocurrió un error al procesar los datos.")

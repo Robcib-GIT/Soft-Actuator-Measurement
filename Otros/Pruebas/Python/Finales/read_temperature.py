@@ -8,10 +8,10 @@ import ADS1x15
  I2C BUS 1 (SCL: 5  |  SDA: 3)
 """
 
-# --- Constantes y variables presión arterial ---
+# --- Constantes ADS ---
 BUS_I2C_ADS115 = 1
 ADS_1 = ADS1x15.ADS1115(BUS_I2C_ADS115, 0x49)  # Para pulso y temperatura
-ADS_1.setGain(ADS_1.PGA_0_512V)
+ADS_1.setGain(ADS_1.PGA_6_144V)
 
 # Constantes generales para sensores
 VCC = 5.0
@@ -25,8 +25,8 @@ T0 = 25.0 + 273.15  # Temperatura nominal en Kelvin (25°C)
 
 # --- Declaracion de funciones presion arterial ---
 def get_temperature() -> float:
-    voltage = ADS_1.toVoltage(ADS_1.readADC(0))
-    print(f"\rVoltaje: {voltage:.2f}       ")
+    voltage = ADS_1.toVoltage(ADS_1.readADC(1))
+    # print(f"\rVoltaje: {voltage:.2f}       ")
 
     if voltage <= 0:
         return 25.0  # Evitar división por cero o log(0)
@@ -40,7 +40,7 @@ if __name__ == "__main__":
     try:
         while True:
             temperature = get_temperature()
-            # print(f"\rTemperatura: {temperature:.2f}       ")
+            print(f"\rTemperatura: {temperature:.2f}       ")
             time.sleep(1)
     except KeyboardInterrupt:
         print("\nEjecución interrumpida por el usuario. Saliendo...")

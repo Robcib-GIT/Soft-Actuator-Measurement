@@ -1,6 +1,7 @@
 from Utilities.pulse import Pulse
 from Utilities.data_operations import load_data
 from typing import List
+import numpy as np
 
 
 def process_pulse_segment(segment: List[int]):
@@ -11,9 +12,13 @@ def process_pulse_segment(segment: List[int]):
 
 
 if __name__ == "__main__":
-    pulse = Pulse(fs=25)
+    data, params_data = load_data()
+    pulse_data = data['Pulse']
 
-    pulse_data = load_data()[0]
+    time = np.array(data['Time'])
+    fs = 1 / np.mean(np.diff(time))
+    print(f"{params_data['subject']} v{params_data['version']} @{fs}Hz")
+    pulse = Pulse(fs=fs)
 
     processing = False
     pulse_segment = []

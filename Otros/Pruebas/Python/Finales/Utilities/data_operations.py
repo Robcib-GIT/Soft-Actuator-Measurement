@@ -102,7 +102,7 @@ def load_data(filepath = None) -> Tuple[Dict[str, List[float]], Dict[str, Any]]:
 
     # Añadir info extra a partir del nombre del archivo
     filename = os.path.basename(filepath)
-    match = re.match(r"PRESION_(.+?)_v(\d+)\.csv", filename)
+    match = re.match(r"PULSO_(.+?)_v(\d+)\.csv", filename)
     if match:
         param_dict["subject"] = match.group(1)
         param_dict["version"] = int(match.group(2))

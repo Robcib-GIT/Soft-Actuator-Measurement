@@ -30,13 +30,13 @@ BUS_I2C_ADS115 = 1
 ADS = ADS1x15.ADS1115(BUS_I2C_ADS115, 0x48)
 ADS.setGain(ADS.PGA_0_512V)
 
-pressure_fs = 40  # Hz
+pressure_fs = 100  # Hz
 INTERVAL = 1 / pressure_fs
 
 ACTUATOR_GOAL_PRESSURE = 600.0
 CUFF_GOAL_PRESSURE = 190.0
 
-# --- Constantes y variables servos
+# --- Constantes y variables servos --- TODO: refinar rangos servo y angulos
 CUFF_INFLATE_ANGLE = 180
 CUFF_DEFLATE_ANGLE = 115
 CUFF_FULL_DEFLATE_ANGLE = 90
@@ -67,16 +67,17 @@ def get_pressure(sensor: str):
         pressure_ref = 200.0
         value_ref = 2870
 
-        ADS.requestADC_Differential_0_1()  # TODO: ver si con esto soluciona
-        pressure_raw = ADS.getValue()
-        # pressure_raw = ADS.readADC_Differential_0_1()
+        #ADS.requestADC_Differential_0_1()  # TODO: ver si con esto soluciona
+        #pressure_raw = ADS.getValue()
+        pressure_raw = ADS.readADC_Differential_0_1()
     else:  # Cuff
         offset = 11
         pressure_ref = 200.0
         value_ref = 2960
-        ADS.requestADC_Differential_2_3()
-        pressure_raw = ADS.getValue()
-        # pressure_raw = ADS.readADC_Differential_2_3()
+
+        #ADS.requestADC_Differential_2_3()
+        #pressure_raw = ADS.getValue()
+        pressure_raw = ADS.readADC_Differential_2_3()
 
     pressure = (pressure_raw - offset) * pressure_ref / (value_ref - offset)
     return float(pressure)
@@ -124,10 +125,13 @@ if __name__ == "__main__":
             if actuator_pressure >= ACTUATOR_GOAL_PRESSURE:
                 set_pump_state(on=False)
 
-            print(f"\rCuff pressure: {cuff_pressure:.2f}mmHg   ({cuff_p_velocity:.2f}mmHg/s)   |   Actuator pressure: {actuator_pressure:.2f}mmHg   ({actuator_p_velocity:.2f}mmHg/s)           ", end="")
+            #print(f"\rCuff pressure: {cuff_pressure:.2f}mmHg   ({cuff_p_velocity:.2f}mmHg/s)   |   Actuator pressure: {actuator_pressure:.2f}mmHg   ({actuator_p_velocity:.2f}mmHg/s)           ", end="")
+            print(f"\rCuff pressure: {cuff_pressure:.2f}mmHg   |   Actuator pressure: {actuator_pressure:.2f}mmHg           ", end="")
 
             time.sleep(INTERVAL)
     except KeyboardInterrupt:
         print("\nLectura interrumpida por el usuario.")
+        actuator_servo.angle = ACTUATOR_BRIDGE_ANGLE
+        cuff_servo.angle = CUFF_BRIDGE_ANGLE
     finally:
         set_pump_state(on=False)
