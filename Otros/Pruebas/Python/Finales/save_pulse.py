@@ -50,6 +50,7 @@ if __name__ == "__main__":
         reading = get_pulse()
         pulse_samples.append(reading)
         print(f"\rProgreso: {sample / steps * 100:.2f}%  | ({reading})          ", end="")
+    pulse_samples.append(-1)
 
     data = {
         "Time": np.arange(0, len(pulse_samples)) * PULSE_INTERVAL,

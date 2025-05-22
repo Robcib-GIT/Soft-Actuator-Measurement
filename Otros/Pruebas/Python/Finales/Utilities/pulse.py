@@ -23,8 +23,8 @@ class Pulse:
         self.filtered_signal = []
         self.signal = []  # TODO: ver si borrar
         self.time = []  # TODO: manejar
-        self.systolics_time = [[], []]
-        self.diastolics_time = [[], []]
+        self.__systolics_time = [[], []]
+        self.__diastolics_time = [[], []]
 
         # Variables para el filtro
         self.__zi: np.ndarray | None = None
@@ -51,7 +51,7 @@ class Pulse:
             self.__processed_samples += len(data)
             self.signal.extend(data)
 
-            # Eliminar sobrante
+            # Eliminar sobrante del principio
             if len(self.filtered_signal) > self.__max_samples_to_analice:
                 self.filtered_signal = self.filtered_signal[self.shipping_samples:]
                 self.signal = self.signal[self.shipping_samples:]
@@ -60,8 +60,8 @@ class Pulse:
 
     def __get_cardiac_data(self):  # TODO: retocar
         # Obtener propiedades del pulso
-        if len(self.systolics_time[1]) > 2:
-            ibi = np.diff(self.systolics_time[1])  # Intervalo entre pulsos
+        if len(self.__systolics_time[1]) > 2:
+            ibi = np.diff(self.__systolics_time[1])  # Intervalo entre pulsos
 
             # Tomar últimos 5 pulsos del ibi para datos más cambiantes
             relevant_pulses = 5
@@ -111,16 +111,16 @@ class Pulse:
             if len(systolic_indexes) > 0:
                 for index in systolic_indexes:
                     # Si el pico no está se guarda
-                    if self.time[index] not in self.systolics_time[1]:
-                        self.systolics_time[0].append(self.filtered_signal[index])
-                        self.systolics_time[1].append(self.time[index])
+                    if self.time[index] not in self.__systolics_time[1]:
+                        self.__systolics_time[0].append(self.filtered_signal[index])
+                        self.__systolics_time[1].append(self.time[index])
 
             if len(diastolic_indexes) > 0:
                 for index in diastolic_indexes:
                     # Si el pico no está se guarda
-                    if self.time[index] not in self.systolics_time[1]:
-                        self.diastolics_time[0].append(self.filtered_signal[index])
-                        self.diastolics_time[1].append(self.time[index])
+                    if self.time[index] not in self.__systolics_time[1]:
+                        self.__diastolics_time[0].append(self.filtered_signal[index])
+                        self.__diastolics_time[1].append(self.time[index])
 
             # Obtener datos médicos
             return self.__get_cardiac_data()
@@ -130,8 +130,8 @@ class Pulse:
     def plot_results(self):
         plt.plot(self.time, self.signal, color='r', linewidth=1, label='Pulso original')
         plt.plot(self.time, self.filtered_signal, color='g', linewidth=2, label='Pulso filtrado')
-        plt.scatter(self.systolics_time[1], self.systolics_time[0], color='blue', label="Picos sistólicos")
-        plt.scatter(self.diastolics_time[1], self.diastolics_time[0], color='orange', label="Picos diastólicos")
+        plt.scatter(self.__systolics_time[1], self.__systolics_time[0], color='blue', label="Picos sistólicos")
+        plt.scatter(self.__diastolics_time[1], self.__diastolics_time[0], color='orange', label="Picos diastólicos")
         plt.xlabel('Time (s)')
         plt.ylabel('Pulso (mV)')
         plt.title('Pulso vs Tiempo')
@@ -145,6 +145,6 @@ class Pulse:
         self.filtered_signal = []
         self.signal = []
         self.time = []
-        self.systolics_time = [[], []]
-        self.diastolics_time = [[], []]
+        self.__systolics_time = [[], []]
+        self.__diastolics_time = [[], []]
         self.__zi = None
