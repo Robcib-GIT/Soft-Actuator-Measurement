@@ -7,7 +7,7 @@ def process_pulse_segment(segment: List[int]):
     filtered_segment = pulse.apply_low_pass_filter(pulse_segment)
     # print(filtered_segment)
     ppm, mean_ibi, frequency, sdnn, rmssd = pulse.analice_pulse_signal()
-    # print(f"ppm: {ppm}  |  freq: {frequency}  |  sdnn: {sdnn}  |  rmssd: {rmssd}")
+    print(f"\rppm: {ppm}  |  freq: {frequency}  |  sdnn: {sdnn}  |  rmssd: {rmssd}", end="")
 
 
 if __name__ == "__main__":
@@ -26,7 +26,7 @@ if __name__ == "__main__":
             pulse.plot_results()
             pulse.restart()
             pulse_segment = []
-            print("Fin del analisis cardiaco")
+            print("\nFin del analisis cardiaco")
 
         elif value != -1:
             if not processing:

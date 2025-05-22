@@ -20,7 +20,7 @@ if __name__ == "__main__":
         # Procesar información
         sys, dia, ppm = bp.get_blood_pressure(pressures=pressures)
         print(f"SAM_SYS:  {sys}  |  SAM_DIA:  {dia}  |  SAM_PPM:  {ppm}")
-        print(f"Real_SYS: {params_data['SYS']}  |  Real_SIA: {params_data['DIA']}  |  Real_PPM: {params_data['PPM']}")
+        print(f"Real_SYS: {params_data['SYS']}  |  Real_DIA: {params_data['DIA']}  |  Real_PPM: {params_data['PPM']}")
     except Exception as e:
         print(f"Ocurrió un error al procesar los datos.\n {e}")
     finally:

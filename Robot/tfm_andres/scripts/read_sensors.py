@@ -45,7 +45,7 @@ sensors = {
         publisher=rospy.Publisher("/cuff_pressure_data", Float32, queue_size=10),
         interval=10  # 100Hz
     ),
-    "pulse": Sensor(
+    "pulse_samples": Sensor(
         publisher=rospy.Publisher("/pulse_data", Int32, queue_size=10),
         interval=40  # 25Hz
     ),
@@ -132,7 +132,7 @@ def read_sensor(sensor: str):
         if sensor == "temperature":
             return get_temperature()
 
-        elif sensor == "pulse":
+        elif sensor == "pulse_samples":
             return ADS_1.readADC(1)
 
         elif sensor == "actuator_pressure":
