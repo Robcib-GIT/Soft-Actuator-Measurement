@@ -109,7 +109,7 @@ class Pulse:
 
             # Añadir nuevos puntos de interés
             if len(systolic_indexes) > 0:
-                for index in systolic_indexes:
+                for index in systolic_indexes:  # FIXME: ver como solucionar lo del recorte
                     # Si el pico no está se guarda
                     if self.time[index] not in self.__systolics_time[1]:
                         self.__systolics_time[0].append(self.filtered_signal[index])
