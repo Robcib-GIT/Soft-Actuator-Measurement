@@ -25,10 +25,10 @@ T0 = 25.0 + 273.15  # Temperatura nominal en Kelvin (25°C)
 
 # --- Declaracion de funciones presion arterial ---
 def get_temperature() -> float:
-    voltage = ADS_1.toVoltage(ADS_1.readADC(1))
-    # print(voltage)
+    voltage = ADS_1.toVoltage(ADS_1.readADC(0))
+    print(f"\rVoltaje: {voltage:.2f}       ")
 
-    if voltage == 0:
+    if voltage <= 0:
         return 25.0  # Evitar división por cero o log(0)
 
     r_ntc = R_AUX * (VCC / voltage - 1)
@@ -40,7 +40,7 @@ if __name__ == "__main__":
     try:
         while True:
             temperature = get_temperature()
-            print(f"\rTemperatura: {temperature:.2f}       ")
+            # print(f"\rTemperatura: {temperature:.2f}       ")
             time.sleep(1)
     except KeyboardInterrupt:
         print("\nEjecución interrumpida por el usuario. Saliendo...")

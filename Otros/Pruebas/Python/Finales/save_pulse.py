@@ -47,8 +47,9 @@ if __name__ == "__main__":
     steps = int(20 / PULSE_INTERVAL)
     pulse_samples = []
     for sample in range(steps+1):
-        pulse_samples.append(get_pulse())
-        print(f"\rProgreso: {sample / steps * 100:.2f}%          ", end="")
+        reading = get_pulse()
+        pulse_samples.append(reading)
+        print(f"\rProgreso: {sample / steps * 100:.2f}%  | ({reading})          ", end="")
 
     data = {
         "Time": np.arange(0, len(pulse_samples)) * PULSE_INTERVAL,
