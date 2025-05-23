@@ -40,7 +40,7 @@ if __name__ == "__main__":
     try:
         while True:
             temperature = get_temperature()
-            print(f"\rTemperatura: {temperature:.2f}       ")
+            print(f"\rTemperatura: {temperature:.2f}Cº       ", end="")
             time.sleep(1)
     except KeyboardInterrupt:
         print("\nEjecución interrumpida por el usuario. Saliendo...")
