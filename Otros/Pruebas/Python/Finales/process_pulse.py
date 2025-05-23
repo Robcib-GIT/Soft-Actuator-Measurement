@@ -2,7 +2,7 @@ from Utilities.pulse import Pulse
 from Utilities.data_operations import load_data
 from typing import List
 import numpy as np
-
+import time
 
 def process_pulse_segment(segment: List[int]):
     filtered_segment = pulse.apply_low_pass_filter(pulse_segment)
@@ -22,7 +22,6 @@ if __name__ == "__main__":
 
     processing = False
     pulse_segment = []
-
     for value in pulse_data:
 
         if value == -1 and processing:
@@ -43,3 +42,5 @@ if __name__ == "__main__":
             if len(pulse_segment) >= pulse.shipping_samples:
                 process_pulse_segment(pulse_segment)
                 pulse_segment = []
+
+

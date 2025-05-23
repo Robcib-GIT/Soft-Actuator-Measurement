@@ -6,9 +6,9 @@ import matplotlib.pyplot as plt
 
 
 class Pulse:
-    MAX_SYSTOLIC = 25000         # Dedo: 550 | Brazo: 580 | Cuello: 25000
-    BARRIER_SYS_DIA = 15000      # Dedo: 515 | Brazo: 525  | Cuello: 15000
-    MIN_DIASTOLIC = 10000        # Dedo: ? | Brazo: ?  | Cuello: 10000
+    MAX_SYSTOLIC = 15000  # Dedo: 550 | Brazo: 580 | Cuello: 25000
+    # BARRIER_SYS_DIA = 15000      # Dedo: 515 | Brazo: 525  | Cuello: 15000
+    MIN_DIASTOLIC = 13000  # Dedo: ? | Brazo: ?  | Cuello: 10000
 
     def __init__(self, fs: float):  # Añadir un publicador como entrada para enviar segmentos
         self.fs = fs
@@ -28,7 +28,7 @@ class Pulse:
 
         # Variables para el filtro
         self.__zi: np.ndarray | None = None
-        self.__b, self.__a = self.__init_low_pass_filter(fc=5, order=4)
+        self.__b, self.__a = self.__init_low_pass_filter(fc=3.5, order=4)
 
     def __init_low_pass_filter(self, fc, order=4):
         nyquist = 0.5 * self.fs
@@ -67,7 +67,7 @@ class Pulse:
             relevant_pulses = 5
             ibi_slice = ibi[-min(len(ibi), relevant_pulses):]
             mean_ibi: float = np.mean(ibi_slice)
-            frequency: float = 1000 / mean_ibi
+            frequency: float = 1/mean_ibi
             ppm = int(frequency * 60)
 
             # Tomar últimos 20 pulsos para parámetros menos cambiantes
@@ -100,29 +100,39 @@ class Pulse:
             # Localizar puntos de interés en los ultimos puntos
             systolic_indexes, _ = find_peaks(
                 self.filtered_signal,
-                height=(self.BARRIER_SYS_DIA, self.MAX_SYSTOLIC),
+                height=(self.MIN_DIASTOLIC, self.MAX_SYSTOLIC),
                 distance=self.__min_samples_per_beat)
-            diastolic_indexes, _ = find_peaks(
-                self.filtered_signal,
-                height=(self.MIN_DIASTOLIC, self.BARRIER_SYS_DIA),
-                distance=self.__min_samples_per_beat)
+
+            filtered_signal = np.array(self.filtered_signal)
+
+            # Ahora puedes indexar sin problema
+            self.__systolics_time = [
+                filtered_signal[systolic_indexes],
+                self.time[systolic_indexes]
+            ]
+
+            # diastolic_indexes, _ = find_peaks(
+            #     self.filtered_signal,
+            #     height=(self.MIN_DIASTOLIC, self.BARRIER_SYS_DIA),
+            #     distance=self.__min_samples_per_beat)
 
             # Añadir nuevos puntos de interés
-            if len(systolic_indexes) > 0:
-                for index in systolic_indexes:  # FIXME: ver como solucionar lo del recorte
-                    # Si el pico no está se guarda
-                    if self.time[index] not in self.__systolics_time[1]:
-                        self.__systolics_time[0].append(self.filtered_signal[index])
-                        self.__systolics_time[1].append(self.time[index])
-
-            if len(diastolic_indexes) > 0:
-                for index in diastolic_indexes:
-                    # Si el pico no está se guarda
-                    if self.time[index] not in self.__systolics_time[1]:
-                        self.__diastolics_time[0].append(self.filtered_signal[index])
-                        self.__diastolics_time[1].append(self.time[index])
+            # if len(systolic_indexes) > 0:
+            #     for index in systolic_indexes:  # FIXME: ver como solucionar lo del recorte
+            #         # Si el pico no está se guarda
+            #         if self.time[index] not in self.__systolics_time[1]:
+            #             self.__systolics_time[0].append(self.filtered_signal[index])
+            #             self.__systolics_time[1].append(self.time[index])
+            #
+            # if len(diastolic_indexes) > 0:
+            #     for index in diastolic_indexes:
+            #         # Si el pico no está se guarda
+            #         if self.time[index] not in self.__systolics_time[1]:
+            #             self.__diastolics_time[0].append(self.filtered_signal[index])
+            #             self.__diastolics_time[1].append(self.time[index])
 
             # Obtener datos médicos
+            # TODO: meter ppm, ibi etc en self y devolver el anterior si no hay mas picos o ns
             return self.__get_cardiac_data()
         else:
             return (-1,) * 5
