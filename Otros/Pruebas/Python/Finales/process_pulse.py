@@ -4,6 +4,7 @@ from typing import List
 import numpy as np
 import time
 
+
 def process_pulse_segment(segment: List[int]):
     filtered_segment = pulse.apply_low_pass_filter(pulse_segment)
     # print(filtered_segment)
@@ -42,5 +43,3 @@ if __name__ == "__main__":
             if len(pulse_segment) >= pulse.shipping_samples:
                 process_pulse_segment(pulse_segment)
                 pulse_segment = []
-
-

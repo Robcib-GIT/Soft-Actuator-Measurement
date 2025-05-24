@@ -111,16 +111,16 @@ def get_pressure(sensor: str):
         pressure_ref = 200.0
         value_ref = 2870
 
-        ADS_2.requestADC_Differential_0_1()  # TODO: ver si con esto soluciona
-        pressure_raw = ADS_2.getValue()
-        # pressure_raw = ADS.readADC_Differential_0_1()
+        # ADS_2.requestADC_Differential_0_1()  # TODO: ver si con esto soluciona
+        # pressure_raw = ADS_2.getValue()
+        pressure_raw = ADS_2.readADC_Differential_0_1()
     else:  # Cuff
         offset = 11
         pressure_ref = 200.0
         value_ref = 2960
-        ADS_2.requestADC_Differential_2_3()
-        pressure_raw = ADS_2.getValue()
-        # pressure_raw = ADS.readADC_Differential_2_3()
+        # ADS_2.requestADC_Differential_2_3()
+        # pressure_raw = ADS_2.getValue()
+        pressure_raw = ADS_2.readADC_Differential_2_3()
 
     pressure = (pressure_raw - offset) * pressure_ref / (value_ref - offset)
     return float(pressure)

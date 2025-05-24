@@ -21,13 +21,7 @@ def publish_ppg_data(segment: List[int]):
     msg = Float32MultiArray()
     msg.layout.data_offset = pulse.interval
 
-    # Limitar los valores dentro de un rango y normalizarlos para que estén entre 0 y 1
-    min_val = pulse.MIN_DIASTOLIC - 3
-    max_val = pulse.MAX_SYSTOLIC + 3
-    adapted_segment = [
-        (max(min_val, min(value, max_val)) - min_val) / (max_val - min_val)
-        for value in segment
-    ]
+    adapted_segment = segment
 
     # Añadir indicador de final de señal
     if not processing:

@@ -6,9 +6,6 @@ import matplotlib.pyplot as plt
 
 
 class Pulse:
-    MAX_SYSTOLIC = 15000  # Dedo: 550 | Brazo: 580 | Cuello: 25000
-    # BARRIER_SYS_DIA = 15000      # Dedo: 515 | Brazo: 525  | Cuello: 15000
-    MIN_DIASTOLIC = 13000  # Dedo: ? | Brazo: ?  | Cuello: 10000
 
     def __init__(self, fs: float):  # Añadir un publicador como entrada para enviar segmentos
         self.fs = fs
@@ -24,6 +21,10 @@ class Pulse:
         self.signal = []  # TODO: ver si borrar
         self.time = []  # TODO: manejar
         self.__systolics_time = [[], []]
+
+        # TODO: retocar
+        self.__max_height = 15000
+        self.__min_height = 13000
 
         # Variables para el filtro
         self.__zi: np.ndarray | None = None
@@ -70,7 +71,7 @@ class Pulse:
             ppm = int(frequency * 60)
 
             # Tomar últimos 20 pulsos para parámetros menos cambiantes
-            relevant_pulses = 20
+            relevant_pulses = 15
             ibi_slice = ibi[-min(len(ibi), relevant_pulses):]
 
             if len(ibi_slice) > 2:
@@ -97,7 +98,8 @@ class Pulse:
         #     height=(self.MIN_DIASTOLIC, self.MAX_SYSTOLIC),
         #     distance=self.__min_samples_per_beat)
 
-        # Obtener picos cuya prominencia varíe menos de un 15% de la media de los ultimos 20 secs
+        # Obtener picos cuya prominencia este entre un 40% por debajo y un 60% por encima de la media
+        # de los ultimos 20 secs
         # TODO: ver si el 20 ese lo meto como constante que lo uso en otro lao tambn
         idx_beats, properties = find_peaks(
             self.filtered_signal,
@@ -118,10 +120,8 @@ class Pulse:
         idx_filtered_prominences = np.where((properties['prominences'] > prominence_range[0])
                                             & (properties['prominences'] < prominence_range[1]))[0]
 
-        idx_beats_filtered = idx_beats[idx_filtered_prominences].tolist()
+        idx_beats_filtered = idx_beats[idx_filtered_prominences]
 
-
-        # TODO: extraer altura max y min de esos picos para escalar si eso
         return idx_beats_filtered
 
     def analice_pulse_signal(self):
@@ -142,27 +142,6 @@ class Pulse:
                 self.time[systolic_indexes]
             ]
 
-            # diastolic_indexes, _ = find_peaks(
-            #     self.filtered_signal,
-            #     height=(self.MIN_DIASTOLIC, self.BARRIER_SYS_DIA),
-            #     distance=self.__min_samples_per_beat)
-
-            # Añadir nuevos puntos de interés
-            # if len(systolic_indexes) > 0:
-            #     for index in systolic_indexes:  # FIXME: ver como solucionar lo del recorte
-            #         # Si el pico no está se guarda
-            #         if self.time[index] not in self.__systolics_time[1]:
-            #             self.__systolics_time[0].append(self.filtered_signal[index])
-            #             self.__systolics_time[1].append(self.time[index])
-            #
-            # if len(diastolic_indexes) > 0:
-            #     for index in diastolic_indexes:
-            #         # Si el pico no está se guarda
-            #         if self.time[index] not in self.__systolics_time[1]:
-            #             self.__diastolics_time[0].append(self.filtered_signal[index])
-            #             self.__diastolics_time[1].append(self.time[index])
-
-            # Obtener datos médicos
             # TODO: meter ppm, ibi etc en self y devolver el anterior si no hay mas picos o ns
             return self.__get_cardiac_data()
         else:
