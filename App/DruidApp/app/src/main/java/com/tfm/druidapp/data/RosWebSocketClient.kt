@@ -171,6 +171,7 @@ class RosWebSocketClient(uri: URI, private val viewModel: MainViewModel) : WebSo
         }
         //Deshabilitar monitorizacion
         viewModel.updateActuatorState(ActuatorStates.Disconnected)
+        viewModel.updateMonitoringPT(false)
         //Resetear medic data
         viewModel.resetMedicData()
     }

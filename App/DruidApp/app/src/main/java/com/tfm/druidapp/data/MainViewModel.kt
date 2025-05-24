@@ -167,7 +167,7 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
 
     //Pulso
     private val _pulseListChannel = Channel<List<Float>>(Channel.BUFFERED)
-    private var _pulseSampleRate: Long = 100L
+    private var _pulseSampleRate: Long = 25L
     fun updatePulseSampleRate(rate: Long){
         if(rate != _pulseSampleRate) _pulseSampleRate = rate
     }
@@ -184,7 +184,7 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
                         clearAmplitudes()
                     }else{
                         addPulseAmplitude(item)
-                        delay(_pulseSampleRate-4) //Un poco menos para compensar
+                        delay(1000/_pulseSampleRate-4) //Un poco menos para compensar
                     }
                 }
 
