@@ -9,7 +9,7 @@ import math
 # Declaración de sensores
 BUS_I2C_ADS115 = 1
 ADS_1 = ADS1x15.ADS1115(BUS_I2C_ADS115, 0x49)  # Para pulso y temperatura
-ADS_1.setGain(ADS_1.PGA_0_512V)
+ADS_1.setGain(ADS_1.PGA_6_144V)
 
 ADS_2 = ADS1x15.ADS1115(BUS_I2C_ADS115, 0x48)  # Para presiones
 ADS_2.setGain(ADS_2.PGA_0_512V)
@@ -95,9 +95,9 @@ def sensor_control_callback(msg: String):
 
 
 def get_temperature() -> float:
-    voltage = ADS_1.toVoltage(ADS_1.readADC(0))
+    voltage = ADS_1.toVoltage(ADS_1.readADC(1))
 
-    if voltage == 0:
+    if voltage <= 0 or voltage >= VCC:
         return 25.0  # Evitar división por cero o log(0)
 
     r_ntc = R_AUX * (VCC / voltage - 1)
@@ -133,7 +133,7 @@ def read_sensor(sensor: str):
             return get_temperature()
 
         elif sensor == "pulse":
-            return ADS_1.readADC(1)
+            return abs(ADS_1.readADC(0))
 
         elif sensor == "actuator_pressure":
             return get_pressure(sensor='actuator')

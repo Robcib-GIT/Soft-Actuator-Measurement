@@ -38,7 +38,7 @@ class Pulse:
 
     def apply_low_pass_filter(self, data: List[int]):
         if not data:
-            return []
+            return np.array([])
 
         else:
             if self.__zi is None:
@@ -56,7 +56,7 @@ class Pulse:
                 self.filtered_signal = self.filtered_signal[self.shipping_samples:]
                 self.signal = self.signal[self.shipping_samples:]
 
-            return filtered_data
+            return filtered_data  # TODO: toque
 
     def __get_cardiac_data(self):  # TODO: retocar
         # Obtener propiedades del pulso
@@ -77,18 +77,18 @@ class Pulse:
             if len(ibi_slice) > 2:
                 sdnn: float = np.std(ibi_slice, ddof=1)  # Desviación estándar
             else:
-                sdnn = -1
+                sdnn = -1.0
 
             if len(ibi_slice) > 1:
                 rmssd: float = np.sqrt(
                     np.mean(np.diff(ibi_slice) ** 2))  # Raíz cuadrada de la media de las diferencias al cuadrado
             else:
-                rmssd = -1
+                rmssd = -1.0
 
             return ppm, mean_ibi, frequency, sdnn, rmssd
 
         else:
-            return (-1,) * 5
+            return (-1, -1.0, -1.0, -1.0, -1.0)
 
     def get_beat_idxs(self):
 
@@ -122,7 +122,7 @@ class Pulse:
 
         idx_beats_filtered = idx_beats[idx_filtered_prominences]
 
-        return idx_beats_filtered
+        return idx_beats_filtered 
 
     def analice_pulse_signal(self):
         samples = len(self.filtered_signal)
@@ -145,7 +145,7 @@ class Pulse:
             # TODO: meter ppm, ibi etc en self y devolver el anterior si no hay mas picos o ns
             return self.__get_cardiac_data()
         else:
-            return (-1,) * 5
+            return (-1, -1.0, -1.0, -1.0, -1.0)
 
     def plot_results(self):
         plt.plot(self.time, self.signal, color='r', linewidth=1, label='Pulso original')

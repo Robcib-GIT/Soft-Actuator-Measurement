@@ -28,7 +28,7 @@ def get_temperature() -> float:
     voltage = ADS_1.toVoltage(ADS_1.readADC(1))
     # print(f"\rVoltaje: {voltage:.2f}       ")
 
-    if voltage <= 0:
+    if voltage <= 0 or voltage >= VCC:
         return 25.0  # Evitar división por cero o log(0)
 
     r_ntc = R_AUX * (VCC / voltage - 1)

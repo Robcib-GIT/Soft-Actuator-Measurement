@@ -1,5 +1,6 @@
 <launch>
     <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch"/>
     <node name="read_sensors" pkg="tfm_andres" type="read_sensors.py" output="screen"/>
+    <node name="process_pulse_data" pkg="tfm_andres" type="process_pulse_data.py" output="screen"/>
     <node name="pneumatics_server" pkg="tfm_andres" type="pneumatics_server.py" output="screen"/>
 </launch>

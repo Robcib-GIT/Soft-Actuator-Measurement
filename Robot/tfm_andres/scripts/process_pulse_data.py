@@ -17,11 +17,11 @@ processing = False
 pulse_segment = []
 
 
-def publish_ppg_data(segment: List[int]):
+def publish_ppg_data(segment):   #: List[int]
     msg = Float32MultiArray()
-    msg.layout.data_offset = pulse.interval
+    msg.layout.data_offset = fs
 
-    adapted_segment = segment
+    adapted_segment = segment.tolist()
 
     # Añadir indicador de final de señal
     if not processing:
@@ -37,7 +37,7 @@ def publish_cardiac_data(ppm: int, ibi: float, frequency: float, sdnn: float, rm
     msg = CardiacData()
     msg.ppm = ppm
     msg.ibi = ibi
-    msg.frequency = frequency,
+    msg.frequency = frequency
     msg.sdnn = sdnn
     msg.rmssd = rmssd
 
@@ -62,14 +62,13 @@ def pulse_data_callback(msg: Int32):
     if value == -1 and processing:
         processing = False
         process_pulse_segment()
-        pulse.plot_results()
         pulse.restart()
         pulse_segment = []
-        print("Fin del análisis cardiaco")
+        rospy.loginfo("Fin del análisis cardiaco")
 
     elif value != -1:
         if not processing:
-            print("Comienzo del análisis cardiaco")
+            rospy.loginfo("Comienzo del análisis cardiaco")
             processing = True
 
         pulse_segment.append(value)
