@@ -121,6 +121,7 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
     //Mensajes
     val topicsMap: Map<String, TopicInfo> = mapOf( //TODO poner los que haga falta y mover si eso
         "/blood_pressure_data" to TopicInfo(MsgTypes.BloodPressureMsg::class.java),
+        "/temperature_data" to TopicInfo(MsgTypes.FloatMsg::class.java),
         "/ppg_data" to TopicInfo(MsgTypes.FloatArrayMsg::class.java),
         "/cardiac_data" to TopicInfo(MsgTypes.CardiacMsg::class.java),
         "/open_actuator/feedback" to TopicInfo(MsgTypes.PneumaticFeedbackMsg::class.java),
@@ -310,8 +311,13 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
     }
 
     ////////////////// RELACIONADO CON UI /////////////////////////////
-    //ActuationView
+    //MonitoringView
+    private val _monitoringPT: MutableState<Boolean> = mutableStateOf(false)
+    val monitoringPT: State<Boolean> = _monitoringPT
 
+    fun updateMonitoringPT(state: Boolean){
+        _monitoringPT.value = state
+    }
 
 
 

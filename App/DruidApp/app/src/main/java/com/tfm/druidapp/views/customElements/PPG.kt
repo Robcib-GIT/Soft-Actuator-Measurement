@@ -42,7 +42,7 @@ import com.tfm.druidapp.ui.theme.DruidAppTheme
 
 @Composable
 fun PPG(viewModel: MainViewModel, modifier: Modifier = Modifier) {
-    val enabled = (viewModel.actuatorState.value == ActuatorStates.Closed)
+    val enabled by viewModel.monitoringPT
     val pulseAmplitudeList by viewModel.pulseAmplitudeList.collectAsState()
     val cardiacData by viewModel.cardiacData.collectAsState()
     val measuresInScreen = viewModel.maxPulseRegisters

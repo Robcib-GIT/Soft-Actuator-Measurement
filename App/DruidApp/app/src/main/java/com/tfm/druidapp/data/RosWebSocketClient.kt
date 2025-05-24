@@ -36,6 +36,12 @@ class RosWebSocketClient(uri: URI, private val viewModel: MainViewModel) : WebSo
             val parsedMsg = parseRosMessage(message, viewModel.topicsMap)
 
             when(parsedMsg.topic){
+                "/temperature_data" -> {
+                    val msg = parsedMsg.msg as? MsgTypes.FloatMsg
+                    msg?.let {
+                        viewModel.updateTemperature(it.data)
+                    }
+                }
 
                 "/ppg_data" -> {
                     val msg = parsedMsg.msg as? MsgTypes.FloatArrayMsg

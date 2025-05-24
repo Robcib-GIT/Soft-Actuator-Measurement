@@ -49,6 +49,8 @@ fun MonitoringView(viewModel: MainViewModel, navController: NavHostController){
     val pressureData by viewModel.pressureData
     val enabled = (viewModel.actuatorState.value == ActuatorStates.Closed)
     val normalRanges by viewModel.normalMedicRanges
+    val bpEnabled = (viewModel.actuatorState.value == ActuatorStates.Closed)
+    val PTEnabled by viewModel.monitoringPT
 
     Column(
         modifier = Modifier
@@ -75,11 +77,11 @@ fun MonitoringView(viewModel: MainViewModel, navController: NavHostController){
 
             PressureItem(
                 title = "SYS",
-                value = if (enabled) pressureData.sys else null,
+                value = if (bpEnabled) pressureData.sys else null,
                 color = setColor(
                     value = pressureData.sys,
                     range = normalRanges.sys,
-                    enabled = enabled,
+                    enabled = bpEnabled,
                     colors = MedicUtilities.MedicDataColors(
                         onCorrect = MaterialTheme.colorScheme.onPrimary,
                         onIncorrect = Color.Red,
@@ -97,11 +99,11 @@ fun MonitoringView(viewModel: MainViewModel, navController: NavHostController){
 
             PressureItem(
                 title = "DIA",
-                value = if (enabled) pressureData.dia else null,
+                value = if (bpEnabled) pressureData.dia else null,
                 color = setColor(
                     value = pressureData.dia,
                     range = normalRanges.dia,
-                    enabled = enabled,
+                    enabled = bpEnabled,
                     colors = MedicUtilities.MedicDataColors(
                         onCorrect = MaterialTheme.colorScheme.onPrimary,
                         onIncorrect = Color.Red,
@@ -125,11 +127,11 @@ fun MonitoringView(viewModel: MainViewModel, navController: NavHostController){
                 .background(MaterialTheme.colorScheme.primary)
             ){
                 TemperatureDisplay(
-                    temperature = if (enabled) temperature else null,
+                    temperature = if (PTEnabled) temperature else null,
                     color = setColor(
                         value = temperature,
                         range = normalRanges.temperature,
-                        enabled = enabled,
+                        enabled = PTEnabled,
                         colors = MedicUtilities.MedicDataColors(
                             onCorrect = MaterialTheme.colorScheme.onPrimary,
                             onIncorrect = Color.Red,
