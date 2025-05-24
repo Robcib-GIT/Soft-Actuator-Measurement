@@ -213,6 +213,21 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
                     removeAt(size - 1) // Elimina el primer elemento si se supera el límite
                 }
                 add(0, amplitude) // Agrega el nuevo valor
+
+                // Escalar todos los valores entre 0 y 1
+                val min = minOrNull() ?: 0f
+                val max = maxOrNull() ?: 1f
+
+                if (max != min) {
+                    forEachIndexed { index, value ->
+                        this[index] = (value - min) / (max - min)
+                    }
+                } else {
+                    // Si todos los valores son iguales, escala a 0
+                    forEachIndexed { index, _ ->
+                        this[index] = 0f
+                    }
+                }
             }
     }
     fun clearAmplitudes() { //TODO si la conexion se pierde eliminar la lista
