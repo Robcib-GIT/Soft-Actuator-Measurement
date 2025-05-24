@@ -16,6 +16,27 @@ data class ActuationState(
 
 class ActuatorUtilities(val viewModel: MainViewModel) {
 
+    fun togglePT(){
+        viewModel.wsClient.publishToTopic(
+            RosMsg(
+                operation = MsgOp.PUBLISH,
+                topic = "/sensor_command",
+                msg = MsgTypes.StringMsg(data = "temperature")
+            )
+        )
+        viewModel.wsClient.publishToTopic(
+            RosMsg(
+                operation = MsgOp.PUBLISH,
+                topic = "/sensor_command",
+                msg = MsgTypes.StringMsg(data = "pulse")
+            )
+        )
+
+        viewModel.updateMonitoringPT(
+            state = !viewModel.monitoringPT.value
+        )
+    }
+
     fun closeActuator(){
         viewModel.wsClient.publishToTopic(
             RosMsg(

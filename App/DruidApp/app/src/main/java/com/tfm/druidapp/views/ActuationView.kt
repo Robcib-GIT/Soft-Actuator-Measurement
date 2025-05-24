@@ -47,6 +47,7 @@ import com.tfm.druidapp.views.customElements.ActionProcessButton
 @Composable
 fun ActuationView(viewModel: MainViewModel, navController: NavHostController) {
     val state by viewModel.actuatorState
+    val monitoringPT by viewModel.monitoringPT
     val openActuatorState by viewModel.openActuatorState.collectAsState()
     val closeActuatorState by viewModel.closeActuatorState.collectAsState()
     val measureBPState by viewModel.measureBPState.collectAsState()
@@ -112,7 +113,7 @@ fun ActuationView(viewModel: MainViewModel, navController: NavHostController) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 16.dp, end = 16.dp),
+                .padding(top = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -125,14 +126,13 @@ fun ActuationView(viewModel: MainViewModel, navController: NavHostController) {
                 verticalAlignment = Alignment.CenterVertically
             ){
                 Switch(
-                    checked = viewModel.monitoringPT.value,
+                    enabled = state != ActuatorStates.Disconnected,
+                    checked = monitoringPT,
                     colors = SwitchDefaults.colors(
                         checkedThumbColor = Color.Green
                     ),
                     onCheckedChange = {
-                        viewModel.updateMonitoringPT(
-                            state = !viewModel.monitoringPT.value
-                        )
+                        actuatorUtilities.togglePT()
                     }
                 )
                 Text(
@@ -142,7 +142,7 @@ fun ActuationView(viewModel: MainViewModel, navController: NavHostController) {
                     textAlign = TextAlign.Center,
                     modifier = Modifier
                         .padding(start = 6.dp)
-                        .width(35.dp)
+                        .width(40.dp)
                 )
             }
 
