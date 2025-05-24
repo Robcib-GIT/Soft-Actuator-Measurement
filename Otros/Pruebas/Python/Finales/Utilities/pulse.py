@@ -24,7 +24,6 @@ class Pulse:
         self.signal = []  # TODO: ver si borrar
         self.time = []  # TODO: manejar
         self.__systolics_time = [[], []]
-        self.__diastolics_time = [[], []]
 
         # Variables para el filtro
         self.__zi: np.ndarray | None = None
@@ -90,6 +89,41 @@ class Pulse:
         else:
             return (-1,) * 5
 
+    def get_beat_idxs(self):
+
+        # Obtener todos los picos entre 2 alturas y distanciados al menos cierta cantidad de muestras
+        # systolic_indexes, _ = find_peaks(
+        #     self.filtered_signal,
+        #     height=(self.MIN_DIASTOLIC, self.MAX_SYSTOLIC),
+        #     distance=self.__min_samples_per_beat)
+
+        # Obtener picos cuya prominencia varíe menos de un 15% de la media de los ultimos 20 secs
+        # TODO: ver si el 20 ese lo meto como constante que lo uso en otro lao tambn
+        idx_beats, properties = find_peaks(
+            self.filtered_signal,
+            height=0,
+            prominence=0,
+            distance=self.__min_samples_per_beat
+        )
+
+        n_samples = 20 * self.fs
+        # Obtener la posición de partida para la busqueda, si no hay mustras suficientes coge el inicio
+        mask = idx_beats >= (len(self.filtered_signal)-n_samples)
+        idx_start_search = np.argmax(mask)
+
+        # Obtener rango de prominencias a partir de los picos de esa zona
+        mean_prominence = np.mean(properties['prominences'][idx_start_search:])
+        prominence_range = (mean_prominence * (1 - 0.4), mean_prominence * (1 + 0.6))
+
+        idx_filtered_prominences = np.where((properties['prominences'] > prominence_range[0])
+                                            & (properties['prominences'] < prominence_range[1]))[0]
+
+        idx_beats_filtered = idx_beats[idx_filtered_prominences].tolist()
+
+
+        # TODO: extraer altura max y min de esos picos para escalar si eso
+        return idx_beats_filtered
+
     def analice_pulse_signal(self):
         samples = len(self.filtered_signal)
 
@@ -98,10 +132,7 @@ class Pulse:
             self.time = np.arange(self.__processed_samples - samples, self.__processed_samples) * self.interval
 
             # Localizar puntos de interés en los ultimos puntos
-            systolic_indexes, _ = find_peaks(
-                self.filtered_signal,
-                height=(self.MIN_DIASTOLIC, self.MAX_SYSTOLIC),
-                distance=self.__min_samples_per_beat)
+            systolic_indexes = self.get_beat_idxs()
 
             filtered_signal = np.array(self.filtered_signal)
 
@@ -141,7 +172,6 @@ class Pulse:
         plt.plot(self.time, self.signal, color='r', linewidth=1, label='Pulso original')
         plt.plot(self.time, self.filtered_signal, color='g', linewidth=2, label='Pulso filtrado')
         plt.scatter(self.__systolics_time[1], self.__systolics_time[0], color='blue', label="Picos sistólicos")
-        plt.scatter(self.__diastolics_time[1], self.__diastolics_time[0], color='orange', label="Picos diastólicos")
         plt.xlabel('Time (s)')
         plt.ylabel('Pulso (mV)')
         plt.title('Pulso vs Tiempo')
