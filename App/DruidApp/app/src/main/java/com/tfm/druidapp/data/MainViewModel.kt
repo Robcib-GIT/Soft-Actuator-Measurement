@@ -1,6 +1,5 @@
 package com.tfm.druidapp.data
 
-import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
@@ -210,25 +209,28 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
         _pulseAmplitudeList.value = _pulseAmplitudeList.value
             .toMutableList() // Convierte la lista inmutable a mutable
             .apply {
-                if (size >= maxPulseRegisters) {
-                    removeAt(size - 1) // Elimina el primer elemento si se supera el límite
-                }
-                add(0, amplitude) // Agrega el nuevo valor
-
-                // Escalar todos los valores entre 0 y 1
-                val min = minOrNull() ?: 0f
-                val max = maxOrNull() ?: 1f
-
-                if (max != min) {
-                    forEachIndexed { index, value ->
-                        this[index] = (value - min) / (max - min)
-                    }
-                } else {
-                    // Si todos los valores son iguales, escala a 0
-                    forEachIndexed { index, _ ->
-                        this[index] = 0f
-                    }
-                }
+                add(0, amplitude)
+//                if (size >= maxPulseRegisters) {
+//                    removeAt(size - 1) // Elimina el primer elemento si se supera el límite
+//                }
+//
+//                // Reescalar pulsos si es necesario
+//                if(amplitude > _pulseRange.value.max){
+//                    indices.forEach{idx->
+//                        this[idx] = ((this[idx] * (_pulseRange.value.max - _pulseRange.value.min))) / (amplitude - _pulseRange.value.min)
+//                    }
+//                    _pulseRange.value.max = amplitude
+//                    add(0, 1f)
+//                }else if (amplitude < _pulseRange.value.min){
+//                    indices.forEach{idx->
+//                        this[idx] = ((this[idx] * (_pulseRange.value.max - _pulseRange.value.min) + _pulseRange.value.min) - amplitude) / (_pulseRange.value.max - amplitude)
+//                    }
+//                    _pulseRange.value.min = amplitude
+//                    add(0, 0f)
+//                }else{
+//                    val g = (amplitude - _pulseRange.value.min)/(_pulseRange.value.max - _pulseRange.value.min)
+//                    add(0, amplitude)
+//                }
             }
     }
     fun clearAmplitudes() { //TODO si la conexion se pierde eliminar la lista
@@ -312,11 +314,18 @@ class MainViewModel(private val dataStoreManager: DataStoreManager) : ViewModel(
 
     ////////////////// RELACIONADO CON UI /////////////////////////////
     //MonitoringView
-    private val _monitoringPT: MutableState<Boolean> = mutableStateOf(false)
-    val monitoringPT: State<Boolean> = _monitoringPT
+    private val _monitoringPulse: MutableState<Boolean> = mutableStateOf(false)
+    val monitoringPulse: State<Boolean> = _monitoringPulse
 
-    fun updateMonitoringPT(state: Boolean){
-        _monitoringPT.value = state
+    fun updateMonitoringPulse(state: Boolean){
+        _monitoringPulse.value = state
+    }
+
+    private val _monitoringTemperature: MutableState<Boolean> = mutableStateOf(false)
+    val monitoringTemperature: State<Boolean> = _monitoringTemperature
+
+    fun updateMonitoringTemperature(state: Boolean){
+        _monitoringTemperature.value = state
     }
 
 

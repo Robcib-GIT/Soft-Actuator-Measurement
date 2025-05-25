@@ -16,14 +16,7 @@ data class ActuationState(
 
 class ActuatorUtilities(val viewModel: MainViewModel) {
 
-    fun togglePT(){
-        viewModel.wsClient.publishToTopic(
-            RosMsg(
-                operation = MsgOp.PUBLISH,
-                topic = "/sensor_command",
-                msg = MsgTypes.StringMsg(data = "temperature")
-            )
-        )
+    fun togglePulse(){
         viewModel.wsClient.publishToTopic(
             RosMsg(
                 operation = MsgOp.PUBLISH,
@@ -32,8 +25,22 @@ class ActuatorUtilities(val viewModel: MainViewModel) {
             )
         )
 
-        viewModel.updateMonitoringPT(
-            state = !viewModel.monitoringPT.value
+        viewModel.updateMonitoringPulse(
+            state = !viewModel.monitoringPulse.value
+        )
+    }
+
+    fun toggleTemperature(){
+        viewModel.wsClient.publishToTopic(
+            RosMsg(
+                operation = MsgOp.PUBLISH,
+                topic = "/sensor_command",
+                msg = MsgTypes.StringMsg(data = "temperature")
+            )
+        )
+
+        viewModel.updateMonitoringTemperature(
+            state = !viewModel.monitoringTemperature.value
         )
     }
 

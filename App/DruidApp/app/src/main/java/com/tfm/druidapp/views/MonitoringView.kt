@@ -47,10 +47,9 @@ import com.tfm.druidapp.views.customElements.ThermometerIcon
 fun MonitoringView(viewModel: MainViewModel, navController: NavHostController){
     val temperature by viewModel.temperature.collectAsState()
     val pressureData by viewModel.pressureData
-    val enabled = (viewModel.actuatorState.value == ActuatorStates.Closed)
     val normalRanges by viewModel.normalMedicRanges
     val bpEnabled = (viewModel.actuatorState.value == ActuatorStates.Closed)
-    val PTEnabled by viewModel.monitoringPT
+    val temperatureEnabled by viewModel.monitoringTemperature
 
     Column(
         modifier = Modifier
@@ -127,11 +126,11 @@ fun MonitoringView(viewModel: MainViewModel, navController: NavHostController){
                 .background(MaterialTheme.colorScheme.primary)
             ){
                 TemperatureDisplay(
-                    temperature = if (PTEnabled) temperature else null,
+                    temperature = if (temperatureEnabled) temperature else null,
                     color = setColor(
                         value = temperature,
                         range = normalRanges.temperature,
-                        enabled = PTEnabled,
+                        enabled = temperatureEnabled,
                         colors = MedicUtilities.MedicDataColors(
                             onCorrect = MaterialTheme.colorScheme.onPrimary,
                             onIncorrect = Color.Red,

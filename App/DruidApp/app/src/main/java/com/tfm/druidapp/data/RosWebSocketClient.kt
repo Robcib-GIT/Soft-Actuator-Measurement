@@ -46,6 +46,7 @@ class RosWebSocketClient(uri: URI, private val viewModel: MainViewModel) : WebSo
                 "/ppg_data" -> {
                     val msg = parsedMsg.msg as? MsgTypes.FloatArrayMsg
                     msg?.let {
+                        // Log.d("PPG", it.toString())
                         it.layout.data_offset?.let {offset->
                             viewModel.updatePulseSampleRate(offset.toLong())
                         }
@@ -171,7 +172,8 @@ class RosWebSocketClient(uri: URI, private val viewModel: MainViewModel) : WebSo
         }
         //Deshabilitar monitorizacion
         viewModel.updateActuatorState(ActuatorStates.Disconnected)
-        viewModel.updateMonitoringPT(false)
+        viewModel.updateMonitoringPulse(false)
+        viewModel.updateMonitoringTemperature(false)
         //Resetear medic data
         viewModel.resetMedicData()
     }

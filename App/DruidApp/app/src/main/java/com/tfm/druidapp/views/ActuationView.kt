@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -47,7 +46,7 @@ import com.tfm.druidapp.views.customElements.ActionProcessButton
 @Composable
 fun ActuationView(viewModel: MainViewModel, navController: NavHostController) {
     val state by viewModel.actuatorState
-    val monitoringPT by viewModel.monitoringPT
+    val monitoringPT by viewModel.monitoringPulse
     val openActuatorState by viewModel.openActuatorState.collectAsState()
     val closeActuatorState by viewModel.closeActuatorState.collectAsState()
     val measureBPState by viewModel.measureBPState.collectAsState()
@@ -109,45 +108,27 @@ fun ActuationView(viewModel: MainViewModel, navController: NavHostController) {
             onClick = {actuatorUtilities.measureBP()}
         )
 
-
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(
-                text = "Sensores pulso/temperatura",
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onPrimary
+            SensorControl(
+                title = "Sensor de temperatura",
+                enabled = state != ActuatorStates.Disconnected,
+                checked = viewModel.monitoringTemperature.value,
+                onCheckedChange = {
+                    actuatorUtilities.toggleTemperature()
+                }
             )
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ){
-                Switch(
-                    enabled = state != ActuatorStates.Disconnected,
-                    checked = monitoringPT,
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = Color.Green
-                    ),
-                    onCheckedChange = {
-                        actuatorUtilities.togglePT()
-                    }
-                )
-                Text(
-                    text = if (viewModel.monitoringPT.value) "(ON)" else "(OFF)",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = Color.LightGray,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .padding(start = 6.dp)
-                        .width(40.dp)
-                )
-            }
-
+            SensorControl(
+                title = "Sensor de pulso",
+                enabled = state != ActuatorStates.Disconnected,
+                checked = viewModel.monitoringPulse.value,
+                onCheckedChange = {
+                    actuatorUtilities.togglePulse()
+                }
+            )
         }
-
 
         Spacer(modifier = Modifier.weight(1f))
 
@@ -173,6 +154,49 @@ fun ActuationView(viewModel: MainViewModel, navController: NavHostController) {
     }
 }
 
+@Composable
+fun SensorControl(
+    title: String,
+    enabled: Boolean,
+    checked: Boolean,
+    onCheckedChange: ()->Unit
+){
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onPrimary
+        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ){
+            Switch(
+                enabled = enabled,
+                checked = checked,
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = Color.Green
+                ),
+                onCheckedChange = {onCheckedChange()}
+            )
+            Text(
+                text = if (checked) "(ON)" else "(OFF)",
+                style = MaterialTheme.typography.titleSmall,
+                color = Color.LightGray,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .padding(start = 6.dp)
+                    .width(40.dp)
+            )
+        }
+
+    }
+}
 @Composable
 fun StopButton(
     state: ActuatorStates,

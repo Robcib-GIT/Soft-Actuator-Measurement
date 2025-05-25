@@ -34,7 +34,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.tfm.druidapp.R
-import com.tfm.druidapp.data.ActuatorStates
 import com.tfm.druidapp.data.MainViewModel
 import com.tfm.druidapp.data.MedicUtilities
 import com.tfm.druidapp.ui.theme.DruidAppTheme
@@ -42,7 +41,7 @@ import com.tfm.druidapp.ui.theme.DruidAppTheme
 
 @Composable
 fun PPG(viewModel: MainViewModel, modifier: Modifier = Modifier) {
-    val enabled by viewModel.monitoringPT
+    val enabled by viewModel.monitoringPulse
     val pulseAmplitudeList by viewModel.pulseAmplitudeList.collectAsState()
     val cardiacData by viewModel.cardiacData.collectAsState()
     val measuresInScreen = viewModel.maxPulseRegisters
