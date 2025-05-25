@@ -63,7 +63,7 @@ def pulse_data_callback(msg: Int32):
     if value == -1 and processing:
         processing = False
         process_pulse_segment()
-        pulse.plot_results()  #TODO: metido
+        # pulse.plot_results()  #TODO: metido
         pulse.restart()
         pulse_segment = []
         rospy.loginfo("Fin del análisis cardiaco")
