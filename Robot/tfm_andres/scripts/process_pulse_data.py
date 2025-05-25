@@ -21,7 +21,8 @@ def publish_ppg_data(segment):   #: List[int]
     msg = Float32MultiArray()
     msg.layout.data_offset = fs
 
-    adapted_segment = segment.tolist()
+    segment_scaled = (segment - pulse.MIN_HEIGHT) / (pulse.MAX_HEIGHT - pulse.MIN_HEIGHT)
+    adapted_segment = segment_scaled.tolist()
 
     # Añadir indicador de final de señal
     if not processing:
@@ -62,7 +63,7 @@ def pulse_data_callback(msg: Int32):
     if value == -1 and processing:
         processing = False
         process_pulse_segment()
-        # pulse.plot_results()  #TODO: metido
+        pulse.plot_results()  #TODO: metido
         pulse.restart()
         pulse_segment = []
         rospy.loginfo("Fin del análisis cardiaco")
