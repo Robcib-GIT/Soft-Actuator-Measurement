@@ -7,6 +7,9 @@ import matplotlib.pyplot as plt
 
 class Pulse:
 
+    __MAX_HEIGHT = 16000
+    __MIN_HEIGHT = 11000
+
     def __init__(self, fs: float):  # Añadir un publicador como entrada para enviar segmentos
         self.fs = fs
         self.interval = 1 / fs
@@ -21,10 +24,6 @@ class Pulse:
         self.signal = []  # TODO: ver si borrar
         self.time = []  # TODO: manejar
         self.__systolics_time = [[], []]
-
-        # TODO: retocar
-        self.__max_height = 15000
-        self.__min_height = 13000
 
         # Variables para el filtro
         self.__zi: np.ndarray | None = None
@@ -43,13 +42,15 @@ class Pulse:
         else:
             if self.__zi is None:
                 self.__zi = [0 for _ in range(max(len(self.__a), len(self.__b)) - 1)]
-            filtered_data, self.__zi = lfilter(self.__b, self.__a, data, zi=self.__zi)
+
+            coerced_data = [min(max(x, self.__MIN_HEIGHT), self.__MAX_HEIGHT) for x in data]    
+            filtered_data, self.__zi = lfilter(self.__b, self.__a, coerced_data, zi=self.__zi)
 
             # TODO: mover esta parte cuando añada publicador
             # Actualizar señales
             self.filtered_signal.extend(filtered_data)
-            self.__processed_samples += len(data)
-            self.signal.extend(data)
+            self.__processed_samples += len(coerced_data)
+            self.signal.extend(coerced_data)
 
             # Eliminar sobrante del principio
             if len(self.filtered_signal) > self.__max_samples_to_analice:
