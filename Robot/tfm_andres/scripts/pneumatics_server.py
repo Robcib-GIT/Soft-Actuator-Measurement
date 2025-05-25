@@ -51,6 +51,7 @@ class PneumaticsServer:
     # TODO: comprobar lo del event clear
     ACTUATOR_GOAL_PRESSURE = 600.0
     CUFF_GOAL_PRESSURE = 190.0
+    CUFF_DEFLATE_GOAL_PRESSURE = 40.0
 
     CUFF_INFLATE_ANGLE = 180
     CUFF_DEFLATE_ANGLE = 90
@@ -425,7 +426,7 @@ class PneumaticsServer:
 
             pressures.append(self.cuff_pressure)
 
-            if self.cuff_pressure <= 40.0:
+            if self.cuff_pressure <= self.CUFF_DEFLATE_GOAL_PRESSURE:
                 feedback.progress = 3.0
                 self.server_blood_pressure.publish_feedback(feedback)
                 # Desactivar sensor de presión
@@ -438,7 +439,7 @@ class PneumaticsServer:
 
             # Calcular progreso
             feedback.progress = 3.0 - (
-                    max(0.0, min(self.cuff_pressure, self.CUFF_GOAL_PRESSURE)) / self.CUFF_GOAL_PRESSURE)
+                    max(0.0, (min(self.cuff_pressure, self.CUFF_GOAL_PRESSURE))-self.CUFF_DEFLATE_GOAL_PRESSURE) / (self.CUFF_GOAL_PRESSURE-self.CUFF_DEFLATE_GOAL_PRESSURE))
             self.server_blood_pressure.publish_feedback(feedback)
 
         # 4- Cálculo de la presión arterial
