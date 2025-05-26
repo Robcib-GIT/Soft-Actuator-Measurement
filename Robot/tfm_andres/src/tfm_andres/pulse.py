@@ -89,7 +89,7 @@ class Pulse:
             return ppm, mean_ibi, frequency, sdnn, rmssd
 
         else:
-            return (-1, -1.0, -1.0, -1.0, -1.0)
+            return -1, -1.0, -1.0, -1.0, -1.0
 
     def get_beat_idxs(self):
 
@@ -146,7 +146,7 @@ class Pulse:
             # TODO: meter ppm, ibi etc en self y devolver el anterior si no hay mas picos o ns
             return self.__get_cardiac_data()
         else:
-            return (-1, -1.0, -1.0, -1.0, -1.0)
+            return -1, -1.0, -1.0, -1.0, -1.0
 
     def plot_results(self):
         plt.plot(self.time, self.signal, color='r', linewidth=1, label='Pulso original')
@@ -166,5 +166,4 @@ class Pulse:
         self.signal = []
         self.time = []
         self.__systolics_time = [[], []]
-        self.__diastolics_time = [[], []]
         self.__zi = None

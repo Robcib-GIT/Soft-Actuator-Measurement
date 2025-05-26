@@ -21,6 +21,7 @@ if __name__ == "__main__":
             # Obtener información
             subject = param_dict['subject']
             version = param_dict['version']
+            print(f"{subject} v{version}")
 
             results = {
                 "real_sys": param_dict.get("SYS", None),

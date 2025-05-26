@@ -7,6 +7,9 @@ import matplotlib.pyplot as plt
 
 class Pulse:
 
+    MAX_HEIGHT = 18000
+    MIN_HEIGHT = 10000
+
     def __init__(self, fs: float):  # Añadir un publicador como entrada para enviar segmentos
         self.fs = fs
         self.interval = 1 / fs
@@ -22,10 +25,6 @@ class Pulse:
         self.time = []  # TODO: manejar
         self.__systolics_time = [[], []]
 
-        # TODO: retocar
-        self.__max_height = 15000
-        self.__min_height = 13000
-
         # Variables para el filtro
         self.__zi: np.ndarray | None = None
         self.__b, self.__a = self.__init_low_pass_filter(fc=3.5, order=4)
@@ -38,25 +37,27 @@ class Pulse:
 
     def apply_low_pass_filter(self, data: List[int]):
         if not data:
-            return []
+            return np.array([])
 
         else:
             if self.__zi is None:
                 self.__zi = [0 for _ in range(max(len(self.__a), len(self.__b)) - 1)]
-            filtered_data, self.__zi = lfilter(self.__b, self.__a, data, zi=self.__zi)
+
+            coerced_data = [min(max(x, self.MIN_HEIGHT), self.MAX_HEIGHT) for x in data]
+            filtered_data, self.__zi = lfilter(self.__b, self.__a, coerced_data, zi=self.__zi)
 
             # TODO: mover esta parte cuando añada publicador
             # Actualizar señales
             self.filtered_signal.extend(filtered_data)
-            self.__processed_samples += len(data)
-            self.signal.extend(data)
+            self.__processed_samples += len(coerced_data)
+            self.signal.extend(coerced_data)
 
             # Eliminar sobrante del principio
             if len(self.filtered_signal) > self.__max_samples_to_analice:
                 self.filtered_signal = self.filtered_signal[self.shipping_samples:]
                 self.signal = self.signal[self.shipping_samples:]
 
-            return filtered_data
+            return filtered_data  # TODO: toque
 
     def __get_cardiac_data(self):  # TODO: retocar
         # Obtener propiedades del pulso
@@ -77,18 +78,18 @@ class Pulse:
             if len(ibi_slice) > 2:
                 sdnn: float = np.std(ibi_slice, ddof=1)  # Desviación estándar
             else:
-                sdnn = -1
+                sdnn = -1.0
 
             if len(ibi_slice) > 1:
                 rmssd: float = np.sqrt(
                     np.mean(np.diff(ibi_slice) ** 2))  # Raíz cuadrada de la media de las diferencias al cuadrado
             else:
-                rmssd = -1
+                rmssd = -1.0
 
             return ppm, mean_ibi, frequency, sdnn, rmssd
 
         else:
-            return (-1,) * 5
+            return -1, -1.0, -1.0, -1.0, -1.0
 
     def get_beat_idxs(self):
 
@@ -145,7 +146,7 @@ class Pulse:
             # TODO: meter ppm, ibi etc en self y devolver el anterior si no hay mas picos o ns
             return self.__get_cardiac_data()
         else:
-            return (-1,) * 5
+            return -1, -1.0, -1.0, -1.0, -1.0
 
     def plot_results(self):
         plt.plot(self.time, self.signal, color='r', linewidth=1, label='Pulso original')
@@ -165,5 +166,4 @@ class Pulse:
         self.signal = []
         self.time = []
         self.__systolics_time = [[], []]
-        self.__diastolics_time = [[], []]
         self.__zi = None
