@@ -12,7 +12,7 @@ class BloodPressure:
     __MIN_PEAK_H = -100
     __PROMINENCE = 4    # Prominencia mínima para considerar un pico  5
     __MAX_IBI_VARIANCE = 90E-3  # Máximo tiempo que pueden diferir los intervalos entre pulsos entre si  80
-    __SYS_RATIO = 0.87  # @0.83: 6.29  inicialmente 0.8
+    __SYS_RATIO = 0.88  # @0.83: 6.29  inicialmente 0.8
     __DIA_RATIO = 0.42  # @0.41: 8.38  inicialmente 0.5
 
     def __init__(self, fs: float):
@@ -42,7 +42,7 @@ class BloodPressure:
         # Aplica el filtro a la señal de presión
         self.__filtered_pressures = filtfilt(fir_coeffs, [1.0], self.pressures)
 
-    def get_amplitudes(self, peaks: List[int]):
+    def __get_amplitudes(self, peaks: List[int]):
         amplitudes = []
 
         for i, peak in enumerate(peaks):
@@ -60,9 +60,39 @@ class BloodPressure:
             amp_right = self.__d_pressures[peak] - right_min
 
             # Tomar la mayor de las dos
-            amplitudes.append(min(amp_left, amp_right))
+            amplitudes.append(min(amp_left, amp_right))  # FIXME: he cambiado min por max
 
         return amplitudes
+
+    @staticmethod
+    def __find_1d_peak_widths(signal):
+        peaks, _ = find_peaks(signal)
+        widths = []
+        for i, peak in enumerate(peaks):
+            left = 0
+            right = len(signal) - 1
+            if i > 0:
+                temp = signal[peak]
+                for j in range(peak, peaks[i - 1], -1):
+                    left = j
+                    if signal[j] <= temp:
+                        temp = signal[j]
+                    else:
+                        left = j + 1
+                        break
+
+            if i < len(peaks) - 1:
+                temp = signal[peak]
+                for j in range(peak, peaks[i + 1] + 1):
+                    right = j
+                    if signal[j] <= temp:
+                        temp = signal[j]
+                    else:
+                        right = j - 1
+                        break
+
+            widths.append(right - left)
+        return peaks, widths
 
     """
     Según parece Omron y demas tienen ciertos coeficientes fijos y los usan para obtener sys y dia sabiendo map
@@ -101,12 +131,12 @@ class BloodPressure:
         if PLOT_THROUGH:
             self.plot_histogram(distances, bins)
 
-        # Determinar el rango de interés cogiendo los 3 bins consecutivos que contienen la mayor cantidad de picos
+        # Determinar el rango de interés cogiendo los max_bins bins consecutivos que contienen la mayor cantidad de picos
         idx_bins_range = (None, None)
         max_peaks_count = 0
         current_start = None
         current_peaks_count = 0
-        max_bins = 3
+        max_bins = 5  # FIXME: antes 3 pero parece mejorar alguna (Jaime_v1)
 
         for i, freq in enumerate(hist):
             if freq > 0:
@@ -162,13 +192,30 @@ class BloodPressure:
 
         return velocity
 
+    @staticmethod
+    def __polinomial_fitting(signal, deg=3):
+        x = np.arange(len(signal))
+        coeffs = np.polyfit(x, signal, deg=deg)
+        poly = np.poly1d(coeffs)
+        return poly(x)
+
     def __get_map(self, idx_peaks: List[int]):
-        peak_amplitudes = self.get_amplitudes(peaks=idx_peaks)
+        peak_amplitudes = self.__get_amplitudes(peaks=idx_peaks)
+
+        smoothed_peak_amplitudes = self.__polinomial_fitting(peak_amplitudes)
+        # Obtener el punto maximo en la version suavizada y a partir de ese indice coger el
+        # maximo mas cercano en la original
+        idx_max_smoothed = np.argmax(smoothed_peak_amplitudes)
+        idx_map = idx_max_smoothed - 1 + np.argmax([peak_amplitudes[idx_max_smoothed - 1:idx_max_smoothed + 2]])
+
+        # amplitude_peak_idxs, amplitude_peak_widths = self.__find_1d_peak_widths(peak_amplitudes)
+
+        # idx_map = amplitude_peak_idxs[np.argmax(amplitude_peak_widths)]
 
         # Se selecciona el map como el pico de amplitudes más ancho
-        idx_amplitude_peaks, properties = find_peaks(peak_amplitudes, width=0)
+        # idx_amplitude_peaks, properties = find_peaks(peak_amplitudes, width=0)
         # Se obtiene map como el pico más ancho
-        idx_map = idx_amplitude_peaks[np.argmax(properties['widths'])]
+        # idx_map = idx_amplitude_peaks[np.argmax(properties['widths'])]
 
         # Se selecciona el map como el pico de amplitudes más alto con ancho superior a 2
         # idx_amplitude_peaks, properties = find_peaks(peak_amplitudes, width=1, height=0)
@@ -180,8 +227,15 @@ class BloodPressure:
         self.map = self.pressures[idx_map_peak]
 
         if PLOT_THROUGH:
-            print(f"MAP: {self.map:.2f}mmHg en amplitudes[{idx_map}]")
+            print(f"MAP: {self.map:.2f}mmHg en latido [{idx_map}]")
             print(f"Amplitudes: {[f'{a:.2f}' for a in peak_amplitudes]}")
+
+            plt.plot(range(len(peak_amplitudes)), peak_amplitudes, label='Amplitudes original')
+            plt.scatter(idx_map, peak_amplitudes[idx_map], color='red', s=30)
+            plt.plot(range(len(peak_amplitudes)), smoothed_peak_amplitudes, label='Amplitudes suavizada')
+            plt.scatter(idx_max_smoothed, smoothed_peak_amplitudes[idx_max_smoothed], color='red', s=30)
+            plt.legend()
+            plt.show()
 
         return peak_amplitudes, idx_map
 
@@ -189,19 +243,22 @@ class BloodPressure:
         # ---------------OBTENER SYS--------------------
         idx_first_pulse = None
 
-        # Tomar sys como primer pulso mas cercano a MAP que no supere el umbral ni su siguiente
-        # for i in range(idx_map, -1, -1):
-        #     if peak_amplitudes[i] >= peak_amplitudes[idx_map] * self.__SYS_RATIO:
-        #         idx_first_pulse = i
-        #     else:
-        #         if i > 0 and peak_amplitudes[i - 1] >= peak_amplitudes[idx_map] * self.__SYS_RATIO:  # el FIXME
-        #             continue
-        #         break
+        # Tomar sys como MAP
+        #idx_first_pulse = idx_map
 
-        # Tomar sys como último pulso más cercano a MAP que no supere el umbral
+        # Tomar sys como primer pulso mas cercano a MAP que no supere el umbral ni su siguiente
         for i in range(idx_map, -1, -1):
             if peak_amplitudes[i] >= peak_amplitudes[idx_map] * self.__SYS_RATIO:
                 idx_first_pulse = i
+            else:
+                if i > 0 and peak_amplitudes[i - 1] >= peak_amplitudes[idx_map] * self.__SYS_RATIO:  # el FIXME
+                    continue
+                break
+
+        # Tomar sys como último pulso más cercano a MAP que no supere el umbral
+        # for i in range(idx_map, -1, -1):
+        #     if peak_amplitudes[i] >= peak_amplitudes[idx_map] * self.__SYS_RATIO:
+        #         idx_first_pulse = i
 
         if idx_first_pulse is None:
             raise ValueError(f"Presión sistólica no detectada")

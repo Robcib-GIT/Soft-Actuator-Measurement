@@ -102,7 +102,7 @@ def get_temperature() -> float:
 
     r_ntc = R_AUX * (VCC / voltage - 1)
     temperature_k = 1.0 / ((math.log(r_ntc / R0) / BETA) + (1.0 / T0))
-    return temperature_k - 273.15  # Convertir de Kelvin a Celsius
+    return temperature_k - 273.15 + 2.5  # Convertir de Kelvin a Celsius
 
 
 def get_pressure(sensor: str):

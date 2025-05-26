@@ -7,8 +7,8 @@ import matplotlib.pyplot as plt
 
 class Pulse:
 
-    MAX_HEIGHT = 16000
-    MIN_HEIGHT = 11000
+    MAX_HEIGHT = 18000
+    MIN_HEIGHT = 10000
 
     def __init__(self, fs: float):  # Añadir un publicador como entrada para enviar segmentos
         self.fs = fs
@@ -43,7 +43,7 @@ class Pulse:
             if self.__zi is None:
                 self.__zi = [0 for _ in range(max(len(self.__a), len(self.__b)) - 1)]
 
-            coerced_data = [min(max(x, self.MIN_HEIGHT), self.MAX_HEIGHT) for x in data]    
+            coerced_data = [min(max(x, self.MIN_HEIGHT), self.MAX_HEIGHT) for x in data]
             filtered_data, self.__zi = lfilter(self.__b, self.__a, coerced_data, zi=self.__zi)
 
             # TODO: mover esta parte cuando añada publicador
@@ -123,7 +123,7 @@ class Pulse:
 
         idx_beats_filtered = idx_beats[idx_filtered_prominences]
 
-        return idx_beats_filtered 
+        return idx_beats_filtered
 
     def analice_pulse_signal(self):
         samples = len(self.filtered_signal)
