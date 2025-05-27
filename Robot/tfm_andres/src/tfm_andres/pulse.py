@@ -67,22 +67,23 @@ class Pulse:
             # Tomar últimos 5 pulsos del ibi para datos más cambiantes
             relevant_pulses = 5
             ibi_slice = ibi[-min(len(ibi), relevant_pulses):]
-            mean_ibi: float = np.mean(ibi_slice)
-            frequency: float = 1/mean_ibi
+            mean_ibi: float = 1000 * np.mean(ibi_slice)
+            frequency: float = 1000 / mean_ibi
             ppm = int(frequency * 60)
 
             # Tomar últimos 20 pulsos para parámetros menos cambiantes
             relevant_pulses = 15
             ibi_slice = ibi[-min(len(ibi), relevant_pulses):]
 
+            # Desviación estándar
             if len(ibi_slice) > 2:
-                sdnn: float = np.std(ibi_slice, ddof=1)  # Desviación estándar
+                sdnn: float = 1000 * np.std(ibi_slice, ddof=1)
             else:
                 sdnn = -1.0
 
+            # Raíz cuadrada de la media de las diferencias al cuadrado
             if len(ibi_slice) > 1:
-                rmssd: float = np.sqrt(
-                    np.mean(np.diff(ibi_slice) ** 2))  # Raíz cuadrada de la media de las diferencias al cuadrado
+                rmssd: float = 1000 * np.sqrt(np.mean(np.diff(ibi_slice) ** 2))
             else:
                 rmssd = -1.0
 

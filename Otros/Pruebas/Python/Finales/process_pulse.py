@@ -9,7 +9,7 @@ def process_pulse_segment(segment: List[int]):
     filtered_segment = pulse.apply_low_pass_filter(pulse_segment)
     # print(filtered_segment)
     ppm, mean_ibi, frequency, sdnn, rmssd = pulse.analice_pulse_signal()
-    print(f"\rppm: {ppm}  |  freq: {frequency:.2f}  |  sdnn: {sdnn:.2f}  |  rmssd: {rmssd:.2f}     ", end="")
+    print(f"\rppm: {ppm}  |  ibi: {mean_ibi:.2f}  |  freq: {frequency:.2f}  |  sdnn: {sdnn:.2f}  |  rmssd: {rmssd:.2f}     ", end="")
 
 
 if __name__ == "__main__":
