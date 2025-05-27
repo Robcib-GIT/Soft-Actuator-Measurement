@@ -26,19 +26,14 @@ sealed class Screen(val title: String, val route: String, @DrawableRes val icon:
     /*
     DrawerScreen: Ventanas a las que se accede desde el drawer
      */
-    data object Project : Screen(
-        title = "Proyecto",
-        route = "proyecto",
-        icon = R.drawable.baseline_info_24
+    data object SAM : Screen(
+        title = "SAM",
+        route = "sam",
+        icon = R.drawable.rounded_android_24
     )
-    data object Opcion1 : Screen(
-        title = "Opcion1",
-        route = "opcion1",
-        icon = R.drawable.baseline_info_24
-    )
-    data object Opcion2 : Screen(
-        title = "opcion2",
-        route = "opcion2",
+    data object About : Screen(
+        title = "Acerca de",
+        route = "about",
         icon = R.drawable.baseline_info_24
     )
 
@@ -64,9 +59,8 @@ val allScreens = listOf(
     Screen.Settings,
     Screen.PPG,
     Screen.Glasgow,
-    Screen.Project,
-    Screen.Opcion1,
-    Screen.Opcion2
+    Screen.SAM,
+    Screen.About
 )
 
 val screensWithNav = listOf(
@@ -75,8 +69,7 @@ val screensWithNav = listOf(
     Screen.Settings
 )
 val screensInDrawer = listOf(
-    Screen.Project,
-    Screen.Opcion1,
-    Screen.Opcion2
+    Screen.SAM,
+    Screen.About
 )
 
