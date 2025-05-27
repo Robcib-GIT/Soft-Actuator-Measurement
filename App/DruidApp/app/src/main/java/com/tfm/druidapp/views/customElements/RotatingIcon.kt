@@ -1,12 +1,15 @@
 package com.tfm.druidapp.views.customElements
 
+import android.content.res.Configuration
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -14,8 +17,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-
+import androidx.compose.ui.tooling.preview.Preview
+import com.tfm.druidapp.R
+import com.tfm.druidapp.data.DataStoreManager
+import com.tfm.druidapp.data.MainViewModel
+import com.tfm.druidapp.ui.theme.DruidAppTheme
+import com.tfm.druidapp.views.PPGView
 
 @Composable
 fun RotatingIcon(@DrawableRes icon: Int, onClick: ()->Unit) {
@@ -33,7 +42,7 @@ fun RotatingIcon(@DrawableRes icon: Int, onClick: ()->Unit) {
     Icon(
         painter = painterResource(id = icon),
         contentDescription = "Info",
-        tint = MaterialTheme.colorScheme.primary,
+        tint = MaterialTheme.colorScheme.onPrimaryContainer,
         modifier = Modifier
             .graphicsLayer(
                 rotationY = rotation // Rota sobre el eje Y

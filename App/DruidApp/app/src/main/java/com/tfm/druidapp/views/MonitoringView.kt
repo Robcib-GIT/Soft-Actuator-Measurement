@@ -37,6 +37,7 @@ import com.tfm.druidapp.data.DataStoreManager
 import com.tfm.druidapp.data.MainViewModel
 import com.tfm.druidapp.data.MedicUtilities
 import com.tfm.druidapp.data.MedicUtilities.setColor
+import com.tfm.druidapp.data.MsgTypes
 import com.tfm.druidapp.data.Screen
 import com.tfm.druidapp.ui.theme.DruidAppTheme
 import com.tfm.druidapp.views.customElements.GlasgowGauge

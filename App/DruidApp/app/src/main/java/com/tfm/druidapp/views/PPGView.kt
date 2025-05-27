@@ -26,11 +26,15 @@ import com.tfm.druidapp.data.ActuatorStates
 import com.tfm.druidapp.data.DataStoreManager
 import com.tfm.druidapp.data.MainViewModel
 import com.tfm.druidapp.data.MedicUtilities
-import com.tfm.druidapp.data.NormalRange
-import com.tfm.druidapp.views.customElements.bpmInfo
+import com.tfm.druidapp.data.MsgTypes
+import com.tfm.druidapp.views.customElements.BPMInfo
 import com.tfm.druidapp.ui.theme.DruidAppTheme
+import com.tfm.druidapp.views.customElements.FrequencyInfo
+import com.tfm.druidapp.views.customElements.IBIInfo
 import com.tfm.druidapp.views.customElements.PPG
+import com.tfm.druidapp.views.customElements.RMSSDInfo
 import com.tfm.druidapp.views.customElements.RotatingIcon
+import com.tfm.druidapp.views.customElements.SDNNInfo
 
 private const val col1Width = 150
 private const val col2Width = 100
@@ -38,7 +42,7 @@ private const val col2Width = 100
 @Composable
 fun PPGView(viewModel: MainViewModel){
     val cardiacData by viewModel.cardiacData.collectAsState()
-    val enabled = (viewModel.actuatorState.value == ActuatorStates.Closed)
+    val enabled = (viewModel.actuatorState.value == ActuatorStates.Connected)
     val ranges by viewModel.normalMedicRanges
 
     Column(
@@ -86,7 +90,7 @@ fun PPGView(viewModel: MainViewModel){
                         valueUnits = "",
                         color = ppmColor
                     ) {
-                        viewModel.setComposableContent { bpmInfo() }
+                        viewModel.setComposableContent { BPMInfo() }
                         viewModel.updateBottomSheetVisibility(true)
                     }
                     DataRow(
@@ -95,7 +99,8 @@ fun PPGView(viewModel: MainViewModel){
                         valueUnits = " ms",
                         color = ppmColor
                     ) {
-                        //TODO
+                        viewModel.setComposableContent { IBIInfo() }
+                        viewModel.updateBottomSheetVisibility(true)
                     }
                     DataRow(
                         title = "Frecuencia",
@@ -103,7 +108,8 @@ fun PPGView(viewModel: MainViewModel){
                         valueUnits = " Hz",
                         color = ppmColor
                     ) {
-                        //TODO
+                        viewModel.setComposableContent { FrequencyInfo() }
+                        viewModel.updateBottomSheetVisibility(true)
                     }
 
                 }
@@ -137,7 +143,8 @@ fun PPGView(viewModel: MainViewModel){
                             )
                         )
                     ) {
-                        //TODO
+                        viewModel.setComposableContent { SDNNInfo() }
+                        viewModel.updateBottomSheetVisibility(true)
                     }
                     DataRow(
                         title = "RMSDD",
@@ -154,60 +161,9 @@ fun PPGView(viewModel: MainViewModel){
                             )
                         )
                     ) {
-                        //TODO
+                        viewModel.setComposableContent { RMSSDInfo() }
+                        viewModel.updateBottomSheetVisibility(true)
                     }
-                }
-
-                HorizontalDivider(
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-
-                Text(
-                    text = "Análisis morfológico de la onda",
-                    style = MaterialTheme.typography.titleMedium
-                )
-
-                Column( //Forma onda PPG
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 50.dp)
-                ) {
-
-                    DataRow(
-                        title = "Amplitud",
-                        value = 0f, //TODO: calcular
-                        valueUnits = "",
-                        color = MedicUtilities.setColor(
-                            value = 0f,
-                            range = NormalRange(0f,5f), //TODO: ajustar
-                            enabled = enabled,
-                            colors = MedicUtilities.MedicDataColors(
-                                onCorrect = MaterialTheme.colorScheme.onPrimary,
-                                onIncorrect = Color.Red,
-                                onIdle = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                        )
-                    ) {
-                        //TODO
-                    }
-                    DataRow(
-                        title = "Rise Time",
-                        value = 0f, //TODO: calcular
-                        valueUnits = " ms",
-                        color = MedicUtilities.setColor(
-                            value = 0f,
-                            range = NormalRange(0f,5f), //TODO: ajustar
-                            enabled = enabled,
-                            colors = MedicUtilities.MedicDataColors(
-                                onCorrect = MaterialTheme.colorScheme.onPrimary,
-                                onIncorrect = Color.Red,
-                                onIdle = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                        )
-                    ) {
-                        //TODO
-                    }
-
                 }
             }
         }
@@ -251,6 +207,14 @@ fun PPGViewPreview(){
         ) {
             val dataStoreManager = DataStoreManager(LocalContext.current)
             val vm = MainViewModel(dataStoreManager)
+            vm.updateCardiacData(data = MsgTypes.CardiacMsg(
+                ppm = 60,
+                ibi = 824.14f,
+                frequency = 1f,
+                sdnn = 60f,
+                rmsdd = 2f
+            ))
+            vm.updateActuatorState(state = ActuatorStates.Connected)
             PPGView(vm)
         }
     }

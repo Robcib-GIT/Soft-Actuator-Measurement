@@ -20,7 +20,7 @@ import androidx.compose.ui.unit.dp
 import com.tfm.druidapp.ui.theme.DruidAppTheme
 
 @Composable
-fun bpmInfo(){
+fun BPMInfo(){
     val bpmMap: Map<String, String> = mapOf(
         "Bebés (hasta 1 mes)" to "70 - 190",
         "Bebés (1 a 11 meses)" to "80 - 160",
@@ -48,6 +48,119 @@ fun bpmInfo(){
         }
     }
 }
+
+@Composable
+fun FrequencyInfo(){
+    val frecMap: Map<String, String> = mapOf(
+        "Bebés (hasta 1 mes)" to "1.16 - 3.16",
+        "Bebés (1 a 11 meses)" to "1.33 - 2.66",
+        "Niños (1 a 2 años)" to "1.33 - 2.16",
+        "Niños (3 a 4 años)" to "1.33 - 2",
+        "Niños (5 a 6 años)" to "1.25 - 1.91",
+        "Niños (7 a 9 años)" to "1.16 - 1.83",
+        "Niños (más de 10 años)\n&\nAdultos (general)" to "1 - 1.66",
+        "Adultos (Atletas entrenados)" to "0.66 - 1"
+    )
+
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ){
+        tableRow(text1 = "GRUPO", text2 = "FREC EN REPOSO", weight1 = 1f, weight2 = 1.4f, tableTitle = true)
+        frecMap.forEach{(group,bpmRange)->
+            HorizontalDivider(
+                modifier = Modifier
+                    .fillMaxWidth(0.9f),
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+            tableRow(text1 = group, text2 = bpmRange, weight1 = 1f, weight2 = 1.4f)
+        }
+    }
+}
+
+@Composable
+fun IBIInfo(){
+    val ibiMap: Map<String, String> = mapOf(
+        "Bebés (hasta 1 mes)" to "315 - 857",
+        "Bebés (1 a 11 meses)" to "375 - 750",
+        "Niños (1 a 2 años)" to "461 - 750",
+        "Niños (3 a 4 años)" to "500 - 750",
+        "Niños (5 a 6 años)" to "521 - 800",
+        "Niños (7 a 9 años)" to "545 - 857",
+        "Niños (más de 10 años)\n&\nAdultos (general)" to "600 - 1000",
+        "Adultos (Atletas entrenados)" to "1000 - 1500"
+    )
+
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ){
+        tableRow(text1 = "GRUPO", text2 = "IBI EN REPOSO", weight1 = 1f, weight2 = 1.4f, tableTitle = true)
+        ibiMap.forEach{(group,bpmRange)->
+            HorizontalDivider(
+                modifier = Modifier
+                    .fillMaxWidth(0.9f),
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+            tableRow(text1 = group, text2 = bpmRange, weight1 = 1f, weight2 = 1.4f)
+        }
+    }
+}
+
+@Composable
+fun SDNNInfo(){
+    val sdnnMap: Map<String, String> = mapOf(
+        "Adulto en reposo" to "50 - 100",
+        "Adulto entrenado en reposo" to ">100",
+        "Sueño profundo" to ">150",
+        "Recien nacidos" to "<200"
+    )
+
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ){
+        tableRow(text1 = "GRUPO", text2 = "SDNN NORMAL", weight1 = 1f, weight2 = 1.4f, tableTitle = true)
+        sdnnMap.forEach{(group,bpmRange)->
+            HorizontalDivider(
+                modifier = Modifier
+                    .fillMaxWidth(0.9f),
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+            tableRow(text1 = group, text2 = bpmRange, weight1 = 1f, weight2 = 1.4f)
+        }
+    }
+}
+
+@Composable
+fun RMSSDInfo(){
+    val rmssdMap: Map<String, String> = mapOf(
+        "Adulto en reposo" to "20 - 50",
+        "Adulto entrenado en reposo" to ">60",
+        "Sueño profundo" to ">80",
+        "Recien nacidos" to "<100"
+    )
+
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ){
+        tableRow(text1 = "GRUPO", text2 = "SDNN NORMAL", weight1 = 1f, weight2 = 1.4f, tableTitle = true)
+        rmssdMap.forEach{(group,bpmRange)->
+            HorizontalDivider(
+                modifier = Modifier
+                    .fillMaxWidth(0.9f),
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+            tableRow(text1 = group, text2 = bpmRange, weight1 = 1f, weight2 = 1.4f)
+        }
+    }
+}
+
 
 @Composable
 fun tableRow(text1: String, text2: String, weight1: Float,weight2: Float,  tableTitle: Boolean= false){
@@ -91,7 +204,7 @@ fun bpmInfoPreview(){
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background
         ) {
-            bpmInfo()
+            RMSSDInfo()
         }
     }
 }
