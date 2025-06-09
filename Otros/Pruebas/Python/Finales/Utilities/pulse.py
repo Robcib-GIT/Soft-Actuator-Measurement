@@ -150,15 +150,18 @@ class Pulse:
             return -1, -1.0, -1.0, -1.0, -1.0
 
     def plot_results(self):
+        plt.figure(figsize=(15, 5))  # Para informe
         plt.plot(self.time, self.signal, color='r', linewidth=1, label='Pulso original')
         plt.plot(self.time, self.filtered_signal, color='g', linewidth=2, label='Pulso filtrado')
-        plt.scatter(self.__systolics_time[1], self.__systolics_time[0], color='blue', label="Picos sistólicos")
+        plt.scatter(self.__systolics_time[1], self.__systolics_time[0], color='red', s=60, label="Picos sistólicos")
         plt.xlabel('Time (s)')
         plt.ylabel('Pulso (mV)')
         plt.title('Pulso vs Tiempo')
         plt.grid()
         plt.legend()
         plt.tight_layout()
+
+        # plt.ylim(8500, 18500)  # Para informe
         plt.show()
 
     def restart(self):
