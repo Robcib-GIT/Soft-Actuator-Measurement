@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.signal import firwin, filtfilt, find_peaks
 
-PLOT_THROUGH = False
+PLOT_THROUGH = True
 
 
 class BloodPressure:
@@ -41,6 +41,18 @@ class BloodPressure:
 
         # Aplica el filtro a la señal de presión
         self.__filtered_pressures = filtfilt(fir_coeffs, [1.0], self.pressures)
+
+        if PLOT_THROUGH:  # Para informe
+            plt.figure(figsize=(16, 6))
+
+            plt.plot(self.time, self.pressures, label='Presión original')
+            plt.plot(self.time, self.__filtered_pressures, label='Presión filtrada con FIR')
+            plt.xlabel('Tiempo (s)')
+            plt.ylabel('Presión (mmHg)')
+            plt.title('Presión vs Tiempo')
+            plt.grid()
+            plt.legend()
+            plt.show()
 
     def __get_amplitudes(self, peaks: List[int]):
         amplitudes = []
@@ -230,11 +242,14 @@ class BloodPressure:
             print(f"MAP: {self.map:.2f}mmHg en latido [{idx_map}]")
             print(f"Amplitudes: {[f'{a:.2f}' for a in peak_amplitudes]}")
 
-            plt.plot(range(len(peak_amplitudes)), peak_amplitudes, label='Amplitudes original')
+            plt.plot(range(len(peak_amplitudes)), peak_amplitudes, label='Amplitudes originales')
             plt.scatter(idx_map, peak_amplitudes[idx_map], color='red', s=30)
-            plt.plot(range(len(peak_amplitudes)), smoothed_peak_amplitudes, label='Amplitudes suavizada')
-            plt.scatter(idx_max_smoothed, smoothed_peak_amplitudes[idx_max_smoothed], color='red', s=30)
+            plt.plot(range(len(peak_amplitudes)), smoothed_peak_amplitudes, label='Amplitudes suavizadas')
+            plt.scatter(idx_max_smoothed, smoothed_peak_amplitudes[idx_max_smoothed], color='red', s=30, label='MAP')
             plt.legend()
+            plt.xlabel('Pico')
+            plt.ylabel('Amplitud')
+            plt.title('Amplitudes de los picos detectados')
             plt.show()
 
         return peak_amplitudes, idx_map
@@ -243,15 +258,12 @@ class BloodPressure:
         # ---------------OBTENER SYS--------------------
         idx_first_pulse = None
 
-        # Tomar sys como MAP
-        #idx_first_pulse = idx_map
-
         # Tomar sys como primer pulso mas cercano a MAP que no supere el umbral ni su siguiente
         for i in range(idx_map, -1, -1):
             if peak_amplitudes[i] >= peak_amplitudes[idx_map] * self.__SYS_RATIO:
                 idx_first_pulse = i
             else:
-                if i > 0 and peak_amplitudes[i - 1] >= peak_amplitudes[idx_map] * self.__SYS_RATIO:  # el FIXME
+                if i > 0 and peak_amplitudes[i - 1] >= peak_amplitudes[idx_map] * self.__SYS_RATIO:
                     continue
                 break
 
@@ -263,7 +275,6 @@ class BloodPressure:
         if idx_first_pulse is None:
             raise ValueError(f"Presión sistólica no detectada")
 
-        # idx_first_pulse += 1  # TODO: por la cara pero ver si funciona
         idx_sys = idx_peaks[idx_first_pulse]
         sys = int(self.pressures[idx_sys])
 
@@ -287,8 +298,6 @@ class BloodPressure:
         if idx_last_pulse is None:
             raise ValueError(f"Presión diastólica no detectada")
 
-        # if idx_last_pulse < len(peak_amplitudes)-1:
-        #     idx_last_pulse += 1 # TODO: por la cara pero ver si funciona
         idx_dia = idx_peaks[idx_last_pulse]
         dia = int(self.pressures[idx_dia])
 
@@ -314,6 +323,28 @@ class BloodPressure:
 
             # Localizar picos mediante la derivada
             self.__d_pressures = np.gradient(self.__filtered_pressures, self.time)
+            # if PLOT_THROUGH:  # TODO: borrar
+            #     plt.figure(figsize=(16, 20))
+            #
+            #     plt.subplot(2, 1, 1)
+            #     plt.plot(self.time, self.pressures, label='Presión original')
+            #     plt.plot(self.time, self.__filtered_pressures, label='Presión filtrada con FIR')
+            #     plt.xlabel('Tiempo (s)')
+            #     plt.ylabel('Presión (mmHg)')
+            #     plt.title('Presión vs Tiempo')
+            #     plt.grid()
+            #     plt.legend()
+            #
+            #     plt.subplot(2, 1, 2)
+            #     plt.plot(self.time, self.__d_pressures, label='Derivada de la presión')
+            #     plt.xlabel('Tiempo (s)')
+            #     plt.ylabel('dPresión/dt (mmHg/s)')
+            #     plt.title('Derivada de la presión vs Tiempo')
+            #     plt.grid()
+            #     plt.legend()
+            #
+            #
+            #     plt.show()
 
             # Aplicar filtro morfológico para obtener los índices de los picos válidos
             idx_peaks = self.__morphological_filter()
@@ -360,29 +391,29 @@ class BloodPressure:
 
             # Gráfico de presión original con anotaciones de presión sistólica y diastólica
             plt.subplot(2, 1, 1)
-            plt.plot(self.time, self.pressures, label='Original pressure')
-            plt.plot(self.time, self.__filtered_pressures, label='FIR filtered pressure')
-            plt.scatter(peaks_time, peaks_pressure, color='green', label="Pulse peaks", s=26)
+            plt.plot(self.time, self.pressures, label='Presión original')
+            # TODO: descomentar plt.plot(self.time, self.__filtered_pressures, label='Presión filtrada con FIR')
+            plt.scatter(peaks_time, peaks_pressure, color='green', label="Latidos", s=26)
             plt.scatter(self.time[idx_sys], self.pressures[idx_sys], color='red', label=f"SYS: {sys} mmHg")
             plt.axvline(x=self.time[idx_sys], color='r', linestyle='--')
             plt.scatter(self.time[idx_dia], self.pressures[idx_dia], color='red', label=f"DIA: {dia} mmHg")
             plt.axvline(x=self.time[idx_dia], color='r', linestyle='--')
-            plt.xlabel('Time (s)')
-            plt.ylabel('Pressure (mmHg)')
-            plt.title('Pressure vs Time')
+            plt.xlabel('Tiempo (s)')
+            plt.ylabel('Presión (mmHg)')
+            plt.title('Presión vs Tiempo')
             plt.grid()
             plt.legend()
 
             # Gráfico de derivada de presión con picos detectados
             plt.subplot(2, 1, 2)
-            plt.plot(self.time, self.__d_pressures, label='Pressure derivative')
-            plt.scatter(all_peaks_time, all_peaks_d_pressure, color='red', label="All peaks", s=26)
-            plt.scatter(peaks_time, peaks_d_pressure, color='green', label='Filtered peaks')
+            plt.plot(self.time, self.__d_pressures, label='Derivada de la presión')
+            plt.scatter(all_peaks_time, all_peaks_d_pressure, color='red', label="Picos rechazados", s=26)
+            plt.scatter(peaks_time, peaks_d_pressure, color='green', label='Latidos')
             plt.axvline(x=self.time[idx_sys], color='r', linestyle='--')
             plt.axvline(x=self.time[idx_dia], color='r', linestyle='--')
-            plt.xlabel('Time (s)')
-            plt.ylabel('dPressure/dt (mmHg/s)')
-            plt.title('Pressure derivative')
+            plt.xlabel('Tiempo (s)')
+            plt.ylabel('dPresión/dt (mmHg/s)')
+            plt.title('Derivada de la presion vs Tiempo')
             plt.grid()
             plt.legend()
 
@@ -417,7 +448,7 @@ class BloodPressure:
     @staticmethod
     def plot_histogram(distances, bins):
         plt.hist(distances, bins=bins, edgecolor='black')
-        plt.xlabel("IBI")
+        plt.xlabel("IBI (muestras)")
         plt.ylabel("Frecuencia")
         plt.title("Histograma de IBI")
         plt.grid(True)
@@ -430,26 +461,26 @@ class BloodPressure:
             peaks_pressure = [self.pressures[i] for i in idx_peaks]
             peaks_d_pressure = [self.__d_pressures[i] for i in idx_peaks]
 
-            plt.figure(figsize=(12, 6))
+            plt.figure(figsize=(16, 20)) # 12, 6
 
             # Gráfico de presión original con anotaciones de presión sistólica y diastólica
             plt.subplot(2, 1, 1)
-            plt.plot(self.time, self.pressures, label='Original pressure')
-            plt.plot(self.time, self.__filtered_pressures, label='FIR filtered pressure')
-            plt.scatter(peaks_time, peaks_pressure, color='green', label="Pulse peaks", s=26)
-            plt.xlabel('Time (s)')
-            plt.ylabel('Pressure (mmHg)')
-            plt.title('Pressure vs Time')
+            plt.plot(self.time, self.pressures, label='Presión original')
+            # TODO: descometar plt.plot(self.time, self.__filtered_pressures, label='FIR filtered pressure')
+            plt.scatter(peaks_time, peaks_pressure, color='green', label="Picos filtrados", s=26)
+            plt.xlabel('Tiempo (s)')
+            plt.ylabel('Presión (mmHg)')
+            plt.title('Presión vs Tiempo')
             plt.grid()
             plt.legend()
 
             # Gráfico de derivada de presión con picos detectados
             plt.subplot(2, 1, 2)
-            plt.plot(self.time, self.__d_pressures, label='Pressure derivative')
-            plt.scatter(peaks_time, peaks_d_pressure, color='green', label='Filtered peaks')
-            plt.xlabel('Time (s)')
-            plt.ylabel('dPressure/dt (mmHg/s)')
-            plt.title('Pressure derivative')
+            plt.plot(self.time, self.__d_pressures, label='Derivada de la presión')
+            plt.scatter(peaks_time, peaks_d_pressure, color='green', label='Picos filtrados')
+            plt.xlabel('Tiempo (s)')
+            plt.ylabel('dPresión/dt (mmHg/s)')
+            plt.title('Derivada de la presión vs Tiempo')
             plt.grid()
             plt.legend()
 
