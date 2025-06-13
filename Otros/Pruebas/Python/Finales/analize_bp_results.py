@@ -11,16 +11,22 @@ import statsmodels.api as sm
 
 def plot_homoscedasticity(estimated, real, variable_name):
     error = np.array(real) - np.array(estimated)
+    # media = (np.array(real) + np.array(estimated))/2
 
-    coef = np.polyfit(estimated, error, deg=1)  # coef = [pendiente, intercepto]
+    coef = np.polyfit(real, error, deg=1)  # coef = [pendiente, intercepto]
     linea_tendencia = np.poly1d(coef)
 
+    # Ajuste LOWESS
+    # lowess = sm.nonparametric.lowess
+    # ajuste = lowess(error, real, frac=0.6)  # frac controla el grado de suavizado
+
     plt.figure(figsize=(8, 5))
-    plt.scatter(estimated, error, color='blue')
+    plt.scatter(real, error, color='blue')
 
-    plt.plot(estimated, linea_tendencia(estimated), color='red')
+    plt.plot(real, linea_tendencia(real), color='red')
+    # plt.plot(ajuste[:, 0], ajuste[:, 1], color='red')
 
-    plt.xlabel(f"Presión {variable_name} estimada (mmHg)")
+    plt.xlabel(f"Presión {variable_name} real (mmHg)")
     plt.ylabel(f"Real - Estimada (mmHg)")
     plt.title(f"Presión {variable_name}")
     plt.grid(True)
