@@ -122,6 +122,16 @@ fun App(viewModel: MainViewModel = viewModel()){
                             item = item
                         ){
                             //TODO navegar a la ventana que toque y cambiar a archivo separado
+                            if (item.route == Screen.About.route){
+                                if(currentRoute != Screen.About.route)
+                                    navController.navigate(Screen.About.route)
+                                    scope.launch { drawerState.close() }
+                            }
+                            else{
+                                if(currentRoute == Screen.About.route)
+                                    navController.popBackStack()
+                                    scope.launch { drawerState.close() }
+                            }
                         }
 
 

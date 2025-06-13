@@ -12,6 +12,7 @@ import com.tfm.druidapp.views.ActuationView
 import com.tfm.druidapp.views.MonitoringView
 import com.tfm.druidapp.views.SettingsView
 import com.tfm.druidapp.data.Screen
+import com.tfm.druidapp.views.AboutView
 import com.tfm.druidapp.views.GlasgowView
 import com.tfm.druidapp.views.PPGView
 
@@ -41,6 +42,10 @@ fun Navigation(navController: NavHostController, viewModel: MainViewModel, pd: P
 
         composable(Screen.Glasgow.route) {
             GlasgowView(viewModel)
+        }
+
+        composable(Screen.About.route) {
+            AboutView()
         }
 
 
