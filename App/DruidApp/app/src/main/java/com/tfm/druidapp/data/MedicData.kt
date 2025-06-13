@@ -15,7 +15,7 @@ data class NormalMedicRanges(
     //val ibi: NormalRange<Float>? = null,
     //val frequency: NormalRange<Float>? = null,
     val sdnn: NormalRange<Float> = NormalRange(50f,200f),
-    val rmsdd: NormalRange<Float> = NormalRange(20f,100f),
+    val rmsdd: NormalRange<Float> = NormalRange(30f,100f),
     //val amplitude: NormalRange<Float>? = null,
     val riseTime: NormalRange<Float> = NormalRange(100f,200f),
     val sys: NormalRange<Int> = NormalRange(108,139),

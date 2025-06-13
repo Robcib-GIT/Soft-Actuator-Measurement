@@ -208,11 +208,11 @@ fun PPGViewPreview(){
             val dataStoreManager = DataStoreManager(LocalContext.current)
             val vm = MainViewModel(dataStoreManager)
             vm.updateCardiacData(data = MsgTypes.CardiacMsg(
-                ppm = 60,
-                ibi = 824.14f,
-                frequency = 1f,
-                sdnn = 60f,
-                rmsdd = 2f
+                ppm = 84,
+                ibi = 714.28f,
+                frequency = 1.4f,
+                sdnn = 55f,
+                rmsdd = 29f
             ))
             vm.updateActuatorState(state = ActuatorStates.Connected)
             PPGView(vm)
