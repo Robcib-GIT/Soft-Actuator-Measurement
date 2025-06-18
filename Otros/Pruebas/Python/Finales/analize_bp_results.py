@@ -33,6 +33,21 @@ def plot_homoscedasticity(estimated, real, variable_name):
     plt.show()
 
 
+def plot_pressures(pressures_sys, pressures_dia, type_str):
+    x = list(range(len(pressures_sys)))
+
+    plt.figure(figsize=(12, 5))
+    plt.scatter(x, pressures_sys, color='blue', label="Presión sistólica")
+    plt.scatter(x, pressures_dia, color='red', label="Presión diastólica")
+
+    plt.xlabel(f"Muestras")
+    plt.ylabel(f"Presión (mmHg)")
+    plt.title(f"Presión arterial {type_str}")
+    plt.grid(True)
+    plt.legend()
+    plt.show()
+
+
 if __name__ == "__main__":
 
     carpeta = "data"
@@ -83,5 +98,7 @@ if __name__ == "__main__":
                 real_dia.append(results["real_dia"])
                 sam_dia.append(results["sam_dia"])
 
-    plot_homoscedasticity(estimated=sam_sys, real=real_sys, variable_name="sistólica")
-    plot_homoscedasticity(estimated=sam_dia, real=real_dia, variable_name="diastólica")
+    plot_pressures(pressures_sys=sam_sys, pressures_dia=sam_dia, type_str="estimada")
+    plot_pressures(pressures_sys=real_sys, pressures_dia=real_dia, type_str="real")
+    # plot_homoscedasticity(estimated=sam_sys, real=real_sys, variable_name="sistólica")
+    # plot_homoscedasticity(estimated=sam_dia, real=real_dia, variable_name="diastólica")
