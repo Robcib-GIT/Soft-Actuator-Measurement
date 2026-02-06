@@ -1,0 +1,4 @@
+Variable,Column,Decile_1,Decile_5,Decile_7,Decile_9
+SYS,SYS_Real,106.4,117.75,120.3,128.10000000000002
+DIA,DIA_Real,63.1,73.0,77.8,82.55
+PPM,PPM_Real,65.7,73.25,77.3,85.1
